@@ -1,0 +1,65 @@
+% =============================================================================
+% SECCIÓN 2.3: TECNOLOGÍAS DESCENTRALIZADAS: BLOCKDAG
+% =============================================================================
+
+\section{BlockDAG}
+\label{sec:blockdag}
+
+BlockDAG (Block Directed Acyclic Graph) representa una generalización arquitectónica de la estructura blockchain tradicional, donde los bloques no referencian a un único padre, sino a múltiples padres denominados tips o puntas del grafo \cite{wang2023dag}. Esta arquitectura permite superar limitaciones fundamentales de las blockchains lineales mediante la incorporación de bloques paralelos válidos, transicionando de un modelo de exclusión competitiva a un modelo de inclusión colaborativa \cite{sompolinsky2021phantom}.
+
+\subsubsection{Concepto de DAG vs. Cadena Lineal}
+
+La diferencia fundamental entre blockchain y BlockDAG reside en la topología de la estructura de datos subyacente. En una blockchain tradicional, cada bloque $B_i$ mantiene una referencia criptográfica exactamente a un bloque padre $B_{i-1}$, formando una estructura de cadena lineal donde únicamente una rama es válida según reglas de consenso como la cadena más larga o más pesada. Las ramas paralelas generadas por colisiones de minería se descartan como bloques huérfanos (orphans), desperdiciando el trabajo computacional invertido en su creación.
+
+En contraste, un BlockDAG permite que cada bloque $B_i$ referencie a un conjunto de padres $P \subset \{B_0, ..., B_{i-1}\}$, formando matemáticamente un grafo dirigido acíclico $G=(V, E)$ donde $V$ representa el conjunto de bloques y $E$ representa las referencias hash que apuntan a bloques anteriores. La propiedad de aciclicidad garantiza que no existen caminos que permitan regresar a un bloque previo, preservando la integridad temporal, mientras que la estructura de grafo permite bifurcaciones válidas concurrentes que se integran en la topología general \cite{wang2023dag}.
+
+Esta transición arquitectónica modifica el paradigma operativo: de un modelo de exclusión donde los mineros compiten para generar el siguiente bloque único, a un modelo de inclusión donde múltiples bloques generados simultáneamente son válidos y colaboran para extender el grafo en paralelo, maximizando la utilización del ancho de banda de la red \cite{sompolinsky2021phantom}.
+
+\subsubsection{Ventajas Estructurales: Paralelismo, Throughput y Latencia}
+
+El paralelismo inherente en BlockDAG elimina restricciones artificiales de throughput presentes en blockchains lineales. En sistemas como Bitcoin, el intervalo entre bloques debe ser suficientemente grande para asegurar la propagación completa del bloque anterior a través de la red antes de que se genere el siguiente, evitando bifurcaciones masivas que comprometan la seguridad. Esta restricción limita el throughput a valores como 7 transacciones por segundo, independientemente del ancho de banda disponible.
+
+BlockDAG permite que múltiples bloques generados simultáneamente sean válidos e integrados en el grafo, rompiendo la restricción de "un bloque a la vez" y permitiendo utilizar todo el ancho de banda de la red para procesar transacciones en paralelo \cite{wang2023dag}. Esta capacidad de procesamiento paralelo se traduce en throughput significativamente mayor, limitado principalmente por el ancho de banda físico de la red en lugar de restricciones algorítmicas.
+
+La latencia también se beneficia de esta arquitectura. En blockchains tradicionales, la seguridad se basa parcialmente en la probabilidad de orfandad: bloques generados en paralelo compiten, y solo uno prevalece mientras los demás se descartan. Esta competencia requiere tiempos de bloque largos (10 minutos en Bitcoin) para mantener baja la probabilidad de colisiones. En BlockDAG, como los bloques paralelos no se descartan sino que se integran, los mineros no enfrentan el riesgo de perder recompensas por colisiones, permitiendo tiempos de bloque mucho más cortos, incluso sub-segundo en implementaciones modernas como Kaspa \cite{sompolinsky2021phantom}.
+
+Adicionalmente, BlockDAG permite desacoplar el throughput de la latencia, mitigando parcialmente el denominado "blockchain trilemma" que establece la dificultad de maximizar simultáneamente seguridad, descentralización y escalabilidad en sistemas distribuidos \cite{buterin2015trilemma}. En protocolos tipo Nakamoto, aumentar la tasa o tamaño de bloques suele implicar reducir seguridad o descentralización, ya que incrementa la probabilidad de bloques huérfanos y eleva los requisitos de hardware para nodos completos \cite{wang2020dag}. En contraste, los protocolos DAG-based permiten procesar transacciones en paralelo, mejorando throughput y reduciendo latencia de confirmación respecto a blockchains lineales \cite{wang2020dag}. Esta capacidad de incorporar bloques paralelos en la estructura de consenso permite aumentar la tasa de bloques y el throughput sin degradar la seguridad al mismo ritmo que en protocolos tipo Nakamoto \cite{sompolinsky2021phantom}, ya que los bloques paralelos se integran como parte del conjunto de bloques honestos bien conectados y contribuyen a la seguridad acumulativa del sistema, en lugar de ser descartados como en una cadena lineal.
+
+\subsubsection{Consenso GHOSTDAG/PHANTOM: Fundamentos Conceptuales}
+
+Un DAG define naturalmente un orden parcial entre bloques: se sabe que un bloque $A$ precedió a un bloque $B$ si existe un camino dirigido de $A$ a $B$ en el grafo. Sin embargo, las transacciones financieras requieren un orden total para resolver conflictos como el doble gasto: es necesario determinar de manera unívoca qué transacción ocurrió primero cuando dos transacciones intentan gastar el mismo activo.
+
+PHANTOM representa el protocolo teórico que aborda este desafío mediante la distinción entre bloques creados por nodos honestos y atacantes basándose en la conectividad del grafo. El protocolo busca identificar el k-cluster más grande, definido como un subconjunto de bloques bien conectados que representan la actividad honesta de la red. Sin embargo, encontrar el k-cluster máximo es un problema computacionalmente intratable (NP-hard), lo que limita su implementación práctica directa \cite{sompolinsky2021phantom}.
+
+GHOSTDAG constituye una variante práctica y eficiente de PHANTOM, implementando una aproximación "greedy" (voraz) que resuelve el problema de ordenamiento de manera computacionalmente viable. El protocolo utiliza un algoritmo de coloración que clasifica los bloques en dos conjuntos: bloques Azules, que representan bloques honestos bien conectados y generados en tiempo, y bloques Rojos, que representan bloques potencialmente atacantes, retardados o desconectados del grafo principal.
+
+La cadena azul se construye seleccionando la "mejor punta" del grafo basándose en el mayor peso acumulado (similar al concepto de cadena más larga en Bitcoin) y recorriendo hacia atrás para formar una cadena principal que representa el consenso honesto. Una vez definida la cadena azul, todos los bloques del DAG, incluidos los rojos y aquellos fuera de la cadena principal, se ordenan topológicamente, creando un orden canónico único que todos los nodos respetan para resolver conflictos de transacciones \cite{sompolinsky2021phantom}.
+
+A diferencia de Bitcoin, que descarta completamente las ramas paralelas, GHOSTDAG las penaliza en el ordenamiento pero preserva su información (data availability), invalidando únicamente transacciones conflictivas dentro de bloques rojos mientras mantiene la contribución de seguridad de todos los bloques integrados en el grafo.
+
+La Tabla~\ref{tab:blockchain_vs_blockdag} sintetiza las principales diferencias entre arquitecturas blockchain tradicionales y BlockDAG basadas en GHOSTDAG. La comparación considera protocolos representativos de cada paradigma: Nakamoto consensus implementado en Bitcoin y Ethereum para blockchains lineales \cite{nakamoto2008bitcoin,buterin2014ethereum,bitcoin_blocktime,ethereum_blocks}, y PHANTOM/GHOSTDAG como generalización teórica y práctica del consenso distribuido en estructuras DAG \cite{sompolinsky2021phantom}. Los valores de throughput y latencia reflejan métricas observadas en redes operativas, donde Bitcoin mantiene un intervalo de bloque de 10 minutos para asegurar propagación completa, Ethereum PoS opera con bloques de 12 segundos, e implementaciones BlockDAG como Kaspa alcanzan latencias sub-segundo con throughput significativamente mayor \cite{kaspa_whitepaper,zhang2025sok}.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Comparación entre Blockchain Tradicional y BlockDAG}
+\label{tab:blockchain_vs_blockdag}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\hline
+\textbf{Característica} & \textbf{Blockchain Tradicional} & \textbf{BlockDAG (GHOSTDAG)} \\
+\hline
+Topología & Lineal (1 padre)\cite{sompolinsky2021phantom} & Grafo acíclico (múltiples padres)\cite{sompolinsky2021phantom,zhang2025sok} \\
+Bloques huérfanos & Descartados (seguridad desperdiciada)\cite{sompolinsky2021phantom} & Integrados como tíos/padres (seguridad acumulativa)\cite{sompolinsky2021phantom,kaspa_whitepaper} \\
+Ordenamiento & Total (intrínseco a la cadena) & Parcial (topológico) $\rightarrow$ Total (vía algoritmo)\cite{sompolinsky2021phantom} \\
+Escalabilidad & Limitada por latencia de propagación\cite{sompolinsky2021phantom} & Alta (limitada por ancho de banda físico)\cite{sompolinsky2021phantom,zhang2025sok} \\
+Confirmación & Probabilística lenta (e.g., 6 bloques) & Probabilística rápida (segundos)\cite{zhang2025sok,kaspa_whitepaper} \\
+Minería & Competitiva (winner-takes-all)\cite{sompolinsky2021phantom} & Cooperativa (pay-per-share implícito)\cite{sompolinsky2021phantom} \\
+Throughput típico & 7-30 TPS\cite{nakamoto2008bitcoin,buterin2014ethereum} & 100+ TPS (depende de implementación)\cite{kaspa_whitepaper,zhang2025sok} \\
+Latencia de bloque & 10 min (Bitcoin)\cite{bitcoin_blocktime}, 12 s (Ethereum)\cite{ethereum_blocks} & Sub-segundo a segundos\cite{kaspa_whitepaper,zhang2025sok} \\
+\hline
+\end{tabular}
+\end{table}
+
+Estas ventajas estructurales hacen de BlockDAG una arquitectura prometedora para aplicaciones que requieren alto throughput, baja latencia y costos transaccionales reducidos, como sistemas de monitoreo urbano que necesitan escritura frecuente de datos con verificación descentralizada.
+

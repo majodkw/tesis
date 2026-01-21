@@ -1,0 +1,231 @@
+% =============================================================================
+% SECCIÓN 2.6: PARTICLE SWARM OPTIMIZATION (PSO)
+% =============================================================================
+
+\section{Particle Swarm Optimization (PSO)}
+\label{sec:pso}
+
+Particle Swarm Optimization (PSO) es un metaheurístico de optimización global inspirado en el comportamiento colectivo de bandadas de aves y bancos de peces, en el que un conjunto de partículas intercambia información sobre buenas soluciones para desplazarse en el espacio de búsqueda. En ingeniería de tráfico, PSO se ha aplicado con éxito al ajuste de tiempos semafóricos y otros parámetros de control, mostrando reducciones relevantes en demoras y tiempos de espera en simulaciones de intersecciones.
+
+\subsubsection{Algoritmo PSO: Inspiración y Dinámica Básica}
+
+PSO fue introducido por Kennedy y Eberhart en 1995 como un método para optimizar funciones no lineales mediante un conjunto de partículas que se mueven en un espacio de búsqueda multidimensional \cite{kennedy1995particle}. Cada partícula representa una solución candidata, caracterizada por una posición $x_i$ y una velocidad $v_i$, que se actualizan en función de la experiencia propia y de la del grupo.
+
+La inspiración biológica proviene de modelos de comportamiento social en bandadas, en los que cada individuo ajusta su trayectoria considerando tanto su mejor experiencia previa como la de sus vecinos o la del enjambre completo. En PSO, esta idea se formaliza mediante dos componentes: el componente cognitivo, que representa la tendencia de la partícula a regresar a su mejor posición individual conocida (pbest), y el componente social, que representa la tendencia a acercarse a la mejor posición encontrada por el grupo (gbest) o por su vecindario en variantes locales \cite{eberhart1995new}.
+
+La Figura~\ref{fig:pso_enjambre} ilustra esquemáticamente el concepto del enjambre PSO en un espacio de búsqueda bidimensional, mostrando cómo las partículas se mueven influenciadas por su mejor experiencia personal y la mejor experiencia global del grupo.
+
+\begin{figure}[htbp]
+    \centering
+    \shorthandoff{>}
+    \begin{tikzpicture}[scale=1.8]
+        % Ejes
+        \draw[->,line width=1.3pt] (-0.2,0) -- (6.2,0) node[below,font=\Large] {$x_1$};
+        \draw[->,line width=1.3pt] (0,-0.2) -- (0,4.2) node[left,font=\Large] {$x_2$};
+
+        % Partículas
+        \fill[red] (1.0,3.0) circle (2.5pt) node[above left,font=\large] {$\mathbf{x}_1$};
+        \fill[red] (2.0,2.5) circle (2.5pt) node[above,font=\large] {$\mathbf{x}_2$};
+        \fill[red] (4.5,2.2) circle (2.5pt) node[above right,font=\large] {$\mathbf{x}_3$};
+        
+        % Mejor personal de una partícula
+        \fill[orange] (1.8,3.4) circle (2.5pt) node[above,font=\large] {$p_1$};
+        \draw[->,orange,dashed,line width=1.8pt] (1.0,3.0) -- (1.8,3.4);
+        
+        % Mejor global
+        \fill[green!70!black] (3.0,1.6) circle (3pt) node[below right,font=\large] {$g$};
+        \draw[->,green!70!black,dashed,line width=1.8pt] (2.0,2.5) -- (3.0,1.6);
+        \draw[->,green!70!black,dashed,line width=1.8pt] (4.5,2.2) -- (3.0,1.6);
+        
+        % Leyenda
+        \node[draw,fill=white,anchor=west] at (6.5,2.0) {%
+          \begin{tabular}{@{}l@{}}
+            \textcolor{red}{$\bullet$} Partículas (soluciones)\\
+            \textcolor{orange}{$\bullet$} Mejor personal $p_i$\\
+            \textcolor{green!70!black}{$\bullet$} Mejor global $g$
+          \end{tabular}
+        };
+    \end{tikzpicture}
+    \shorthandon{>}
+    \caption{Esquema conceptual del enjambre PSO en un espacio de búsqueda bidimensional, mostrando partículas, mejor posición personal ($p_i$) y mejor posición global ($g$).}
+    \label{fig:pso_enjambre}
+\end{figure}
+
+En su forma canónica (modelo global), las ecuaciones de actualización para la partícula $i$ en la iteración $t$ son:
+
+\begin{equation}
+v_i^{t+1} = w\,v_i^{t} + c_1 r_1 (p_i - x_i^{t}) + c_2 r_2 (g - x_i^{t})
+\end{equation}
+
+\begin{equation}
+x_i^{t+1} = x_i^{t} + v_i^{t+1}
+\end{equation}
+
+donde $p_i$ es la mejor posición personal de la partícula, $g$ es la mejor posición global del enjambre, $r_1, r_2 \sim U(0,1)$ son números aleatorios uniformes, $w$ es el peso de inercia y $c_1, c_2$ son coeficientes de aceleración que ponderan la influencia del componente cognitivo y social, respectivamente \cite{clerc2002particle}.
+
+El proceso iterativo incluye: (1) evaluar la función objetivo $f(x_i^{t})$ para todas las partículas, (2) actualizar $p_i$ si $f(x_i^{t}) < f(p_i)$, (3) actualizar $g$ (global o local según la topología), y (4) actualizar velocidades y posiciones con las ecuaciones anteriores. Frecuentemente se impone un límite de velocidad $|v_{id}| \leq v_{\max,d}$ para controlar la amplitud de los saltos y evitar divergencia.
+
+La Figura~\ref{fig:pso_flujo} muestra el diagrama de flujo del algoritmo PSO clásico, ilustrando el ciclo iterativo de evaluación, actualización y movimiento de partículas.
+
+\begin{figure}[htbp]
+    \centering
+    \shorthandoff{>}
+    \begin{tikzpicture}[node distance=1.2cm,>=latex]
+        % Estilos
+        \tikzstyle{block} = [rectangle, draw, rounded corners,
+                             text width=5.5cm, align=center, minimum height=0.8cm]
+        \tikzstyle{decision} = [diamond, draw, aspect=2,
+                                text width=2.5cm, align=center, inner sep=1pt]
+        \tikzstyle{line} = [draw,->]
+        
+        % Nodos
+        \node[block] (init) {Inicialización del enjambre:\\generar posiciones y velocidades aleatorias,\\evaluar fitness, asignar $p_i$ y $g$};
+        \node[block, below=of init] (evaluate) {Evaluar función objetivo $f(\mathbf{x}_i)$\\para cada partícula};
+        \node[block, below=of evaluate] (update_pbest) {Actualizar $p_i$ si $f(\mathbf{x}_i)$ mejora\\la mejor posición personal};
+        \node[block, below=of update_pbest] (update_gbest) {Actualizar mejor global (o de vecindario) $g$};
+        \node[block, below=of update_gbest] (update_v) {Actualizar velocidad:\\$v_i^{t+1} = w v_i^t + c_1 r_1 (p_i - x_i^t) + c_2 r_2 (g - x_i^t)$};
+        \node[block, below=of update_v] (update_x) {Actualizar posición:\\$x_i^{t+1} = x_i^t + v_i^{t+1}$};
+        \node[decision, below=of update_x] (stop) {¿Criterio de parada?};
+        \node[block, below=of stop] (end) {Devolver mejor solución $g$};
+        
+        % Flechas
+        \path[line] (init) -- (evaluate);
+        \path[line] (evaluate) -- (update_pbest);
+        \path[line] (update_pbest) -- (update_gbest);
+        \path[line] (update_gbest) -- (update_v);
+        \path[line] (update_v) -- (update_x);
+        \path[line] (update_x) -- (stop);
+        \path[line] (stop) -- node[right]{Sí} (end);
+        \path[line] (stop.west) -| +(-2.5,0) |- node[left]{No} (evaluate.west);
+    \end{tikzpicture}
+    \shorthandon{>}
+    \caption{Diagrama de flujo del algoritmo PSO clásico, mostrando el ciclo iterativo de evaluación, actualización y movimiento de partículas.}
+    \label{fig:pso_flujo}
+\end{figure}
+
+La Figura~\ref{fig:pso_geom} ilustra la interpretación geométrica de la ecuación de actualización de velocidad, mostrando cómo los tres componentes (inercia, cognitivo y social) se combinan para determinar la nueva velocidad y posición de la partícula.
+
+\begin{figure}[htbp]
+    \centering
+    \shorthandoff{>}
+    \begin{tikzpicture}[scale=2.0,>=latex]
+
+        % Ejes
+        \draw[->,line width=1.4pt] (-0.2,0) -- (5.0,0)
+            node[below,font=\Large] {$x_1$};
+        \draw[->,line width=1.4pt] (0,-0.2) -- (0,3.6)
+            node[left,font=\Large] {$x_2$};
+
+        % Posición actual
+        \coordinate (xnow) at (1.0,1.0);
+        \fill[blue] (xnow) circle (1.5pt)
+            node[below left,font=\Large] {$\mathbf{x}_i^t$};
+
+        % Mejor personal (p_i)
+        \coordinate (pbest) at (2.6,2.8);
+        \fill[orange] (pbest) circle (1.5pt)
+            node[above,font=\Large] {$p_i$};
+
+        % Mejor global (g)
+        \coordinate (gbest) at (4.2,1.8);
+        \fill[green!70!black] (gbest) circle (1.5pt)
+            node[right,font=\Large] {$g$};
+
+        % Inercia
+        \coordinate (vinertia) at (2.0,1.4);
+        \draw[->,gray,line width=2.4pt] (xnow) -- (vinertia);
+        \node[gray,below right,font=\Large]
+            at ($(xnow)!0.5!(vinertia)$) {$w \mathbf{v}_i^t$};
+
+        % Componente cognitiva (alineada con p_i)
+        \draw[->,orange,line width=2.4pt] (xnow) -- (pbest);
+        \node[orange,left,font=\Large]
+            at ($(xnow)!0.6!(pbest)$) {$c_1 r_1 (p_i - x_i^t)$};
+
+        % Componente social (alineada con g)
+        \draw[->,green!70!black,line width=2.4pt] (xnow) -- (gbest);
+        \node[green!70!black,below,font=\Large]
+            at ($(xnow)!0.8!(gbest)$) {$c_2 r_2 (g - x_i^t)$};
+
+        % Velocidad resultante
+        \coordinate (xnext) at (2.9,2.2);
+        \draw[->,red,line width=2.6pt] (xnow) -- (xnext);
+        \node[red,above,font=\Large]
+            at ($(xnow)!0.7!(xnext)$) {$\mathbf{v}_i^{t+1}$};
+
+        % Nueva posición
+        \fill[red] (xnext) circle (1.5pt)
+            node[above right,font=\Large] {$\mathbf{x}_i^{t+1}$};
+
+    \end{tikzpicture}
+
+    \vspace{0.8em}
+
+    % Leyenda abajo (completa y sin recorte)
+    \begin{tabular}{@{}l l l l@{}}
+        \textcolor{gray}{\rule{0.4cm}{1.2pt}} & Inercia $w \mathbf{v}_i^t$ \quad &
+        \textcolor{orange}{\rule{0.4cm}{1.2pt}} & Componente cognitiva \\[0.3em]
+        \textcolor{green!70!black}{\rule{0.4cm}{1.2pt}} & Componente social \quad &
+        \textcolor{red}{\rule{0.4cm}{1.2pt}} & Velocidad resultante
+    \end{tabular}
+
+    \shorthandon{>}
+    \caption{Interpretación geométrica de la actualización de velocidad en PSO.}
+    \label{fig:pso_geom}
+\end{figure}
+
+
+\subsubsection{Parámetros Principales: Peso de Inercia, Coeficientes de Aceleración y Tamaño de Población}
+
+El comportamiento de PSO está fuertemente gobernado por cuatro parámetros clave: el peso de inercia $w$, los coeficientes de aceleración $c_1, c_2$ y el tamaño de la población (número de partículas).
+
+El peso de inercia $w$ controla cuánto de la velocidad anterior se preserva en cada actualización, modulando el equilibrio entre exploración y explotación. Valores grandes de $w$ (p.ej. $w > 0.8$) permiten pasos más largos, favoreciendo la exploración global, pero pueden generar oscilaciones o divergencia si son excesivos. Valores pequeños de $w$ (p.ej. $w < 0.4$) fomentan la explotación local y la convergencia fina, pero pueden provocar estancamiento en óptimos locales \cite{shi1998parameter}.
+
+Shi y Eberhart propusieron un esquema de inercia decreciente, donde $w$ disminuye linealmente desde un valor inicial alto (p.ej. 0.9) a uno bajo (p.ej. 0.4) a lo largo de las iteraciones, logrando una exploración inicial seguida de explotación refinada. Estudios recientes también introducen pesos de inercia adaptativos basados en medidas de diversidad del enjambre o aprendizaje automático, para ajustar $w$ dinámicamente según el estado de búsqueda \cite{clerc2002particle}.
+
+Los parámetros $c_1$ (cognitivo) y $c_2$ (social) ponderan la atracción hacia la mejor posición personal y la mejor posición global, respectivamente. Un $c_1$ alto refuerza el comportamiento individual, promoviendo una búsqueda más dispersa al permitir que cada partícula explore alrededor de su propia experiencia. Un $c_2$ alto incrementa la influencia del mejor miembro del grupo, favoreciendo una convergencia más rápida hacia la región más prometedora, pero con riesgo de convergencia prematura \cite{clerc2002particle}.
+
+Análisis de estabilidad muestran que la suma $\phi = c_1 + c_2$ juega un papel crítico. La formulación con factor de constricción de Clerc y Kennedy utiliza:
+
+\begin{equation}
+\chi = \frac{2}{\phi - 2 + \sqrt{\phi^2 - 4\phi}}, \quad \text{con} \quad \phi > 4
+\end{equation}
+
+y redefine la ecuación de velocidad como:
+
+\begin{equation}
+v_i^{t+1} = \chi \left( v_i^{t} + c_1 r_1 (p_i - x_i^{t}) + c_2 r_2 (g - x_i^{t}) \right)
+\end{equation}
+
+para garantizar convergencia estable del enjambre. En la práctica, se emplean con frecuencia valores $c_1 \approx c_2 \in [1.5, 2.5]$, manteniendo $\phi$ en un rango moderado \cite{clerc2002particle}.
+
+El número de partículas determina el grado de muestreo del espacio de búsqueda y el costo computacional por iteración. Poblaciones pequeñas reducen el costo computacional, pero pueden cubrir de forma insuficiente el espacio y tienen mayor probabilidad de caer en óptimos locales. Poblaciones grandes mejoran la diversidad y la probabilidad de encontrar zonas promisorias, a costa de mayor tiempo de cómputo por iteración. Estudios empíricos sugieren que tamaños de enjambre en el rango de 20--60 partículas son adecuados para muchos problemas de dimensión moderada, mientras que problemas de alta dimensión o paisajes muy multimodales pueden requerir enjambres mayores o estrategias de partición del enjambre \cite{poli2007particle}.
+
+\subsubsection{Convergencia y Optimización Global}
+
+Aunque PSO se diseñó originalmente como un algoritmo heurístico, se ha desarrollado una extensa literatura sobre su análisis de convergencia y propiedades de optimización global. Al interpretar las ecuaciones de actualización como un sistema dinámico discreto, es posible estudiar condiciones bajo las cuales las trayectorias de las partículas convergen \cite{vandenbergh2010convergence}.
+
+Análisis lineales han mostrado que la estabilidad depende de la tripleta $(w, c_1, c_2)$ y que ciertas combinaciones conducen a oscilaciones acotadas, convergencia a puntos fijos o divergencia. El uso de un factor de constricción $\chi$ y restricciones en la magnitud de la velocidad (clamping) son técnicas habituales para evitar explosiones de la velocidad y asegurar trayectorias acotadas \cite{clerc2002particle}.
+
+Van den Bergh y Engelbrecht propusieron una versión modificada de PSO con garantías de convergencia a mínimos locales, identificando condiciones en las que el enjambre no se estanca en estados degenerados y proponiendo extensiones con convergencia global. Más recientemente, enfoques de tipo mean-field han demostrado convergencia en probabilidad hacia el óptimo global bajo hipótesis de regularidad y crecimiento de la función objetivo \cite{vandenbergh2010convergence, chen2024convergence}.
+
+PSO es un método de optimización sin gradiente (zero-order), lo que lo hace adecuado para funciones no suaves, no derivables o ruidosas. La exploración global se logra mediante la combinación de inicialización aleatoria amplia del enjambre, componentes estocásticas $r_1, r_2$, y balance adecuado entre $w$, $c_1$ y $c_2$. Sin embargo, al igual que otros metaheurísticos, PSO no garantiza en general encontrar el óptimo global en un número finito de iteraciones para funciones arbitrarias, por lo que se habla de convergencia en probabilidad o convergencia bajo supuestos específicos \cite{poli2007particle}.
+
+Para mejorar la capacidad de escape de óptimos locales, se han propuesto variantes como PSO con topologías de vecindario local (lbest) en lugar de gbest, PSO híbrido con mutación tipo algoritmos genéticos o reinicialización parcial de partículas, y PSO multi-objetivo y multi-enjambre (multi-swarm) para cubrir diversos modos del paisaje \cite{poli2007particle, clerc2002particle}.
+
+\subsubsection{Aplicaciones en Optimización de Tráfico y Tiempos Semafóricos}
+
+En el ámbito de sistemas de transporte inteligente, PSO se ha utilizado para optimizar planes de señalización semafórica, coordinación de fases y otros parámetros de control de tráfico en redes urbanas. La idea central es codificar los tiempos de verde/ámbar/rojo (y eventualmente offsets entre intersecciones) como variables de decisión en las partículas, y minimizar funciones objetivo relacionadas con el desempeño del tráfico.
+
+Para el caso de optimización de tiempos de semáforos en una intersección o red pequeña, una partícula suele codificar un vector del tipo $x_i = (g_1, g_2, \dots, g_M, \text{offset}_1, \dots)$, donde $g_k$ es el tiempo de verde de la fase $k$, y opcionalmente se incluyen offsets o tiempos intermedios. Se imponen restricciones como límites mínimos y máximos por fase ($g_k^{\min} \le g_k \le g_k^{\max}$) y suma de tiempos por ciclo $\sum_k g_k = C$ o dentro de un rango $[C_{\min}, C_{\max}]$. Estas restricciones se pueden manejar mediante proyección de $x_i$ al espacio factible después de cada actualización o penalización en la función objetivo si la solución viola restricciones.
+
+La función objetivo puede ser minimizar el tiempo medio de retraso por vehículo, minimizar la suma ponderada de colas, retrasos y emisiones, o maximizar un índice de nivel de servicio (LOS). Para cada partícula, se configura el plan semafórico en el simulador (p.ej. SUMO, VISSIM), se ejecuta la simulación para un periodo representativo, y se mide el valor de la función objetivo. Dado que cada evaluación es costosa, se suele utilizar poblaciones moderadas (20--40 partículas) y número limitado de iteraciones (p.ej. 30--50).
+
+Trabajos como el de Li et al. proponen enfoques de PSO para la combinación de fases y tiempos de verde en intersecciones, minimizando el número de paradas y el retraso total \cite{li2016pso}. En un estudio sobre una intersección, un modelo PSO para combinación de fases logró una reducción aproximada del 19\% en el número de paradas respecto a un plan fijo base, junto con reducciones simultáneas en retraso total y emisiones de CO derivadas del menor número de arranques y frenadas.
+
+Gonçalo y colaboradores plantean un esquema de simulación--optimización donde PSO se integra con el simulador SUMO para ajustar los tiempos de luz verde en problemas de control de tráfico \cite{goncalo2022tuning}. Cada partícula representa una configuración de tiempos de fase para los semáforos. Para cada configuración, SUMO simula el tráfico y devuelve métricas como tiempo medio de espera y número de vehículos en cola. PSO actualiza las partículas para minimizar el tiempo medio de espera. Los resultados reportan reducciones cercanas al 26\% en el tiempo medio de espera respecto a configuraciones iniciales, demostrando que PSO puede encontrar esquemas de señalización más eficientes que configuraciones estáticas o heurísticas simples.
+
+En la literatura de ITS se han explorado variantes de PSO adaptadas al contexto de tráfico, por ejemplo: PSO multiobjetivo para equilibrar retraso, emisiones y equidad entre movimientos; PSO combinado con lógica difusa, donde PSO ajusta parámetros de control difuso (p. ej. funciones de membresía de un controlador de semáforos) para mejorar la calidad de servicio del tráfico; y PSO distribuido para redes grandes, donde distintos subenjambres optimizan regiones de la red de forma coordinada \cite{goncalo2022tuning, li2016pso}.
+
+En conjunto, estos resultados posicionan a PSO como una herramienta flexible y robusta para la optimización de control de tráfico, especialmente en escenarios donde la función objetivo es evaluada mediante simulación y carece de gradiente analítico, como ocurre en sistemas de optimización de tráfico urbano que requieren integración con simuladores microscópicos para evaluar el desempeño de configuraciones de semáforos.
+
