@@ -1,0 +1,41 @@
+% =============================================================================
+% SECCIÓN X: INGENIERÍA DE TRÁFICO – CONTROL SEMAFÓRICO
+% =============================================================================
+
+\section{Ingeniería de Tráfico y Control Semafórico}
+\label{sec:traffic_engineering_signals}
+
+\subsection{Semáforos para el Control del Tránsito de Vehículos}
+\label{subsec:semaforos_control_vehiculos}
+
+Los semáforos constituyen el principal dispositivo de control del derecho de paso en intersecciones urbanas y periurbanas con conflictos significativos de circulación vehicular y peatonal \cite{mopc2019manual}. En el \textit{Manual de Carreteras del Paraguay} (Unidad 3, Volumen 3.3, Sección 3.3.2.7) se establece que los semáforos para el control del tránsito de vehículos deben emplearse para asignar tiempos de paso y de detención a los distintos movimientos que confluyen en la intersección, con el objetivo de reducir conflictos, ordenar las maniobras y aumentar la seguridad vial \cite{mopc2019manual}. Esta función se complementa con el control de flujos peatonales y, cuando corresponde, con fases específicas para giros, carriles exclusivos y prioridades especiales (por ejemplo, transporte público o vehículos de emergencia) \cite{mopc2019manual}.
+
+Desde el punto de vista de la ingeniería de tráfico, un semáforo vehicular puede interpretarse como un sistema de control discreto en el tiempo que alterna estados de indicación verde, amarilla y roja para cada grupo de movimientos, de forma tal que en ningún instante se autoricen simultáneamente movimientos incompatibles \cite{mopc2019manual,garber2019traffic}. El diseño del plan de fases considera la geometría de la intersección, los volúmenes de tránsito por aproximación, la presencia de giros a la izquierda y a la derecha, los flujos peatonales y, en su caso, la coordinación con semáforos próximos en el corredor \cite{mopc2019manual,roess2019traffic}. Las indicaciones luminosas verde, amarilla y roja poseen significado normado asociado a las obligaciones legales de detenerse o avanzar, y se complementan con flechas direccionales cuando es necesario discriminar maniobras permitidas dentro de una misma aproximación \cite{mopc2019manual}.
+
+En la normativa paraguaya se especifican además criterios de ubicación, número de caras y área de influencia de cada cabezal semafórico, de modo que las indicaciones resulten claramente visibles para todos los usuarios a los que se dirigen \cite{mopc2019manual}. Estos lineamientos aseguran que el dispositivo de control implementado por el sistema desarrollado en la presente tesis sea compatible con la infraestructura semafórica existente y respetuoso de las disposiciones vigentes en el país.
+
+% -----------------------------------------------------------------------------
+
+
+\subsection{Semáforos de Tiempos Fijos o Predeterminados}
+\label{subsec:semaforos_tiempo_fijo}
+
+Los semáforos de tiempos fijos o predeterminados operan con un plan de señales cuya secuencia de fases y tiempos se define previamente y se repite cíclicamente, sin interacción directa con el tránsito en tiempo real \cite{mopc2019manual}. El \textit{Manual de Carreteras del Paraguay} indica que estos equipos asignan a cada fase un tiempo de verde y un tiempo intermedio (amarillo y, si corresponde, tiempo de despeje en rojo) calculados a partir de volúmenes de tránsito de diseño, análisis de capacidad y niveles de servicio objetivo \cite{mopc2019manual}. Los tiempos de fase se mantienen constantes durante el período de operación del plan, aunque se contempla el uso de distintos planes fijos según la franja horaria (pico de la mañana, valle, pico de la tarde, periodo nocturno) \cite{mopc2019manual,garber2019traffic}.
+
+La principal ventaja de los semáforos de tiempos fijos reside en su simplicidad de diseño, facilidad de implementación y previsibilidad del patrón de señales, lo que se traduce en menores requerimientos de equipamiento (no se requieren detectores de vehículos) y en un mantenimiento relativamente sencillo \cite{garber2019traffic,roess2019traffic}. Sin embargo, este tipo de control presenta limitaciones en entornos con variaciones significativas de la demanda, como redes urbanas con fuertes diferencias entre horas pico y valle o con eventos recurrentes que alteran los patrones de flujo, ya que el plan fijo no se adapta a la ocupación real de las aproximaciones y puede generar tiempos de verde desaprovechados o demoras excesivas en ciertas corrientes \cite{papageorgiou2003review,stevanovic2010adaptive}.
+
+Diversos estudios en ingeniería de tráfico han mostrado que, en condiciones de demanda altamente variable, los esquemas de control fijo tienden a producir mayores tiempos de retraso medio, un mayor número de paradas y colas más extensas que los sistemas actuados o adaptativos \cite{papageorgiou2003review,stevanovic2010adaptive}. Este comportamiento motiva la búsqueda de estrategias de control más flexibles, como las basadas en lógica difusa o algoritmos de optimización metaheurística, que constituyen el foco de la presente tesis.
+
+
+% -----------------------------------------------------------------------------
+
+
+\subsection{Semáforos Accionados por el Tránsito}
+\label{subsec:semaforos_accionados_transito}
+
+Los semáforos accionados por el tránsito utilizan información en tiempo real captada por detectores (por ejemplo, lazos inductivos, sensores de radar o cámaras de video) ubicados en las aproximaciones para modificar la duración de las fases dentro de límites mínimos y máximos definidos \cite{mopc2019manual}. El Manual de Carreteras del Paraguay distingue entre control parcialmente actuado (al menos una aproximación bajo control por detectores) y totalmente actuado (todas las aproximaciones controladas por demanda), estableciendo criterios de diseño para la ubicación de detectores, la distancia respecto de la línea de detención y los períodos iniciales mínimos y extensiones de verde en función de la velocidad que comprende el 85\,\% del tránsito en el acceso \cite{mopc2019manual}.
+
+En estos sistemas, el controlador decide en cada ciclo si extiende o termina el verde de una fase atendiendo a la detección de vehículos, lo que permite reducir tiempos de verde desaprovechados en movimientos con baja demanda y asignar capacidad adicional a las aproximaciones más cargadas \cite{roess2019traffic,papageorgiou2003review}. La literatura sobre control semafórico actuado y adaptativo destaca que este tipo de sistemas mejora el desempeño frente a planes fijos, especialmente en condiciones de demanda fluctuante, al disminuir el retraso medio por vehículo y el número de paradas, y al reducir la probabilidad de colas críticas en aproximaciones dominantes \cite{papageorgiou2003review,stevanovic2010adaptive}. 
+
+El uso de detectores también permite implementar estrategias avanzadas como extensiones de verde para “limpiar” colas residuales, prioridad al transporte público o prioridad a vehículos de emergencia, resultando particularmente relevante en corredores urbanos con alta variabilidad de flujos \cite{papageorgiou2003review,gartner2001arterial}. Estos conceptos constituyen la base sobre la cual se articula el sistema de control inteligente propuesto en esta tesis, donde un controlador difuso tipo Mamdani y algoritmos de optimización como Particle Swarm Optimization (PSO) se integran para ajustar dinámicamente parámetros de operación semafórica en respuesta a condiciones de tráfico cambiantes.
+
