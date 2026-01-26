@@ -7,7 +7,7 @@
 \subsection{Lógica Difusa y Sistemas de Inferencia Mamdani}
 \label{sec:logica_difusa}
 
-La lógica difusa y los sistemas de inferencia Mamdani proporcionan un marco formal para modelar razonamiento humano impreciso mediante variables lingüísticas, conjuntos difusos y reglas del tipo ``SI–ENTONCES'', y se han aplicado extensamente a la clasificación de estados de congestión vehicular en sistemas de transporte inteligente (ITS) \cite{zadeh1965fuzzy,mamdani1975experiment}. Esta sección resume los fundamentos necesarios para entender el diseño del clasificador de congestión utilizado en esta tesis, sin entrar en detalles matemáticos innecesarios.
+La lógica difusa y los sistemas de inferencia Mamdani proporcionan un marco formal para modelar razonamiento humano impreciso mediante variables lingüísticas, conjuntos difusos y reglas del tipo ``SI–ENTONCES'', y se han aplicado extensamente a la clasificación de estados de congestión vehicular en sistemas de transporte inteligente (ITS) \cite{zadeh1965fuzzy,mamdani1975experiment}. Esta sección resume los fundamentos necesarios para entender el diseño del clasificador de congestión utilizado en este trabajo, sin entrar en detalles matemáticos innecesarios.
 
 % -----------------------------------------------------------------------------
 \subsubsection{Fundamentos de Lógica Difusa}
@@ -31,7 +31,7 @@ En términos prácticos:
     \item Las funciones \textbf{gaussianas} proporcionan transiciones suaves e infinitamente diferenciables alrededor de un valor central, resultando útiles cuando se desea un comportamiento más regular o se combinan sistemas difusos con técnicas de optimización continua.
 \end{itemize}
 
-En esta tesis se utilizan funciones triangulares y trapezoidales, por su equilibrio entre interpretabilidad, facilidad de ajuste a partir de datos empíricos y bajo costo computacional, siguiendo recomendaciones habituales en control difuso \cite{ross2010fuzzy}. La Figura~\ref{fig:fuzzy_velocidad} ilustra una variable lingüística ``velocidad promedio'' con tres términos (baja, media, alta) definidos mediante este tipo de funciones de membresía.
+En este trabajo se utilizan funciones triangulares y trapezoidales, por su equilibrio entre interpretabilidad, facilidad de ajuste a partir de datos empíricos y bajo costo computacional, siguiendo recomendaciones habituales en control difuso \cite{ross2010fuzzy}. La Figura~\ref{fig:fuzzy_velocidad} ilustra una variable lingüística ``velocidad promedio'' con tres términos (baja, media, alta) definidos mediante este tipo de funciones de membresía.
 
 \begin{figure}[htbp]
 \centering
@@ -86,7 +86,7 @@ La arquitectura de un sistema Mamdani se organiza típicamente en cuatro etapas 
     \item \textbf{Defuzzificación}: el conjunto difuso agregado se transforma en un valor crisp. El método de defuzzificación más empleado es el centroide (o centro de gravedad), que entrega un valor representativo de la distribución resultante.
 \end{enumerate}
 
-La Figura~\ref{fig:mamdani_flujo} resume este flujo de información para el caso específico del problema de congestión vehicular considerado en esta tesis.
+La Figura~\ref{fig:mamdani_flujo} resume este flujo de información para el caso específico del problema de congestión vehicular considerado en este trabajo.
 
 \begin{figure}[htbp]
 \centering
@@ -134,4 +134,4 @@ Un esquema típico de clasificación difusa de congestión vehicular con sistema
 
 Diversos estudios reportan que los clasificadores difusos basados en Mamdani son robustos ante datos incompletos o ruidosos y capturan de manera más fiel la percepción de los usuarios respecto a soluciones crisp basadas en umbrales fijos \cite{erdinc2023application,musriroh2020application,esmaeili2025optimization}. Por ejemplo, Erdinç propone un identificador difuso de estado de tráfico que utiliza flujo, velocidad y densidad como entradas y demuestra que el modelo reproduce correctamente las transiciones entre flujo libre y condiciones hipercríticas en escenarios simulados \cite{erdinc2023application}. Otros trabajos aplican lógica difusa Mamdani al control de semáforos y a la gestión dinámica de carriles, mostrando reducciones significativas en tiempos de viaje y número de paradas frente a esquemas de control fijo \cite{musriroh2020application,esmaeili2025optimization}.
 
-En el contexto de esta tesis, estos resultados justifican la elección de un sistema de inferencia Mamdani para clasificar el grado de congestión urbano a partir de variables macroscópicas, proporcionando una salida interpretable (leve, moderada, severa) que puede integrarse de forma natural con los módulos de optimización y control semafórico desarrollados en capítulos posteriores.
+En el contexto de este trabajo, estos resultados justifican la elección de un sistema de inferencia Mamdani para clasificar el grado de congestión urbano a partir de variables macroscópicas, proporcionando una salida interpretable (leve, moderada, severa) que puede integrarse de forma natural con los módulos de optimización y control semafórico desarrollados en capítulos posteriores.
