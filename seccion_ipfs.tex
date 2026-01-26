@@ -18,7 +18,7 @@ Los archivos se fragmentan en bloques y se organizan en un Merkle DAG, donde cad
 Desde el punto de vista de esta tesis, es suficiente entender que: (i) cualquier archivo que se agregue a IPFS se transforma en uno o más bloques; (ii) el sistema calcula un CID único en función del contenido; y (iii) mientras al menos un nodo mantenga esos bloques, cualquier otro nodo que conozca el CID puede recuperar el archivo. No es necesario profundizar en detalles de protocolos de transporte o variantes específicas de la DHT, dado que el uso previsto se limita a un nodo local o a servicios gestionados compatibles con IPFS.
 
 % -----------------------------------------------------------------------------
-\subsubsection{Identificadpres de contenido (CIDs) y acceso a archivos}
+\subsubsection{Identificadores de contenido (CIDs) y acceso a archivos}
 % -----------------------------------------------------------------------------
 
 Un indentificador de contenido (CID) es el identificador principal en IPFS y representa el hash del contenido de un objeto junto con metadatos mínimos sobre cómo interpretarlo \cite{benet2014ipfs}. El mismo contenido generará siempre el mismo CID, independientemente del nodo que lo procese, lo que permite verificar integridad de forma determinista: si el archivo se altera, el CID cambia. Esta propiedad es la base del direccionamiento por contenido y de la trazabilidad que se explota al combinar IPFS con tecnologías de registro inmutable.
