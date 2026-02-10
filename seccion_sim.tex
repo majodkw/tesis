@@ -7,13 +7,70 @@ El módulo \texttt{traffic-sim} implementa un entorno de simulación de tráfico
 \subsection{Arquitectura del Módulo}
 \label{subsec:traffic_sim_architecture}
 
-La estructura de \texttt{traffic-sim} se organiza en torno a un orquestador de simulación y un conjunto de componentes especializados para detección, control y comunicación externa. El archivo \texttt{simulation\_orchestrator.py} encapsula la lógica principal: carga la configuración de SUMO (archivos \texttt{*.sumocfg}, \texttt{edges.edg.xml}, \texttt{nodes.nod.xml}, \texttt{routes.rou.xml} y \texttt{traffic\_lights.add.xml}), inicializa la simulación mediante \texttt{traci} y gestiona el avance de la simulación en pasos discretos \cite{sumo2025manual}. El script \texttt{run\_simulation.py} actúa como punto de entrada, recibiendo como argumento un archivo \texttt{ZIP} de escenario (generado, por ejemplo, mediante la herramienta auxiliar de construcción de mapas) y ejecutando la simulación en modo \emph{headless} o con interfaz gráfica.
+La estructura de \texttt{traffic-sim} se organiza en torno a un orquestador de simulación y un conjunto de componentes especializados para detección, control y comunicación externa. El orquestador de simulación encapsula la lógica principal: carga la configuración de SUMO (archivos de configuración de red, aristas, nodos, rutas y semáforos), inicializa la simulación mediante la interfaz de control remoto y gestiona el avance de la simulación en pasos discretos \cite{sumo2025manual}. El punto de entrada recibe como argumento un archivo comprimido de escenario (generado, por ejemplo, mediante la herramienta auxiliar de construcción de mapas) y ejecuta la simulación en modo sin interfaz gráfica o con interfaz gráfica.
 
-Los detectores de cuellos de botella se implementan en el paquete \texttt{detectors}, particularmente en \texttt{bottleneck\_detector.py}, donde se monitorean métricas como densidad de vehículos, velocidad promedio y longitud de cola por tramo o aproximación. Los umbrales y parámetros de detección (por ejemplo, densidad mínima, velocidad máxima para considerar congestión, intervalo entre detecciones, duración mínima del evento) se centralizan en \texttt{config.py}, lo que permite ajustar la sensibilidad del sistema sin modificar la lógica de detección. El controlador de semáforos se encuentra en \texttt{controllers/traffic\_light\_controller.py} y expone métodos para actualizar dinámicamente los tiempos de verde y de ciclo de los semáforos modelados en SUMO, aplicando las optimizaciones recibidas desde el servicio \texttt{traffic-sync}.
+Los detectores de cuellos de botella monitorean métricas como densidad de vehículos, velocidad promedio y longitud de cola por tramo o aproximación. Los umbrales y parámetros de detección (por ejemplo, densidad mínima, velocidad máxima para considerar congestión, intervalo entre detecciones, duración mínima del evento) se centralizan en la configuración del sistema, lo que permite ajustar la sensibilidad del sistema sin modificar la lógica de detección. El controlador de semáforos expone métodos para actualizar dinámicamente los tiempos de verde y de ciclo de los semáforos modelados en SUMO, aplicando las optimizaciones recibidas desde el servicio de optimización.
 
-El módulo \texttt{services/traffic\_control\_client.py} implementa el cliente HTTP que se comunica con la API de \texttt{traffic-sync}: cuando se detecta un cuello de botella, este cliente construye un payload con métricas agregadas de tráfico para la intersección crítica y lo envía al endpoint correspondiente (por ejemplo, \texttt{/evaluate}). Las utilidades en \texttt{services/metrics\_calculator.py} y \texttt{utils/metrics\_validator.py} calculan y validan las métricas macroscópicas a partir de los datos de SUMO (por ejemplo, viajes completados, tiempos de viaje, velocidades y colas), garantizando que la información enviada a \texttt{traffic-sync} siga el esquema esperado por el sistema difuso y el optimizador PSO.
+El cliente HTTP se comunica con la API del módulo de optimización: cuando se detecta un cuello de botella, este cliente construye una carga útil con métricas agregadas de tráfico para la intersección crítica y lo envía al punto de entrada correspondiente (por ejemplo, \texttt{/evaluate}). Las utilidades de cálculo y validación de métricas calculan y validan las métricas macroscópicas a partir de los datos de SUMO (por ejemplo, viajes completados, tiempos de viaje, velocidades y colas), garantizando que la información enviada al módulo de optimización siga el esquema esperado por el sistema difuso y el optimizador PSO.
 
-La carpeta \texttt{visualization} contiene herramientas para análisis posterior de resultados: parsers de archivos de salida de SUMO (\texttt{tripinfo.xml}, \texttt{summary.xml}, \texttt{fcd.xml}), funciones para generar gráficos de distribución de tiempos de viaje, evolución temporal de congestión y comparaciones A/B entre diferentes configuraciones de semáforos, así como envoltorios sobre herramientas nativas de SUMO. Estas utilidades permiten cuantificar el impacto de las estrategias de control sobre métricas clave como tiempo de viaje, tiempos de espera y niveles de congestión.
+Las herramientas de visualización proporcionan análisis posterior de resultados: parsers de archivos de salida de SUMO (información de viajes, resúmenes, datos de vehículos), funciones para generar gráficos de distribución de tiempos de viaje, evolución temporal de congestión y comparaciones entre diferentes configuraciones de semáforos, así como envoltorios sobre herramientas nativas de SUMO. Estas utilidades permiten cuantificar el impacto de las estrategias de control sobre métricas clave como tiempo de viaje, tiempos de espera y niveles de congestión.
+
+La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo \texttt{traffic-sim}, mostrando los componentes principales y sus interacciones con SUMO y el servicio \texttt{traffic-sync}.
+
+\begin{figure}[htbp]
+    \centering
+    \shorthandoff{>}
+    \begin{tikzpicture}[
+        node distance=1.6cm and 2.5cm,
+        block/.style={rectangle, draw, rounded corners, fill=blue!10,
+                      text width=3.0cm, align=center, minimum height=1.0cm, font=\small},
+        sumo/.style={rectangle, draw, rounded corners, fill=orange!20,
+                     text width=3.0cm, align=center, minimum height=1.0cm, font=\small},
+        external/.style={rectangle, draw, rounded corners, fill=green!10,
+                         text width=3.0cm, align=center, minimum height=1.0cm, font=\small},
+        arrow/.style={->,thick,>=stealth}
+    ]
+    
+        % SUMO
+        \node[sumo] (sumo) {SUMO\\(Simulador)};
+    
+        % Visualización (a la derecha de SUMO)
+        \node[block, right=of sumo] (viz)
+            {Análisis y\\visualización};
+    
+        % Orquestador
+        \node[block, below=of sumo] (orchestrator)
+            {Orquestador\\de simulación};
+    
+        % Detector y controlador
+        \node[block, below left=of orchestrator] (detector)
+            {Detector de\\cuellos de botella};
+    
+        \node[block, below right=of orchestrator] (controller)
+            {Controlador de\\semáforos};
+    
+        % Métricas
+        \node[block, below=of detector] (metrics)
+            {Calculador\\de métricas};
+    
+        % Cliente
+        \node[external, below=of orchestrator, yshift=-4.0cm] (client)
+            {Cliente\\traffic-sync};
+    
+        % Flechas
+        \draw[arrow, <->] (sumo) -- node[right,font=\scriptsize] {TraCI} (orchestrator);
+        \draw[arrow] (orchestrator) -- (detector);
+        \draw[arrow] (orchestrator) -- (controller);
+        \draw[arrow] (detector) -- (metrics);
+        \draw[arrow] (metrics) |- (client);
+        \draw[arrow] (client) -- node[right,font=\scriptsize] {HTTP} (controller);
+        \draw[arrow] (sumo) -- (viz);
+    
+    \end{tikzpicture}
+    \shorthandon{>}
+    \caption{Arquitectura del módulo \texttt{traffic-sim} y sus componentes principales \cite{sumo2025manual}.}
+    \label{fig:sim_architecture}
+    \end{figure}     
 
 % -----------------------------------------------------------------------------
 \subsection{Flujo de Integración}
@@ -23,12 +80,12 @@ El flujo de integración entre \texttt{traffic-sim} y \texttt{traffic-sync} sigu
 
 \begin{enumerate}
     \item \textbf{Ejecución de la simulación}: el orquestador inicia SUMO con el escenario suministrado y avanza la simulación paso a paso, según las rutas y patrones de demanda definidos en los archivos de configuración.
-    \item \textbf{Detección de cuellos de botella}: en intervalos configurables, el detector analiza para cada aproximación variables como densidad, velocidad y longitud de cola, y decide si existe un cuello de botella según los umbrales establecidos en \texttt{BOTTLENECK\_CONFIG} (\texttt{config.py}).
-    \item \textbf{Construcción de métricas de tráfico}: cuando se confirma un cuello de botella en una intersección con semáforo, se calcula un conjunto de métricas agregadas para esa localización (vehículos por minuto, velocidad media en km/h, tiempo medio de circulación, densidad y estadísticos por tipo de vehículo), que se empaquetan en un payload JSON siguiendo el formato consumido por \texttt{traffic-sync}.
-    \item \textbf{Comunicación con \texttt{traffic-sync}}: el cliente \texttt{traffic\_control\_client.py} envía el payload al servicio \texttt{traffic-sync} mediante una petición HTTP (por ejemplo, al endpoint \texttt{/evaluate}), y espera la respuesta con los tiempos de verde optimizados y el impacto estimado sobre la congestión.
-    \item \textbf{Aplicación de optimizaciones}: el controlador de semáforos actualiza, a través de \texttt{traci}, los tiempos de verde y rojo de los programas semafóricos correspondientes en la simulación SUMO, utilizando los valores recibidos desde \texttt{traffic-sync}.
+    \item \textbf{Detección de cuellos de botella}: en intervalos configurables, el detector analiza para cada aproximación variables como densidad, velocidad y longitud de cola, y decide si existe un cuello de botella según los umbrales establecidos en la configuración del sistema.
+    \item \textbf{Construcción de métricas de tráfico}: cuando se confirma un cuello de botella en una intersección con semáforo, se calcula un conjunto de métricas agregadas para esa localización (vehículos por minuto, velocidad media en km/h, tiempo medio de circulación, densidad y estadísticos por tipo de vehículo), que se empaquetan en una carga útil JSON siguiendo el formato consumido por el módulo de optimización.
+    \item \textbf{Comunicación con el módulo de optimización}: el cliente HTTP envía la carga útil al servicio de optimización mediante una petición HTTP (por ejemplo, al punto de entrada \texttt{/evaluate}), y espera la respuesta con los tiempos de verde optimizados y el impacto estimado sobre la congestión.
+    \item \textbf{Aplicación de optimizaciones}: el controlador de semáforos actualiza, a través de la interfaz de control remoto, los tiempos de verde y rojo de los programas semafóricos correspondientes en la simulación SUMO, utilizando los valores recibidos desde el módulo de optimización.
     \item \textbf{Continuación de la simulación}: la simulación se reanuda con los nuevos parámetros de control y se repite el proceso de detección y optimización mientras existan vehículos en red o hasta alcanzar el tiempo límite definido.
 \end{enumerate}
 
-De esta manera, \texttt{traffic-sim} se comporta como un ``laboratorio virtual'' donde se puede evaluar en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO integrados en \texttt{traffic-sync}, utilizando escenarios sintéticos o construidos a partir de mapas reales. La salida de herramientas auxiliares de construcción de escenarios (por ejemplo, generadores de redes y rutas compatibles con SUMO) sirve como entrada directa para \texttt{traffic-sim}, lo que facilita la creación sistemática de casos de prueba. Los resultados de las simulaciones, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan posteriormente mediante las utilidades de visualización para cuantificar de forma objetiva el impacto de las políticas de control propuestas.
+De esta manera, \texttt{traffic-sim} se comporta como un ``laboratorio virtual'' donde se puede evaluar en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO integrados en el módulo de optimización, utilizando escenarios sintéticos o construidos a partir de mapas reales. La salida de herramientas auxiliares de construcción de escenarios (por ejemplo, generadores de redes y rutas compatibles con SUMO) sirve como entrada directa para el módulo de simulación, lo que facilita la creación sistemática de casos de prueba. Los resultados de las simulaciones, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan posteriormente mediante las utilidades de visualización para cuantificar de forma objetiva el impacto de las políticas de control propuestas.
 

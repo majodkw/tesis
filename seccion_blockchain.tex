@@ -10,11 +10,11 @@ Blockchain es una tecnología descentralizada que utiliza una cadena de bloques 
 
 \subsubsection{Fundamentos de Blockchain}
 
-Un blockchain consiste en una secuencia de bloques, donde cada bloque contiene un conjunto de transacciones válidas, una marca de tiempo, un número usado una única vez (nonce) y el hash criptográfico del bloque anterior, lo que garantiza la inmutabilidad mediante la dependencia unidireccional de los hashes. Esta estructura hace que cualquier modificación en un bloque propague cambios en todos los subsiguientes, detectándose fácilmente por la red distribuida \cite{nakamoto2008bitcoin, garay2015backbone}.
+Un blockchain consiste en una secuencia de bloques, donde cada bloque contiene un conjunto de transacciones válidas, una marca de tiempo, un número usado una única vez (nonce) y el resumen criptográfico (hash) del bloque anterior, lo que garantiza la inmutabilidad mediante la dependencia unidireccional de los resúmenes criptográficos. Esta estructura hace que cualquier modificación en un bloque propague cambios en todos los subsiguientes, detectándose fácilmente por la red distribuida \cite{nakamoto2008bitcoin, garay2015backbone}.
 
-La arquitectura básica opera en una red peer-to-peer donde nodos mantienen copias completas del ledger, validando transacciones mediante funciones hash como SHA-256 para enlazar bloques y prevenir alteraciones. La inmutabilidad surge de la dependencia unidireccional de los hashes, haciendo el ledger resistente a manipulaciones retrospectivas una vez que un bloque alcanza suficiente profundidad en la cadena \cite{zheng2018blockchain, narayanan2016bitcoin}. Esta característica fundamental permite que blockchain funcione como un registro distribuido e inmutable, donde la confianza se establece mediante consenso algorítmico en lugar de autoridades centralizadas.
+La arquitectura básica opera en una red peer-to-peer donde nodos mantienen copias completas del ledger, validando transacciones mediante funciones de resumen criptográfico (hash) como SHA-256 para enlazar bloques y prevenir alteraciones. La inmutabilidad surge de la dependencia unidireccional de los resúmenes criptográficos, haciendo el ledger resistente a manipulaciones retrospectivas una vez que un bloque alcanza suficiente profundidad en la cadena \cite{zheng2018blockchain, narayanan2016bitcoin}. Esta característica fundamental permite que blockchain funcione como un registro distribuido e inmutable, donde la confianza se establece mediante consenso algorítmico en lugar de autoridades centralizadas.
 
-La Figura~\ref{fig:bloque_blockchain} ilustra la estructura básica de un bloque típico en una cadena blockchain, mostrando cómo cada bloque referencia criptográficamente al bloque anterior mediante su hash, creando una cadena inmutable.
+La Figura~\ref{fig:bloque_blockchain} ilustra la estructura básica de un bloque típico en una cadena blockchain, mostrando cómo cada bloque referencia criptográficamente al bloque anterior mediante su resumen criptográfico (hash), creando una cadena inmutable.
 
 \begin{figure}[htbp]
     \centering
@@ -76,7 +76,7 @@ Velocidad de confirmación & Lenta (10 min Bitcoin) & Rápida (12 s Ethereum PoS
 Requisitos de hardware & Especializado (ASIC, GPU) & Estándar (servidores) \\
 Seguridad & Basada en potencia computacional & Basada en stake económico \\
 Descentralización & Alta (acceso abierto a minería) & Variable (requiere capital inicial) \\
-Resistencia a ataques & 51\% de hash rate & 51\% de stake económico \\
+Resistencia a ataques & 51\% de tasa de hash & 51\% de stake económico \\
 Ejemplos & Bitcoin, Ethereum pre-merge & Ethereum post-merge, Cardano \\
 \hline
 \end{tabular}

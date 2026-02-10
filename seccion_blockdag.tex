@@ -1,8 +1,8 @@
 % =============================================================================
-% SECCIÓN 2.3: TECNOLOGÍAS DESCENTRALIZADAS: BLOCKDAG
+% BLOCKDAG
 % =============================================================================
 
-\subsection{BlockDAG}
+\section{BlockDAG}
 \label{sec:blockdag}
 
 BlockDAG (Block Directed Acyclic Graph) representa una generalización arquitectónica de la estructura blockchain tradicional, donde los bloques no referencian a un único padre, sino a múltiples padres denominados tips o puntas del grafo \cite{wang2023dag}. Esta arquitectura permite superar limitaciones fundamentales de las blockchains lineales mediante la incorporación de bloques paralelos válidos, transicionando de un modelo de exclusión competitiva a un modelo de inclusión colaborativa \cite{sompolinsky2021phantom}.
@@ -11,7 +11,7 @@ BlockDAG (Block Directed Acyclic Graph) representa una generalización arquitect
 
 La diferencia fundamental entre blockchain y BlockDAG reside en la topología de la estructura de datos subyacente. En una blockchain tradicional, cada bloque $B_i$ mantiene una referencia criptográfica exactamente a un bloque padre $B_{i-1}$, formando una estructura de cadena lineal donde únicamente una rama es válida según reglas de consenso como la cadena más larga o más pesada. Las ramas paralelas generadas por colisiones de minería se descartan como bloques huérfanos (orphans), desperdiciando el trabajo computacional invertido en su creación.
 
-En contraste, un BlockDAG permite que cada bloque $B_i$ referencie a un conjunto de padres $P \subset \{B_0, ..., B_{i-1}\}$, formando matemáticamente un grafo dirigido acíclico $G=(V, E)$ donde $V$ representa el conjunto de bloques y $E$ representa las referencias hash que apuntan a bloques anteriores. La propiedad de aciclicidad garantiza que no existen caminos que permitan regresar a un bloque previo, preservando la integridad temporal, mientras que la estructura de grafo permite bifurcaciones válidas concurrentes que se integran en la topología general \cite{wang2023dag}.
+En contraste, un BlockDAG permite que cada bloque $B_i$ referencie a un conjunto de padres $P \subset \{B_0, ..., B_{i-1}\}$, formando matemáticamente un grafo dirigido acíclico $G=(V, E)$ donde $V$ representa el conjunto de bloques y $E$ representa las referencias de resumen criptográfico (hash) que apuntan a bloques anteriores. La propiedad de aciclicidad garantiza que no existen caminos que permitan regresar a un bloque previo, preservando la integridad temporal, mientras que la estructura de grafo permite bifurcaciones válidas concurrentes que se integran en la topología general \cite{wang2023dag}.
 
 Esta transición arquitectónica modifica el paradigma operativo: de un modelo de exclusión donde los mineros compiten para generar el siguiente bloque único, a un modelo de inclusión donde múltiples bloques generados simultáneamente son válidos y colaboran para extender el grafo en paralelo, maximizando la utilización del ancho de banda de la red \cite{sompolinsky2021phantom}.
 
@@ -49,14 +49,14 @@ La Tabla~\ref{tab:blockchain_vs_blockdag} sintetiza las principales diferencias 
 \hline
 \textbf{Característica} & \textbf{Blockchain Tradicional} & \textbf{BlockDAG (GHOSTDAG)} \\
 \hline
-Topología & Lineal (1 padre)\cite{sompolinsky2021phantom} & Grafo acíclico (múltiples padres)\cite{sompolinsky2021phantom,zhang2025sok} \\
-Bloques huérfanos & Descartados (seguridad desperdiciada)\cite{sompolinsky2021phantom} & Integrados como tíos/padres (seguridad acumulativa)\cite{sompolinsky2021phantom,kaspa_whitepaper} \\
-Ordenamiento & Total (intrínseco a la cadena) & Parcial (topológico) $\rightarrow$ Total (vía algoritmo)\cite{sompolinsky2021phantom} \\
-Escalabilidad & Limitada por latencia de propagación\cite{sompolinsky2021phantom} & Alta (limitada por ancho de banda físico)\cite{sompolinsky2021phantom,zhang2025sok} \\
-Confirmación & Probabilística lenta (e.g., 6 bloques) & Probabilística rápida (segundos)\cite{zhang2025sok,kaspa_whitepaper} \\
-Minería & Competitiva (winner-takes-all)\cite{sompolinsky2021phantom} & Cooperativa (pay-per-share implícito)\cite{sompolinsky2021phantom} \\
-Throughput típico & 7-30 TPS\cite{nakamoto2008bitcoin,buterin2014ethereum} & 100+ TPS (depende de implementación)\cite{kaspa_whitepaper,zhang2025sok} \\
-Latencia de bloque & 10 min (Bitcoin)\cite{bitcoin_blocktime}, 12 s (Ethereum)\cite{ethereum_blocks} & Sub-segundo a segundos\cite{kaspa_whitepaper,zhang2025sok} \\
+Topología & Lineal, un padre por bloque\cite{sompolinsky2021phantom} & Grafo acíclico, múltiples padres\cite{sompolinsky2021phantom,zhang2025sok} \\
+Bloques huérfanos & Descartados\cite{sompolinsky2021phantom} & Integrados en el grafo\cite{sompolinsky2021phantom,kaspa_whitepaper} \\
+Ordenamiento & Total, intrínseco\cite{sompolinsky2021phantom} & Parcial convertido a total mediante algoritmo\cite{sompolinsky2021phantom} \\
+Escalabilidad & Limitada por propagación\cite{sompolinsky2021phantom} & Alta, limitada por ancho de banda\cite{sompolinsky2021phantom,zhang2025sok} \\
+Confirmación & Lenta, múltiples bloques\cite{zhang2025sok} & Rápida, segundos\cite{zhang2025sok,kaspa_whitepaper} \\
+Minería & Competitiva\cite{sompolinsky2021phantom} & Cooperativa\cite{sompolinsky2021phantom} \\
+Throughput & 7--30 TPS\cite{nakamoto2008bitcoin,buterin2014ethereum} & 100+ TPS\cite{kaspa_whitepaper,zhang2025sok} \\
+Latencia de bloque & 10 min (Bitcoin), 12 s (Ethereum)\cite{bitcoin_blocktime,ethereum_blocks} & Sub-segundo a segundos\cite{kaspa_whitepaper,zhang2025sok} \\
 \hline
 \end{tabular}
 \end{table}

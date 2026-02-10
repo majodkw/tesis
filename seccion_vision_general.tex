@@ -1,12 +1,56 @@
-El sistema propuesto se concibe como un ecosistema modular de microservicios para el monitoreo, análisis y optimización del tráfico urbano en tiempo (casi) real, diseñado para operar sobre dispositivos de bajo costo y en entornos de ciudad inteligente. Cada módulo cumple una responsabilidad bien definida —simulación vehicular, análisis adaptativo de congestión, almacenamiento verificable y orquestación operativa— y se comunica con los demás mediante APIs REST y mensajes JSON, lo que facilita la integración con fuentes de datos heterogéneas y despliegues distribuidos. A diferencia de arquitecturas monolíticas o fuertemente centralizadas, esta organización permite escalar y evolucionar componentes de forma independiente, manteniendo al mismo tiempo una trazabilidad completa de los datos gracias al uso combinado de IPFS y contratos inteligentes sobre BlockDAG para el registro inmutable de resultados.
+El sistema propuesto se concibe como un ecosistema modular de microservicios para el monitoreo, análisis y optimización del tráfico urbano en tiempo (casi) real, diseñado para operar en entornos de ciudad inteligente. La arquitectura se compone de cuatro módulos principales, cada uno con responsabilidades bien definidas y comunicándose mediante interfaces estandarizadas (APIs REST y mensajes JSON). Esta organización modular facilita la escalabilidad, el mantenimiento independiente de componentes y la integración con fuentes de datos heterogéneas.
 
-En términos funcionales, el flujo global de información sigue un ciclo cerrado. El módulo \emph{traffic-sim} utiliza SUMO y el protocolo TraCI para emular redes urbanas y generar observaciones macroscópicas de tráfico en intersecciones semaforizadas, incluyendo métricas como vehículos por minuto, velocidad media, tiempo medio de circulación, densidad y distribución por tipo de vehículo. Estas observaciones, o datos provenientes de sensores reales en un despliegue futuro, se envían al módulo \emph{traffic-control}, que actúa como puerta de entrada al sistema: valida la estructura y coherencia de los mensajes, registra metadatos en una base de datos relacional y coordina las llamadas hacia los servicios de análisis y almacenamiento. A continuación, \emph{traffic-control} delega el análisis al módulo \emph{traffic-sync}, que aplica un sistema de inferencia difusa tipo Mamdani para clasificar el nivel de congestión y un algoritmo PSO para proponer tiempos de verde y rojo óptimos, devolviendo una respuesta estructurada que resume las mejoras esperadas. Finalmente, tanto las observaciones originales como los resultados de optimización se envían al módulo \emph{traffic-storage}, que almacena los artefactos en IPFS y registra los identificadores de contenido en una red BlockDAG mediante contratos inteligentes, asegurando integridad, verificabilidad y disponibilidad distribuida de la información histórica.
+\subsection{Módulos Principales}
 
-Desde un punto de vista de arquitectura, esta división de responsabilidades proporciona varias ventajas. Por un lado, el acoplamiento entre captura de datos, análisis y almacenamiento es bajo: \emph{traffic-sim} y futuros dispositivos IoT sólo necesitan conocer el endpoint unificado de \emph{traffic-control}, mientras que los detalles de lógica difusa, PSO, IPFS y BlockDAG quedan encapsulados en módulos especializados. Por otro lado, la combinación de simulación reproducible con SUMO, optimización basada en técnicas de inteligencia computacional y persistencia verificable en infraestructuras descentralizadas permite evaluar el sistema bajo distintos escenarios de carga, al mismo tiempo que se generan evidencias auditables sobre su comportamiento, algo poco habitual en soluciones de gestión de tráfico urbano centradas únicamente en el control local o en plataformas cloud cerradas. La Figura~\ref{fig:arquitectura_sistema}, basada en el archivo \texttt{arquitectura.pdf}, resume gráficamente los módulos principales y las interacciones entre ellos, sirviendo como referencia visual del flujo de datos y de la integración con los servicios descentralizados de almacenamiento y verificación.
+El sistema se estructura en torno a cuatro módulos fundamentales:
 
-\begin{figure}[h]
+\begin{itemize}
+    \item \textbf{traffic-sim}: Módulo de simulación de tráfico urbano, que genera escenarios de prueba controlados y reproducibles para evaluar el comportamiento del sistema bajo diferentes condiciones de demanda vehicular. Permite emular redes viales con semáforos y flujos vehiculares variables.
+    
+    \item \textbf{traffic-control}: Módulo de orquestación que actúa como punto de entrada unificado al sistema. Recibe observaciones de tráfico, valida los datos, coordina las invocaciones a los servicios especializados de optimización y almacenamiento, y mantiene metadatos operativos en una base de datos relacional.
+    
+    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional, y genera configuraciones optimizadas de tiempos semafóricos que buscan reducir demoras y mejorar el flujo vehicular.
+    
+    \item \textbf{traffic-storage}: Módulo de persistencia verificable que almacena datos del sistema en infraestructuras descentralizadas, garantizando trazabilidad, integridad e inmutabilidad de los registros históricos mediante el uso de tecnologías de almacenamiento distribuido y registro de auditoría.
+\end{itemize}
+
+\subsection{Flujo General de Información}
+
+El flujo operativo del sistema sigue un ciclo cerrado de captura, análisis, optimización y registro:
+
+\begin{enumerate}
+    \item \textbf{Captura de datos}: El módulo de simulación (o sensores reales en un despliegue futuro) genera observaciones de tráfico que incluyen métricas agregadas por intersección semafórizada.
+    
+    \item \textbf{Validación y orquestación}: El módulo de control recibe las observaciones, valida su estructura y coherencia, y coordina el flujo de información hacia los servicios especializados.
+    
+    \item \textbf{Análisis y optimización}: El módulo de sincronización procesa las métricas, clasifica el estado de congestión y determina configuraciones de tiempos semafóricos que mejoren el desempeño operativo.
+    
+    \item \textbf{Persistencia verificable}: Los datos originales y los resultados de optimización se almacenan de forma distribuida, registrando identificadores de contenido en estructuras inmutables que permiten auditar y verificar el comportamiento histórico del sistema.
+\end{enumerate}
+
+\subsection{Ventajas de la Arquitectura Modular}
+
+La separación de responsabilidades en módulos independientes proporciona varios beneficios arquitectónicos y operativos:
+
+\begin{itemize}
+    \item \textbf{Bajo acoplamiento}: Los módulos se comunican exclusivamente mediante interfaces REST bien definidas, lo que permite evolucionar o reemplazar componentes individuales sin afectar al resto del sistema.
+    
+    \item \textbf{Escalabilidad}: Cada módulo puede desplegarse de forma independiente en diferentes servidores o contenedores, permitiendo distribuir la carga computacional según las necesidades operativas.
+    
+    \item \textbf{Trazabilidad}: La combinación de almacenamiento distribuido con registros inmutables permite auditar el comportamiento del sistema, verificar la integridad de los datos y validar la conformidad con políticas operativas.
+    
+    \item \textbf{Reproducibilidad}: El uso de simulación permite evaluar el sistema bajo condiciones controladas, generando evidencias objetivas sobre el impacto de las estrategias de control propuestas.
+    
+    \item \textbf{Interoperabilidad}: La arquitectura basada en APIs REST facilita la integración con dispositivos IoT, plataformas de gestión urbana y otros sistemas externos que requieran consumir o producir datos de tráfico.
+\end{itemize}
+
+La Figura~\ref{fig:arquitectura_sistema_general} ilustra de forma esquemática la organización modular del sistema, mostrando los cuatro módulos principales y sus relaciones.
+
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\linewidth]{images/arquitectura.pdf}
-    \caption{Arquitectura general del sistema, mostrando los módulos \emph{traffic-sim}, \emph{traffic-control}, \emph{traffic-sync} y \emph{traffic-storage}, así como su integración con IPFS y BlockDAG.}
-    \label{fig:arquitectura_sistema}
+    \includegraphics[width=\textwidth]{images/arquitectura.pdf}
+    \caption{Arquitectura general del sistema mostrando los cuatro módulos principales y el flujo de información.}
+    \label{fig:arquitectura_sistema_general}
 \end{figure}
+
+En síntesis, esta arquitectura modular proporciona una plataforma flexible y escalable para la gestión inteligente de tráfico urbano, combinando capacidades de simulación, análisis adaptativo y persistencia verificable en un sistema distribuido que puede integrarse con infraestructuras reales de monitoreo vehicular. Los capítulos subsiguientes describen en detalle la implementación, las tecnologías subyacentes y el funcionamiento de cada módulo.

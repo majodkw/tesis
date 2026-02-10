@@ -273,15 +273,6 @@
   note = {Implementación práctica de GHOSTDAG con block time sub-segundo y alto throughput}
 }
 
-@techreport{popov2021iota,
-  author = {Popov, Serguei and Moog, Hans and Camargo, Diego and Capossele, Angelo and others},
-  title = {The IOTA 2.0 Protocol Specifications},
-  institution = {IOTA Foundation},
-  year = {2021},
-  type = {Research Paper},
-  note = {IOTA Foundation Research Papers}
-}
-
 @misc{benet2014ipfs,
   author = {Benet, Juan},
   title = {IPFS - Content Addressed, Versioned, P2P File System},
@@ -299,80 +290,6 @@
   year = {2024},
   url = {https://github.com/ipfs/specs/blob/main/ARCHITECTURE.md},
   note = {Especificación oficial de arquitectura IPFS, define formalmente nodeID := multihash(publicKey) y esquema de identidad basado en PKI}
-}
-
-@inproceedings{freedman2004coral,
-  author = {Freedman, Michael J. and Freudenthal, Eric and Mazières, David},
-  title = {Democratizing Content Publication with Coral},
-  booktitle = {Proceedings of the 3rd USENIX Symposium on Networked Systems Design \& Implementation (NSDI '04)},
-  year = {2004},
-  pages = {239--252},
-  publisher = {USENIX Association},
-  url = {https://www.usenix.org/conference/nsdi-04/democratizing-content-publication-coral},
-  note = {Introduce Coral DSHT como una infraestructura de indexación jerárquica optimizada para latencia basada en Distributed Sloppy Hash Table (DSHT)}
-}
-
-@article{blockchainMeetsDFS,
-  author = {Li, Y. and others},
-  title = {When Blockchain Meets Distributed File Systems: An Overview, Challenges, and Open Issues},
-  journal = {IEEE Access},
-  volume = {8},
-  pages = {50574--50595},
-  year = {2020},
-  publisher = {IEEE},
-  doi = {10.1109/ACCESS.2020.2979882},
-  note = {Survey que explica que IPFS adopta una Distributed Sloppy Hash Table (DSHT) implementada sobre S/Kademlia y Coral}
-}
-
-@article{yang2023interaction,
-  author = {Yang, Fei and Zhou, Wei and Wu, Qiang and Long, Ruyin and Xiong, Neal N. and Zhou, Mengchu},
-  title = {Interaction mechanism between blockchain and IPFS},
-  journal = {ELS Publishing},
-  volume = {1},
-  number = {2},
-  year = {2023},
-  doi = {10.37293/ELS.2023.002}
-}
-
-@article{vasughi2023offchain,
-  author = {Vasughi, T. S. and Muthulakshmi, P. and Gritto, D.},
-  title = {Off-chain Data Storage Blockchain using Interplanetary File System},
-  journal = {International Journal of Scientific Development and Research (IJSDR)},
-  volume = {8},
-  number = {3},
-  pages = {40--44},
-  year = {2023}
-}
-
-@article{haque2024integrated,
-  author = {Haque, Md. Rashedul and others},
-  title = {An integrated blockchain and IPFS-based solution for secure and traceable code repository management},
-  journal = {PLOS ONE},
-  volume = {19},
-  number = {9},
-  pages = {e0331131},
-  year = {2024},
-  publisher = {Public Library of Science},
-  doi = {10.1371/journal.pone.0331131}
-}
-
-@article{praveen2022scalable,
-  author = {Praveen, M. D. and others},
-  title = {Scalable Blockchain Architecture using off-chain IPFS storage for healthcare data security and privacy},
-  journal = {Journal of Parallel and Distributed Computing},
-  volume = {164},
-  pages = {152--167},
-  year = {2022},
-  publisher = {Elsevier},
-  doi = {10.1016/j.jpdc.2021.02.022}
-}
-
-@article{kumar2020healthcare,
-  author = {Kumar, Rakesh and others},
-  title = {Blockchain and IPFS-based Healthcare Data Management System},
-  journal = {IEEE Transactions on Network and Service Management},
-  year = {2020},
-  note = {Aplicación de IPFS en Healthcare IoMT}
 }
 
 % -----------
@@ -554,4 +471,224 @@
   year = {2022},
   publisher = {Springer},
   note = {PSO integrado con SUMO para optimización de semáforos}
+}
+
+% -----------
+% -- Optimización de Control Semafórico --
+% -----------
+
+@article{wong1998optimizing,
+  author = {Wong, S. C. and Yang, H. and Lo, H. K.},
+  title = {Traffic Signal Optimisation: Modeling and Computation},
+  journal = {Transportation Research Part B: Methodological},
+  volume = {32},
+  number = {3},
+  pages = {157--172},
+  year = {1998},
+  publisher = {Elsevier},
+  doi = {10.1016/S0191-2615(97)00028-X},
+  note = {Formulación matemática del problema de optimización de señales}
+}
+
+@article{hillier1967mixed,
+  author = {Hillier, J. A. and Rothery, R.},
+  title = {The Synchronization of Traffic Signals for Minimum Delay},
+  journal = {Transportation Science},
+  volume = {1},
+  number = {2},
+  pages = {81--94},
+  year = {1967},
+  doi = {10.1287/trsc.1.2.81},
+  note = {Clásico sobre formulación de optimización de señales}
+}
+
+@article{ceylan2004traffic,
+  author = {Ceylan, Halim and Bell, Michael G. H.},
+  title = {Traffic Signal Timing Optimization Based on Genetic Algorithm Approach, Including Drivers' Routing},
+  journal = {Transportation Research Part B: Methodological},
+  volume = {38},
+  number = {4},
+  pages = {329--342},
+  year = {2004},
+  publisher = {Elsevier},
+  doi = {10.1016/S0191-2615(03)00015-8},
+  note = {Algoritmos genéticos para optimización semafórica}
+}
+
+% -----------
+% -- Control Adaptativo y Técnicas de IA --
+% -----------
+
+@article{li2016realtime,
+  author = {Li, Li and Lv, Yisheng and Wang, Fei-Yue},
+  title = {Traffic Signal Timing via Deep Reinforcement Learning},
+  journal = {IEEE/CAA Journal of Automatica Sinica},
+  volume = {3},
+  number = {3},
+  pages = {247--254},
+  year = {2016},
+  publisher = {IEEE},
+  doi = {10.1109/JAS.2016.7508798},
+  note = {Deep Q-learning para control semafórico adaptativo}
+}
+
+@article{hunt1982scoot,
+  author = {Hunt, P. B. and Robertson, D. I. and Bretherton, R. D. and Winton, R. I.},
+  title = {SCOOT—A Traffic Responsive Method of Coordinating Signals},
+  journal = {Transport and Road Research Laboratory Report LR 1014},
+  year = {1982},
+  publisher = {TRRL},
+  address = {Crowthorne, UK},
+  note = {Sistema de control adaptativo SCOOT}
+}
+
+@article{sims1980scats,
+  author = {Sims, A. G. and Dobinson, K. W.},
+  title = {The Sydney Coordinated Adaptive Traffic (SCATS) System: Philosophy and Benefits},
+  journal = {IEEE Transactions on Vehicular Technology},
+  volume = {29},
+  number = {2},
+  pages = {130--137},
+  year = {1980},
+  publisher = {IEEE},
+  doi = {10.1109/T-VT.1980.23833},
+  note = {Sistema SCATS de control adaptativo}
+}
+
+@article{abdulhai2003reinforcement,
+  author = {Abdulhai, Baher and Pringle, Rob and Karakoulas, Grigoris J.},
+  title = {Reinforcement Learning for True Adaptive Traffic Signal Control},
+  journal = {Journal of Transportation Engineering},
+  volume = {129},
+  number = {3},
+  pages = {278--285},
+  year = {2003},
+  publisher = {ASCE},
+  doi = {10.1061/(ASCE)0733-947X(2003)129:3(278)},
+  note = {Q-learning aplicado a control semafórico}
+}
+
+@incollection{cools2013selflearning,
+  author = {Cools, Seung-Bae and Gershenson, Carlos and D'Hooghe, Bart},
+  title = {Self-Organizing Traffic Lights: A Realistic Simulation},
+  booktitle = {Advances in Applied Self-Organizing Systems},
+  pages = {45--55},
+  year = {2013},
+  publisher = {Springer},
+  doi = {10.1007/978-1-4471-5113-5_3},
+  note = {Sistemas autoorganizados para control semafórico}
+}
+
+@article{gartner1975multiband,
+  author = {Gartner, Nathan H. and Little, John D. C. and Gabbay, Henry},
+  title = {Optimization of Traffic Signal Settings by Mixed-Integer Linear Programming: Part I: The Network Coordination Problem},
+  journal = {Transportation Science},
+  volume = {9},
+  number = {4},
+  pages = {321--343},
+  year = {1975},
+  publisher = {INFORMS},
+  doi = {10.1287/trsc.9.4.321},
+  note = {Formulación MILP para optimización de redes semafóricas}
+}
+
+@article{park1999genetic,
+  author = {Park, Byungkyu and Messer, Carroll J. and Urbanik, Thomas},
+  title = {Traffic Signal Optimization Program for Oversaturated Conditions: Genetic Algorithm Approach},
+  journal = {Transportation Research Record},
+  volume = {1683},
+  pages = {133--142},
+  year = {1999},
+  publisher = {Transportation Research Board},
+  doi = {10.3141/1683-17},
+  note = {Uso de algoritmos genéticos para condiciones sobresaturadas}
+}
+
+@article{dellorco2013harmony,
+  author = {Dell'Orco, Mauro and Baskan, Ozgur and Marinelli, Mario},
+  title = {A Harmony Search Algorithm Approach for Optimizing Traffic Signal Timings},
+  journal = {PROMET - Traffic \& Transportation},
+  volume = {25},
+  number = {4},
+  pages = {349--358},
+  year = {2013},
+  doi = {10.7307/ptt.v25i4.1245},
+  note = {Metaheurísticas aplicadas a optimización semafórica}
+}
+
+@article{trabia1999two,
+  author = {Trabia, Mohamed B. and Kaseko, Mohamed S. and Ande, Manish},
+  title = {A Two-Stage Fuzzy Logic Controller for Traffic Signals},
+  journal = {Transportation Research Part C: Emerging Technologies},
+  volume = {7},
+  number = {6},
+  pages = {353--367},
+  year = {1999},
+  publisher = {Elsevier},
+  doi = {10.1016/S0968-090X(00)00004-4},
+  note = {Control difuso aplicado a semáforos}
+}
+
+@article{nawi2013fuzzy,
+  author = {Nawi, Nazri Mohd and Khan, Azlan and Rehman, M. Z.},
+  title = {A New Levenberg-Marquardt based Back Propagation Algorithm Trained with Cuckoo Search},
+  journal = {Procedia Technology},
+  volume = {11},
+  pages = {18--23},
+  year = {2013},
+  note = {Optimización de sistemas neuro-fuzzy}
+}
+
+@article{yadav2021fuzzy,
+  author = {Yadav, Sunil Kumar and Sharma, Richa},
+  title = {Fuzzy Logic Based Traffic Light Controller for Heterogeneous Traffic},
+  journal = {International Journal of Advanced Research in Computer Science},
+  volume = {12},
+  number = {3},
+  pages = {1--5},
+  year = {2021},
+  note = {Control difuso para tráfico heterogéneo}
+}
+
+@article{azimirad2010novel,
+  author = {Azimirad, Vahid and Pariz, Naser and Balochian, Saeed},
+  title = {A Novel Fuzzy Model and Control of Single Intersection at Urban Traffic Network},
+  journal = {IEEE Systems Journal},
+  volume = {4},
+  number = {1},
+  pages = {107--111},
+  year = {2010},
+  publisher = {IEEE},
+  doi = {10.1109/JSYST.2010.2043159},
+  note = {Modelo difuso para intersecciones urbanas}
+}
+
+% -----------
+% -- Blockchain y Sistemas Distribuidos para Control de Tráfico --
+% -----------
+
+@article{singh2020blockchain,
+  author = {Singh, Pradeep Kumar and Singh, Roshan and Nandi, Sukumar and Nandi, Sukumar},
+  title = {Managing Smart Traffic Lights Using Fog Computing and Blockchain},
+  journal = {IEEE Internet of Things Journal},
+  volume = {7},
+  number = {7},
+  pages = {6243--6252},
+  year = {2020},
+  publisher = {IEEE},
+  doi = {10.1109/JIOT.2020.2968410},
+  note = {Blockchain aplicado a gestión de semáforos inteligentes}
+}
+
+@article{yuan2018blockchain,
+  author = {Yuan, Ye and Wang, Fei-Yue},
+  title = {Blockchain and Cryptocurrencies: Model, Techniques, and Applications},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics: Systems},
+  volume = {48},
+  number = {9},
+  pages = {1421--1428},
+  year = {2018},
+  publisher = {IEEE},
+  doi = {10.1109/TSMC.2018.2854904},
+  note = {Aplicaciones de blockchain en sistemas ciber-físicos}
 }
