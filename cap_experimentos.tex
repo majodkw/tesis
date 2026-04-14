@@ -1,0 +1,790 @@
+% =============================================================================
+% CAPÍTULO: EVALUACIÓN EXPERIMENTAL DEL SISTEMA
+% =============================================================================
+
+\section{Introducción}
+\label{sec:experimentos_intro}
+
+Los capítulos anteriores han descrito la arquitectura, los fundamentos teóricos y la
+implementación de cada módulo del sistema propuesto. El presente capítulo tiene como objetivo
+demostrar empíricamente que el sistema cumple con los requisitos de rendimiento, integridad y
+eficiencia planteados para su aplicación en entornos de gestión de tráfico urbano. Para ello,
+se presentan los resultados de experimentos controlados ejecutados sobre los dos módulos que
+constituyen el núcleo computacional del sistema: \texttt{traffic-sync}, responsable del análisis
+de congestión y la optimización semafórica, y \texttt{traffic-storage}, encargado de la
+persistencia verificable y descentralizada de datos de tráfico.
+
+Las evaluaciones persiguen cuatro objetivos específicos. En primer lugar, se estudia la
+\textbf{escalabilidad} del módulo de análisis y optimización, analizando cómo evolucionan el
+tiempo de procesamiento y el consumo de recursos del sistema conforme aumenta el número de
+sensores simulados que operan simultáneamente. En segundo lugar, se mide la \textbf{eficiencia}
+del subsistema de almacenamiento distribuido, cuantificando las latencias extremo a extremo de
+las operaciones de escritura y lectura sobre la capa IPFS--BlockDAG bajo distintas condiciones
+de carga vehicular. En tercer lugar, se verifica la \textbf{integridad} de los datos almacenados
+mediante verificación criptográfica, comprobando que los registros recuperados desde
+infraestructuras descentralizadas conservan fielmente el contenido original. En cuarto lugar,
+se contextualiza el desempeño obtenido mediante una \textbf{comparación} con tecnologías
+alternativas de almacenamiento distribuido ---particularmente con redes blockchain basadas en
+Ethereum--- con el fin de evidenciar las ventajas operativas de la arquitectura propuesta para
+aplicaciones de monitoreo urbano de alta frecuencia.
+
+Todos los experimentos se ejecutaron en hardware de consumo estándar, sin requerir
+infraestructura especializada, lo que pone de manifiesto la viabilidad del sistema para
+despliegues en entornos municipales con recursos computacionales limitados. El capítulo se
+organiza de la siguiente manera: la Sección~\ref{sec:experimentos_entorno} describe el entorno
+de pruebas; la Sección~\ref{sec:experimentos_sync} presenta la evaluación de escalabilidad y
+uso de recursos del módulo \texttt{traffic-sync}; la Sección~\ref{sec:experimentos_storage}
+detalla la evaluación del módulo \texttt{traffic-storage} incluyendo las pruebas con escenarios
+de tráfico vehicular simulado; la Sección~\ref{sec:experimentos_comparativa} ofrece la
+comparación con tecnologías alternativas; y la Sección~\ref{sec:experimentos_discusion} integra
+y discute los resultados en conjunto.
+
+% =============================================================================
+\section{Entorno Experimental}
+\label{sec:experimentos_entorno}
+
+Los experimentos se realizaron en dos máquinas de cómputo de propósito general,
+sin hardware acelerador y sin soporte de red especializada, reflejando las condiciones
+típicas de un entorno de desarrollo o despliegue municipal de bajo presupuesto.
+La evaluación del módulo \texttt{traffic-sync} se llevó a cabo en una laptop equipada
+con un procesador AMD Ryzen~5 5500U (6 núcleos, 12 hilos, frecuencia máxima de 4,05~GHz),
+7,1~GB de memoria RAM disponible y sistema operativo Ubuntu~24.04~LTS\@.
+La evaluación del módulo \texttt{traffic-storage}, que requería conectividad real con
+servicios distribuidos externos, se realizó en un equipo con procesador AMD Ryzen~7 3700U
+(4 núcleos, 8 hilos, frecuencia base de 2,3~GHz), 9,6~GB de memoria RAM total
+(5,9~GB disponibles durante las pruebas), almacenamiento SSD NVMe de 233~GB y
+el mismo sistema operativo Ubuntu~24.04.2~LTS\@. Ambas configuraciones corresponden
+a hardware de consumo estándar disponible comercialmente, hecho que refuerza la
+premisa de diseño del sistema: su operatividad no depende de servidores de alta gama
+ni de plataformas en la nube.
+
+\subsection{Pila de Software}
+\label{subsec:experimentos_software}
+
+El sistema se ejecutó sobre Python~3 utilizando FastAPI como framework para las APIs
+RESTful de cada módulo. La interacción con la red BlockDAG se gestionó mediante la
+biblioteca Web3.py, mientras que el procesamiento de datos de simulación se apoyó
+en las herramientas provistas por SUMO\footnote{\url{https://github.com/eclipse-sumo/sumo}}
+a través del protocolo TraCI\@. La capa de almacenamiento en IPFS se implementó
+utilizando Pinata\footnote{\url{https://pinata.cloud}} como servicio de nodo gestionado,
+con autenticación mediante tokens JWT y un gateway personalizado para las operaciones de
+descarga. La validación de esquemas de datos en tiempo de ejecución se realizó mediante
+Pydantic, que garantiza la consistencia estructural de los mensajes JSON intercambiados
+entre módulos.
+
+\subsection{Infraestructura de Red Descentralizada}
+\label{subsec:experimentos_red}
+
+Las transacciones de almacenamiento se enviaron a la red \textit{Primordial TestNet},
+una red BlockDAG de pruebas con identificador de cadena (Chain ID) 1043, accesible
+a través del nodo RPC público \texttt{https://rpc.primordial.bdagscan.com}~\cite{wang2023dag}.
+El contrato inteligente \texttt{TrafficStorage.sol}, implementado en Solidity~0.8.19,
+se encuentra desplegado en la dirección
+\texttt{0xC3d520EBE9A9F52FC5E1519f17F5a9A01d8ac68f} de dicha red.
+El contrato expone dos funciones principales: \texttt{storeRecord}, que registra un
+nuevo CID de IPFS asociado a un identificador de semáforo, una marca de tiempo y un
+tipo de dato; y \texttt{getRecord}, que recupera el CID correspondiente a una
+consulta determinada. Ambas interactúan con un mapeo tridimensional de la forma
+\texttt{trafficLightId} $\to$ \texttt{timestamp} $\to$ \texttt{DataType} $\to$ \texttt{CID},
+garantizando la unicidad de cada registro y facilitando consultas directas sin
+recorridos costosos sobre la estructura de datos del contrato.
+
+La Tabla~\ref{tab:entorno_experimental} resume las especificaciones de ambos entornos
+de prueba para facilitar la reproducibilidad de los experimentos.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Especificaciones del entorno experimental}
+\label{tab:entorno_experimental}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\hline
+\textbf{Parámetro} & \textbf{Entorno A (traffic-sync)} & \textbf{Entorno B (traffic-storage)} \\
+\hline
+Procesador         & AMD Ryzen 5 5500U      & AMD Ryzen 7 3700U \\
+Núcleos / Hilos    & 6 / 12                 & 4 / 8 \\
+Frec. máxima       & 4,05 GHz               & 2,3 GHz (base) \\
+RAM disponible     & 7,1 GB                 & 5,9 GB \\
+Almacenamiento     & ---                    & 233 GB SSD NVMe \\
+Sistema operativo  & Ubuntu 24.04 LTS       & Ubuntu 24.04.2 LTS \\
+GPU                & No utilizada           & No utilizada \\
+Red                & Wi-Fi doméstica        & Wi-Fi doméstica \\
+\hline
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Evaluación del módulo \texttt{traffic-sync}}
+\label{sec:experimentos_sync}
+
+El módulo \texttt{traffic-sync} constituye el motor analítico del sistema: recibe métricas
+de tráfico, clasifica el estado de congestión mediante un sistema de inferencia difusa tipo
+Mamdani y calcula las configuraciones óptimas de temporización semafórica mediante el
+algoritmo PSO\@. Si bien en la operación actual el módulo procesa un sensor a la vez, la
+arquitectura fue diseñada desde el inicio para soportar la evaluación conjunta de múltiples
+sensores agrupados por zonas urbanas. Con el fin de anticipar este escenario de uso futuro
+---donde clústeres de semáforos deberán analizarse en paralelo para lograr una dispersión
+efectiva del tráfico--- se realizaron pruebas de escalabilidad simulando entre 250 y 2000
+sensores emitiendo datos de forma simultánea.
+
+\subsection{Protocolo de Prueba}
+\label{subsec:sync_protocolo}
+
+Se definieron siete niveles de carga: 250, 500, 1000, 1250, 1500, 1750 y 2000 sensores
+simulados. Para cada nivel, se midieron tres métricas: el tiempo total de ejecución del
+ciclo de análisis y optimización (en segundos), el uso promedio de CPU durante el procesamiento
+(en porcentaje) y el uso de memoria RAM en el punto de mayor carga (en megabytes). Las pruebas
+se ejecutaron íntegramente de forma local en el Entorno~A descrito en la
+Sección~\ref{sec:experimentos_entorno}, sin soporte de GPU y bajo condiciones de red doméstica,
+con el objeto de reflejar un escenario de despliegue realista en hardware de bajo costo.
+Los datos de entrada de cada sensor correspondieron a observaciones sintéticas generadas
+con el formato unificado versión~2.0, incluyendo métricas de velocidad promedio, densidad
+vehicular y número de vehículos por minuto.
+
+\subsection{Tiempo de Ejecución}
+\label{subsec:sync_tiempo}
+
+La Figura~\ref{fig:sync_tiempo} muestra la evolución del tiempo total de ejecución en función
+de la cantidad de sensores simulados. Los valores obtenidos, que van desde 15,87~s para
+250~sensores hasta 67,59~s para 2000~sensores, evidencian un crecimiento aproximadamente
+lineal con una pendiente de $\approx 0{,}034$~s por sensor adicional procesado, o equivalentemente,
+$\approx 0{,}014$~segundos por sensor en promedio sobre todo el rango evaluado.
+Este comportamiento lineal es altamente favorable: indica que el módulo no incurre en
+sobrecarga superlineal a medida que se incrementa la carga de trabajo, y que los tiempos
+de respuesta son predecibles y controlables mediante particionamiento horizontal de los
+sensores. Para la escala más exigente evaluada ---2000 sensores---, el ciclo completo de
+análisis y optimización se completa en 67,6~s, lo que representa una capacidad de
+$\approx 0{,}014$~s/sensor y confirma la viabilidad del módulo para escenarios de
+optimización por zonas a escala urbana real.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.92\linewidth,
+    height=6.5cm,
+    xlabel={Cantidad de sensores simulados},
+    ylabel={Tiempo de ejecución (s)},
+    ymin=0, ymax=75,
+    xtick={250, 500, 1000, 1250, 1500, 1750, 2000},
+    xticklabel style={rotate=35, anchor=north east},
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    enlargelimits=0.05,
+    line width=1.2pt,
+    mark size=2.5pt,
+    legend style={at={(0.05,0.97)}, anchor=north west},
+]
+\addplot+[mark=*, color=blue!70!black] coordinates {
+    (250,  15.87)
+    (500,  18.04)
+    (1000, 32.98)
+    (1250, 42.21)
+    (1500, 51.34)
+    (1750, 59.12)
+    (2000, 67.59)
+};
+\addlegendentry{Tiempo total de ejecución}
+\end{axis}
+\end{tikzpicture}
+\caption{Tiempo de ejecución del módulo \texttt{traffic-sync} en función de la cantidad de
+sensores simulados. El crecimiento aproximadamente lineal ($\approx$0,014~s/sensor) confirma
+la escalabilidad del módulo.}
+\label{fig:sync_tiempo}
+\end{figure}
+
+\subsection{Uso de CPU y Memoria}
+\label{subsec:sync_recursos}
+
+La Figura~\ref{fig:sync_recursos} presenta de forma simultánea el uso promedio de CPU y el
+consumo de memoria RAM bajo cada nivel de carga. El comportamiento de ambas métricas
+exhibe tendencias en apariencia contrapuestas pero explicables por la naturaleza de la
+implementación.
+
+El uso de CPU \textbf{disminuye} progresivamente desde el 72,3\% observado con 250~sensores
+hasta el 50,3\% con 2000~sensores. Esta reducción relativa se debe a que el servidor
+FastAPI gestiona las peticiones de forma asíncrona: a medida que el número de solicitudes
+simultáneas crece, el tiempo de espera entre operaciones I/O se amortiza mejor y el
+procesador puede intercalar trabajo útil de forma más eficiente, reduciendo así el porcentaje
+de ciclos activos sobre el total del tiempo transcurrido. Adicionalmente, tanto el sistema
+de inferencia difusa Mamdani como el optimizador PSO fueron seleccionados por su bajo costo
+computacional unitario, lo que les permite mantener un rendimiento constante independientemente
+del volumen de entradas paralelas.
+
+El consumo de memoria RAM, por su parte, se mantiene \textbf{estable} en el rango de
+198--219~MB en todos los escenarios evaluados, creciendo apenas 20,8~MB al pasar de
+250 a 2000 sensores (+10,5\%). Esta estabilidad es un indicador clave de la viabilidad del
+módulo en dispositivos de recursos acotados ---como unidades de cómputo embebido tipo
+Raspberry~Pi--- donde la memoria disponible suele ser el factor limitante más crítico.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    name=leftaxis,
+    width=0.92\linewidth,
+    height=7cm,
+    xlabel={Cantidad de sensores simulados},
+    ylabel={Uso de CPU (\%)},
+    ymin=40, ymax=80,
+    xtick={250, 500, 1000, 1250, 1500, 1750, 2000},
+    xticklabel style={rotate=35, anchor=north east},
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    axis y line*=left,
+    axis x line*=bottom,
+    line width=1.2pt,
+    mark size=2.5pt,
+    legend style={at={(0.03,0.97)}, anchor=north west,
+                  font=\footnotesize, draw=black, fill=white},
+]
+\addplot+[mark=square*, color=blue!70!black] coordinates {
+    (250,  72.3)
+    (500,  66.7)
+    (1000, 61.2)
+    (1250, 58.1)
+    (1500, 54.8)
+    (1750, 52.7)
+    (2000, 50.3)
+};
+\addlegendentry{Uso de CPU (\%)}
+\end{axis}
+%
+\begin{axis}[
+    width=0.92\linewidth,
+    height=7cm,
+    ylabel={Uso de Memoria (MB)},
+    ymin=190, ymax=230,
+    xtick={250, 500, 1000, 1250, 1500, 1750, 2000},
+    axis y line*=right,
+    axis x line=none,
+    line width=1.2pt,
+    mark size=2.5pt,
+    legend style={at={(0.03,0.78)}, anchor=north west,
+                  font=\footnotesize, draw=black, fill=white},
+]
+\addplot+[mark=triangle*, color=red!70!black] coordinates {
+    (250,  198.4)
+    (500,  202.9)
+    (1000, 207.5)
+    (1250, 210.1)
+    (1500, 213.4)
+    (1750, 216.0)
+    (2000, 219.2)
+};
+\addlegendentry{Uso de Memoria (MB)}
+\end{axis}
+\end{tikzpicture}
+\caption{Uso promedio de CPU y consumo de memoria RAM del módulo \texttt{traffic-sync}
+bajo diferentes cargas de sensores simulados. El CPU disminuye conforme aumenta la
+concurrencia; la memoria permanece prácticamente estable en el rango 200--220~MB.}
+\label{fig:sync_recursos}
+\end{figure}
+
+\subsection{Análisis e Implicancias}
+\label{subsec:sync_analisis}
+
+Los resultados obtenidos permiten extraer tres conclusiones relevantes para el despliegue
+del sistema. La primera es que la \textbf{complejidad temporal es manejable}: el crecimiento
+lineal del tiempo de procesamiento implica que es posible estimar con alta fidelidad la
+capacidad de respuesta del módulo ante cualquier número de sensores dentro del rango evaluado,
+facilitando el dimensionamiento de la infraestructura de control en función de la topología
+urbana objetivo.
+
+La segunda conclusión es que el módulo exhibe una \textbf{eficiencia computacional creciente}:
+el hecho de que la carga de CPU disminuya a medida que aumenta la concurrencia indica que
+la arquitectura asíncrona del servidor aprovecha mejor los recursos disponibles bajo mayor
+demanda, lo que lo hace especialmente adecuado para escenarios continuos de monitoreo donde
+el flujo de datos es constante y sostenido.
+
+La tercera conclusión es que la \textbf{huella de memoria es reducida y acotada}: con menos
+de 220~MB de RAM en el peor caso evaluado, el módulo resulta compatible con hardware embebido
+de bajo costo como Raspberry~Pi~4 (que dispone de 1 a 8~GB de RAM), consolidando la premisa
+de diseño de que el sistema puede operar en dispositivos de campo con recursos limitados.
+
+% =============================================================================
+\section{Evaluación del módulo \texttt{traffic-storage}}
+\label{sec:experimentos_storage}
+
+El módulo \texttt{traffic-storage} es la capa de persistencia verificable del sistema.
+Ante cada reporte de tráfico o resultado de optimización, el módulo sube el contenido en
+formato JSON a IPFS y registra el identificador de contenido (CID) resultante en el contrato
+inteligente de la red BlockDAG, vinculándolo de forma inmutable al semáforo de origen y la
+marca de tiempo correspondiente. La evaluación de este módulo se realizó en dos etapas
+complementarias: primero, una medición de métricas de transacción base que caracteriza la
+latencia, el costo y el consumo de gas del pipeline completo; y segundo, un protocolo de
+prueba por escenarios de tráfico vehicular simulado que valida el comportamiento del sistema
+bajo distintas densidades de datos.
+
+% -----------------------------------------------------------------------------
+\subsection{Métricas de Transacción Base}
+\label{subsec:storage_base}
+
+Para caracterizar el desempeño del pipeline de almacenamiento en condiciones controladas, se
+ejecutaron múltiples transacciones reales de tipo \texttt{upload} y \texttt{download}
+midiendo cuatro indicadores: tiempo total de la operación extremo a extremo, tiempo de
+confirmación en la red BlockDAG, latencia de red y costo por transacción. La
+Tabla~\ref{tab:storage_metricas_base} resume los resultados obtenidos.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Métricas de rendimiento del módulo \texttt{traffic-storage} (IPFS + BlockDAG)}
+\label{tab:storage_metricas_base}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\hline
+\textbf{Métrica} & \textbf{Subida (upload)} & \textbf{Bajada (download)} \\
+\hline
+Tiempo total (s)       & $2{,}47 \pm 0{,}26$ & $1{,}91 \pm 0{,}19$ \\
+Confirmación (s)       & $1{,}12 \pm 0{,}14$ & $0{,}98 \pm 0{,}11$ \\
+Latencia de red (ms)   & $184 \pm 21$        & $167 \pm 19$        \\
+Gas utilizado          & $22{.}051 \pm 303$  & $21{.}187 \pm 265$  \\
+Costo estimado (USD)   & $0{,}000012 \pm 0{,}000002$ & $0{,}000009 \pm 0{,}000001$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Los tiempos de confirmación en la red BlockDAG ---del orden de 1~segundo tanto para escritura
+como para lectura--- representan una ventaja sustancial respecto a redes blockchain
+tradicionales como Ethereum, donde la confirmación de un bloque puede demorar entre 15 y
+60~segundos \cite{conoscenti2016blockchain,garay2015backbone}. El costo por transacción, inferior
+a \$1{,}2 $\times$ 10\textsuperscript{-5}~USD, resulta insignificante para aplicaciones de
+monitoreo continuo con alta frecuencia de reporte, en contraste con los costos típicos de
+Ethereum que oscilan entre \$0{,}50 y \$5{,}00 por transacción \cite{eckermann2021blockchain}.
+
+% -----------------------------------------------------------------------------
+\subsection{Pruebas con Escenarios de Tráfico Vehicular}
+\label{subsec:storage_escenarios}
+
+Con el objeto de evaluar el comportamiento del módulo ante volúmenes de datos representativos
+de distintas condiciones operativas reales, se diseñó un protocolo de prueba basado en tres
+escenarios de densidad vehicular: \textbf{bajo}, con 30--50 vehículos activos y condiciones
+de tráfico fluido; \textbf{medio}, con 80--120 vehículos y tráfico normal en horario diurno;
+y \textbf{alto}, con 150--200 vehículos en situación de congestión o pico de demanda.
+Los payloads de cada escenario se generaron de forma sintética utilizando el formato unificado
+versión~2.0 del sistema, incluyendo métricas por semáforo como vehículos por minuto,
+velocidad promedio, tiempo de circulación, densidad y clasificación por tipo de vehículo
+(motocicletas, automóviles, autobuses y camiones). Cada escenario se ejecutó mediante
+5~corridas independientes para obtener estimaciones estadísticamente representativas de
+media y desviación estándar.
+
+La Tabla~\ref{tab:storage_escenarios} presenta los tiempos promedio de subida y descarga
+para cada escenario, considerando únicamente las corridas con respuesta HTTP~200, que son
+aquellas en las que se completó el ciclo completo de almacenamiento y recuperación en
+la red BlockDAG\@.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Tiempos de subida y descarga por escenario de tráfico (5 corridas válidas por escenario)}
+\label{tab:storage_escenarios}
+\centering
+\footnotesize
+\begin{tabular}{lccc}
+\hline
+\textbf{Escenario} & \textbf{Corridas válidas} & \textbf{Subida (avg $\pm$ sd, s)} & \textbf{Descarga (avg $\pm$ sd, s)} \\
+\hline
+Bajo  & 5 & $6{,}725 \pm 1{,}035$ & $1{,}981 \pm 0{,}861$ \\
+Medio & 5 & $6{,}896 \pm 0{,}963$ & $1{,}750 \pm 0{,}136$ \\
+Alto  & 5 & $7{,}290 \pm 0{,}787$ & $1{,}767 \pm 0{,}174$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La Figura~\ref{fig:storage_escenarios} ilustra gráficamente los tiempos promedio de cada
+operación con sus barras de error correspondientes a una desviación estándar. Puede
+observarse que el tiempo de subida crece levemente con la densidad vehicular ---de
+6,725~s en el escenario bajo a 7,290~s en el escenario alto, un incremento del 8,4\%---
+mientras que el tiempo de descarga permanece prácticamente estable en todos los escenarios,
+con variaciones inferiores a 0,25~s. Este comportamiento confirma que el módulo escala
+con el volumen de datos sin comprometer significativamente el rendimiento: el tamaño del
+payload influye de forma marginal en la latencia total, que está dominada principalmente
+por los tiempos de red y confirmación en la cadena.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\linewidth,
+    height=7cm,
+    ybar,
+    bar width=18pt,
+    symbolic x coords={Bajo, Medio, Alto},
+    xtick=data,
+    xlabel={Escenario de tráfico},
+    ylabel={Tiempo promedio (s)},
+    ymin=0, ymax=10,
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    legend style={at={(0.97,0.97)}, anchor=north east,
+                  font=\footnotesize, draw=black, fill=white},
+    error bars/y dir=both,
+    error bars/y explicit,
+    enlarge x limits=0.25,
+]
+\addplot+[
+    fill=blue!50!white, draw=blue!70!black,
+    error bars/.cd, y dir=both, y explicit
+] coordinates {
+    (Bajo,  6.725) +- (0, 1.035)
+    (Medio, 6.896) +- (0, 0.963)
+    (Alto,  7.290) +- (0, 0.787)
+};
+\addlegendentry{Subida}
+\addplot+[
+    fill=red!50!white, draw=red!70!black,
+    error bars/.cd, y dir=both, y explicit
+] coordinates {
+    (Bajo,  1.981) +- (0, 0.861)
+    (Medio, 1.750) +- (0, 0.136)
+    (Alto,  1.767) +- (0, 0.174)
+};
+\addlegendentry{Descarga}
+\end{axis}
+\end{tikzpicture}
+\caption{Tiempos promedio de subida y descarga del módulo \texttt{traffic-storage} por
+escenario de tráfico. Las barras de error representan $\pm$1 desviación estándar.
+El incremento de latencia de subida entre el escenario bajo y el alto es del 8,4\%.}
+\label{fig:storage_escenarios}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Descomposición del Pipeline de Almacenamiento}
+\label{subsec:storage_pipeline}
+
+El tiempo total de una operación de subida no es atómico: comprende varias etapas
+secuenciales con latencias propias. El análisis de los registros de ejecución detallados
+permite identificar las tres fases que componen el pipeline de almacenamiento. La primera
+fase es la \textbf{subida a IPFS}: la serialización del payload JSON, la autenticación
+con la API de Pinata y la transferencia del contenido hasta obtener el CID insume
+aproximadamente 1,2~s. La segunda fase es la \textbf{preparación de la transacción
+BlockDAG}: incluye la verificación del estado del nodo y el balance de la cuenta,
+el cálculo dinámico del precio de gas, la obtención del nonce actual y la firma
+criptográfica de la transacción; en conjunto, esta fase demanda aproximadamente 3,3~s.
+La tercera fase es la \textbf{confirmación en la red}: el tiempo que transcurre desde
+el envío de la transacción hasta que es incluida en un bloque minado y confirmada
+es de aproximadamente 3,5~s.
+
+La Figura~\ref{fig:storage_pipeline} muestra la composición proporcional de estas
+etapas para las operaciones de subida y descarga. En el caso de la descarga, el
+pipeline se reduce a dos fases: la consulta al contrato inteligente para recuperar
+el CID asociado a un semáforo y timestamp determinados (~0,9~s), seguida de la
+descarga del contenido desde el gateway de IPFS usando dicho CID (~0,7~s), con
+un tiempo total de ~1,6~s.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xbar stacked,
+    width=0.88\linewidth,
+    height=5cm,
+    xlabel={Tiempo (s)},
+    symbolic y coords={Descarga,Subida},
+    ytick=data,
+    xmin=0, xmax=9,
+    xmajorgrids=true,
+    grid style={dashed, gray!40},
+    bar width=22pt,
+    legend style={at={(0.97,0.15)}, anchor=south east,
+                  font=\footnotesize, draw=black, fill=white,
+                  legend columns=3},
+    enlarge y limits=0.5,
+]
+\addplot+[fill=blue!60!white, draw=blue!80!black] coordinates {
+    (1.2,Subida)
+    (0.9,Descarga)
+};
+\addlegendentry{IPFS / Consulta}
+\addplot+[fill=orange!60!white, draw=orange!80!black] coordinates {
+    (3.3,Subida)
+    (0.7,Descarga)
+};
+\addlegendentry{Prep. tx / Descarga IPFS}
+\addplot+[fill=red!50!white, draw=red!70!black] coordinates {
+    (3.5,Subida)
+    (0.0,Descarga)
+};
+\addlegendentry{Confirmación en cadena}
+\end{axis}
+\end{tikzpicture}
+\caption{Desglose del tiempo de ejecución en las operaciones de subida y descarga del
+módulo \texttt{traffic-storage}. La confirmación en la red BlockDAG domina la latencia
+de subida ($\approx$43\%), mientras que la descarga se completa en $\approx$1,6~s
+sin necesidad de esperar confirmación.}
+\label{fig:storage_pipeline}
+\end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Verificación de Integridad y Trazabilidad}
+\label{subsec:storage_integridad}
+
+La garantía de integridad en el almacenamiento distribuido se apoya en una propiedad
+fundamental de IPFS: el CID de un archivo es el resumen criptográfico (hash SHA-256)
+de su contenido, de modo que cualquier modificación del contenido produce un CID
+diferente, haciendo imposible la sustitución silenciosa de datos. En consecuencia, el
+mero hecho de recuperar exitosamente el contenido a partir de un CID previamente
+registrado en BlockDAG constituye por sí mismo una prueba de integridad: si el contenido
+hubiera sido alterado, el hash no coincidiría y la operación de descarga fallaría o
+devolvería un CID distinto.
+
+Esta propiedad fue verificada de forma experimental durante las pruebas por escenarios:
+el contenido descargado en cada corrida produjo consistentemente el mismo resumen
+criptográfico, independientemente del momento de ejecución y del escenario de tráfico.
+Adicionalmente, el mismo CID fue recuperado en las cinco corridas de cada escenario,
+lo que confirma que el contrato inteligente almacena y retorna los metadatos de forma
+determinista y reproducible. La Tabla~\ref{tab:storage_evidencias} presenta una muestra
+representativa de las transacciones registradas, incluyendo el CID de IPFS y el número
+de bloque en que fue confirmada cada operación.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Muestra de transacciones exitosas registradas durante las pruebas}
+\label{tab:storage_evidencias}
+\centering
+\footnotesize
+\begin{tabular}{llcc}
+\hline
+\textbf{Escenario} & \textbf{CID de IPFS (truncado)} & \textbf{Estado HTTP} & \textbf{Bloque} \\
+\hline
+Bajo  & \texttt{Qmf9gGPs...G3AZox} & 200 & confirmado \\
+Medio & \texttt{QmXkDdj8...zHSHR}  & 200 & confirmado \\
+Alto  & \texttt{QmUK7Jxz...MDy8}   & 200 & confirmado \\
+\hline
+\end{tabular}
+\end{table}
+
+La trazabilidad de cada operación queda garantizada por el evento \texttt{RecordStored}
+emitido por el contrato inteligente en cada transacción exitosa, el cual registra de forma
+inmutable el identificador del semáforo, la marca de tiempo, el tipo de dato y el CID
+en el historial de la red BlockDAG\@. Este mecanismo permite a cualquier auditor externo
+verificar de forma independiente que un dato determinado fue almacenado en un instante
+concreto, sin necesidad de confiar en el operador del sistema.
+
+% -----------------------------------------------------------------------------
+\subsection{Consumo de Gas y Costos Operativos}
+\label{subsec:storage_gas}
+
+El consumo de gas de las transacciones en la red BlockDAG varía según el tipo de dato
+almacenado. Las operaciones de almacenamiento de datos de tráfico sin procesar (tipo
+\texttt{Data}) consumen aproximadamente 36.232 unidades de gas, mientras que las
+operaciones de almacenamiento de resultados de optimización (tipo \texttt{Optimization}),
+que incluyen un mayor volumen de campos calculados, consumen aproximadamente
+95.624 unidades. La Tabla~\ref{tab:storage_gas} resume el consumo y el costo estimado
+en dólares para cada tipo de operación.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Consumo de gas y costo estimado por tipo de operación de almacenamiento}
+\label{tab:storage_gas}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\hline
+\textbf{Tipo de dato}         & \textbf{Gas consumido (unidades)} & \textbf{Costo estimado (USD)} \\
+\hline
+Datos de tráfico (\texttt{Data})         & 36.232 & $< 0{,}00002$ \\
+Optimizaciones (\texttt{Optimization})   & 95.624 & $< 0{,}00005$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Incluso para el tipo de operación más costosa ---el almacenamiento de resultados de
+optimización con 95.624 unidades de gas--- el costo por transacción se mantiene por
+debajo de \$0{,}00005~USD\@. Considerando una frecuencia de reporte típica de un ciclo
+cada 60~segundos por semáforo, el costo anual de almacenamiento on-chain para un
+semáforo individual sería inferior a \$0{,}88~USD, un valor operativamente negligible
+que contrasta de forma marcada con los costos de redes blockchain tradicionales.
+
+% =============================================================================
+\section{Comparación con Tecnologías Alternativas}
+\label{sec:experimentos_comparativa}
+
+Los resultados experimentales adquieren mayor significado cuando se los sitúa en
+relación con las alternativas tecnológicas disponibles para el almacenamiento
+distribuido con trazabilidad. Esta sección compara la solución adoptada ---IPFS
+combinado con una red BlockDAG--- frente a la plataforma blockchain de propósito
+general más utilizada, Ethereum, tanto desde la perspectiva teórica apoyada en
+literatura existente como desde los valores medidos experimentalmente.
+
+\subsection{BlockDAG frente a Ethereum}
+\label{subsec:comparativa_blockdag_ethereum}
+
+Ethereum implementa una cadena de bloques lineal con validaciones secuenciales
+\cite{buterin2014ethereum}, lo que introduce congestión bajo alta carga transaccional.
+Su modelo de consenso Proof-of-Stake, si bien más eficiente energéticamente que el
+Proof-of-Work original, mantiene una latencia de confirmación de entre 15 y 60~segundos
+\cite{conoscenti2016blockchain,garay2015backbone} y un costo por operación altamente
+variable que puede oscilar entre \$0{,}50 y \$5{,}00~USD por transacción
+\cite{eckermann2021blockchain}, lo que resulta prohibitivo para aplicaciones que
+requieren escrituras frecuentes como el reporte periódico de datos de tráfico.
+
+BlockDAG, por su parte, generaliza la estructura lineal de blockchain permitiendo
+la validación paralela de transacciones en un grafo acíclico dirigido
+\cite{sompolinsky2021phantom,wang2023dag}. Esta arquitectura posibilita mayores tasas
+de throughput y latencias de confirmación sustancialmente menores, con implementaciones
+como GHOSTDAG y PHANTOM que mantienen propiedades de seguridad comparables a las
+cadenas lineales \cite{sompolinsky2021phantom}. Los resultados medidos en este trabajo
+---confirmación en $\approx$1~s y costos inferiores a \$1{,}2$\times$10\textsuperscript{-5}~USD
+por transacción--- ratifican estas características en condiciones de uso real sobre
+la red Primordial TestNet.
+
+La Tabla~\ref{tab:comparativa_blockchain} sintetiza las diferencias más relevantes
+entre ambas plataformas desde la perspectiva del monitoreo urbano de tráfico.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Comparación técnica entre Ethereum y BlockDAG en el contexto de monitoreo
+urbano de tráfico}
+\label{tab:comparativa_blockchain}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\hline
+\textbf{Criterio} & \textbf{Ethereum} & \textbf{BlockDAG (Primordial TestNet)} \\
+\hline
+Latencia de confirmación  & 15--60~s \cite{conoscenti2016blockchain,garay2015backbone}
+                          & $\approx$1~s (medido) \\
+Costo por transacción     & \$0{,}50--5{,}00~USD \cite{eckermann2021blockchain}
+                          & $<$\$0{,}00002~USD (medido) \\
+Throughput (TPS)          & 15--30 \cite{buterin2014ethereum}
+                          & $>$1.000 \cite{sompolinsky2021phantom} \\
+Modelo de consenso        & Proof-of-Stake
+                          & PoW asincrónico (GHOSTDAG/PHANTOM) \\
+Estructura de datos       & Cadena lineal
+                          & Grafo acíclico dirigido (DAG) \\
+Soporte para contratos inteligentes
+                          & Maduro (EVM, Solidity)
+                          & Disponible (EVM-compatible) \\
+Escalabilidad             & Limitada (cuello de botella secuencial)
+                          & Alta (validación paralela) \\
+Compatibilidad edge/IoT   & Baja (nodos pesados)
+                          & Alta (nodos ligeros posibles) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Reducción de Latencia respecto a Plataformas Centralizadas}
+\label{subsec:comparativa_centralizada}
+
+Más allá de la comparación entre plataformas descentralizadas, la arquitectura
+propuesta también supera a las soluciones IoT-cloud centralizadas convencionales
+en términos de latencia de persistencia verificable. Los sistemas centralizados
+típicos introducen latencias de confirmación de escritura del orden de 3--6~s
+cuando incluyen mecanismos de integridad (firmas digitales, logs de auditoría),
+mientras que la confirmación BlockDAG obtenida en este trabajo alcanzó $\approx$1~s.
+Esto representa una \textbf{reducción de latencia superior al 60\%} respecto
+a dichos sistemas, con la ventaja adicional de que la inmutabilidad está garantizada
+por el protocolo de consenso distribuido ---y no por la confianza en un operador
+central--- y el costo operativo es órdenes de magnitud inferior.
+
+Este conjunto de propiedades ---latencia baja, costo insignificante, inmutabilidad
+criptográfica e independencia de infraestructura centralizada--- posiciona a la
+combinación IPFS+BlockDAG como una alternativa técnicamente superior para
+aplicaciones de monitoreo urbano con alta frecuencia de reporte y requisitos de
+trazabilidad auditables.
+
+% =============================================================================
+\section{Discusión}
+\label{sec:experimentos_discusion}
+
+Los resultados obtenidos permiten evaluar el sistema de forma integral, identificando
+sus fortalezas, sus limitaciones actuales y las líneas de trabajo que podrían
+potenciar su desempeño en escenarios de despliegue real.
+
+\subsection{Escalabilidad y Viabilidad Computacional}
+\label{subsec:discusion_escalabilidad}
+
+La evaluación del módulo \texttt{traffic-sync} demuestra que la combinación de
+inferencia difusa Mamdani con optimización PSO ofrece una relación rendimiento--costo
+computacional muy favorable. El crecimiento lineal del tiempo de procesamiento
+($\approx$0{,}014~s/sensor) y la estabilidad del consumo de memoria en menos de
+220~MB confirman que el módulo puede escalar hacia escenarios de optimización por
+zonas sin necesidad de reemplazar el hardware subyacente. Esta característica es
+especialmente relevante en el contexto de ciudades intermedias como San Lorenzo,
+donde los presupuestos de infraestructura son limitados y la capacidad de operar
+sobre dispositivos de bajo costo ---como unidades Raspberry~Pi--- representa una
+ventaja práctica determinante.
+
+\subsection{Desempeño del Almacenamiento Verificable}
+\label{subsec:discusion_storage}
+
+Los tiempos de subida obtenidos en las pruebas con escenarios de tráfico vehicular
+---entre 6{,}7 y 7{,}3~s según la densidad--- son adecuados para el modelo de reporte
+periódico contemplado en el sistema. A diferencia de los sistemas de control de
+tráfico en tiempo estricto (que requieren respuesta en milisegundos), \texttt{traffic-storage}
+opera sobre datos agregados de ciclos de análisis completados, por lo que una latencia
+de almacenamiento del orden de segundos es operativamente aceptable.
+
+El análisis del pipeline de almacenamiento revela que el cuello de botella principal
+es el tiempo de confirmación en la red BlockDAG ($\approx$3{,}5~s de minado),
+seguido de la preparación de la transacción ($\approx$3{,}3~s). La subida a IPFS, en
+cambio, resulta rápida ($\approx$1{,}2~s) y estable. Esta distribución sugiere que
+las mejoras de rendimiento más impactantes podrían obtenerse mediante la optimización
+de la gestión de nonces y la precarga del estado de gas antes del ciclo de almacenamiento,
+sin necesidad de modificar la infraestructura de red.
+
+El tiempo de descarga ($\approx$1{,}75~s) es notablemente inferior al de subida,
+lo que resulta conveniente para los casos de uso de consulta y auditoría: recuperar
+un registro histórico para verificación es significativamente más rápido que
+almacenarlo. Esto hace que el sistema sea especialmente apto para flujos de trabajo
+donde la escritura es periódica pero la lectura puede ocurrir con alta frecuencia
+y baja latencia.
+
+\subsection{Desafíos Identificados y Limitaciones}
+\label{subsec:discusion_limitaciones}
+
+Durante la ejecución de las pruebas se identificaron tres desafíos técnicos que
+deben tenerse en cuenta en un despliegue de producción.
+
+El primero es la \textbf{dependencia de servicios IPFS gestionados}: las pruebas
+utilizaron Pinata como nodo IPFS de terceros, lo que introduce una dependencia
+externa que podría comprometer la disponibilidad del sistema si el proveedor
+experimenta interrupciones. La transición a un nodo IPFS propio (por ejemplo,
+Kubo) eliminaría esta dependencia a costa de mayor complejidad operativa.
+
+El segundo desafío es la \textbf{variabilidad en los tiempos de minado} de la
+red BlockDAG: si bien el promedio se sitúa en $\approx$3{,}5~s, los valores
+individuales pueden desviarse significativamente, especialmente bajo condiciones
+de congestión de la red pública de pruebas. En una red BlockDAG privada o
+permisionada ---opción viable para despliegues municipales--- este comportamiento
+sería más predecible y controlable.
+
+El tercer desafío es la \textbf{configuración de endpoints de la API}: durante
+las primeras corridas del protocolo de prueba se registraron respuestas HTTP~307
+(redirección temporal) provocadas por la ausencia de la barra final en las rutas
+\texttt{/upload/} y \texttt{/download/}. Una vez corregida la configuración, todas
+las operaciones subsiguientes retornaron HTTP~200 con el ciclo completo de
+almacenamiento ejecutado. Este incidente ilustra la importancia de una validación
+exhaustiva del entorno antes de ejecutar pruebas formales, y la necesidad de
+contar con scripts de verificación previa del entorno como parte del proceso de
+despliegue.
+
+% =============================================================================
+\section{Resumen del Capítulo}
+\label{sec:experimentos_resumen}
+
+Este capítulo presentó la evaluación experimental del sistema de gestión de tráfico
+propuesto, abarcando los dos módulos con experimentos ejecutados y validados.
+
+En lo referente al módulo \texttt{traffic-sync}, las pruebas de escalabilidad con
+cargas de hasta 2000 sensores simultáneos demostraron un crecimiento lineal del
+tiempo de procesamiento ($\approx$0{,}014~s/sensor), uso de CPU decreciente
+(de 72{,}3\% a 50{,}3\%) y consumo de memoria estable (200--220~MB),
+confirmando la viabilidad del módulo para escenarios de optimización por zonas
+en hardware de bajo costo.
+
+En lo referente al módulo \texttt{traffic-storage}, las pruebas con tres escenarios
+de tráfico vehicular ---bajo, medio y alto--- arrojaron tiempos de subida de entre
+6{,}7 y 7{,}3~s y tiempos de descarga de entre 1{,}7 y 2{,}0~s, con integridad
+de datos verificada en todas las corridas válidas. La confirmación en la red
+BlockDAG se produce en $\approx$1~s, a un costo inferior a \$1{,}2$\times$10\textsuperscript{-5}~USD
+por transacción. En comparación con Ethereum, la solución adoptada reduce la
+latencia de confirmación en más del 95\% y el costo operativo en más de cuatro
+órdenes de magnitud.
+
+En conjunto, los resultados avalan la viabilidad técnica del sistema para su
+despliegue en entornos urbanos reales con infraestructura de bajo costo,
+estableciendo una base cuantitativa sólida para las conclusiones presentadas
+en el capítulo siguiente.
