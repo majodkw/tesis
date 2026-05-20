@@ -1,11 +1,11 @@
-\centerline{\textbf{\large Titulo1}}
-\centerline{\textbf{\large Titulo2}}
+\centerline{\textbf{\large Scalable and Decentralized Urban Traffic Optimization}}
+\centerline{\textbf{\large with Verifiable Storage for Smart City Deployments}}
 
 \vspace{2cm}
 
-\rightline{Autor: Nombre y apellido}
+\rightline{Autores: Kevin Mathias Galeano Saldivar, María José Duarte Kowalewski}
 \vspace{0.5cm}
-\rightline{Asesor: Nombre y apellido}
+\rightline{Asesor: Cristian Cappo}
 
 \vspace{0.5cm}
 
@@ -15,8 +15,33 @@
 \vspace{0.5cm}
 
 \noindent
-Este es el resumen
+Este trabajo presenta el diseño, la implementación y la evaluación experimental de un sistema
+modular y descentralizado para la optimización adaptativa del control semafórico urbano y la
+persistencia verificable de los datos asociados. La arquitectura propuesta integra cuatro
+microservicios: un módulo de simulación de tráfico basado en SUMO (traffic-sim),
+un módulo de análisis y optimización que combina inferencia difusa tipo Mamdani con
+optimización por enjambre de partículas (traffic-sync), un módulo de almacenamiento
+distribuido basado en IPFS y contratos inteligentes sobre una red BlockDAG
+(traffic-storage), y un módulo de orquestación con interfaz REST
+(traffic-control). Los módulos se comunican mediante APIs HTTP/JSON,
+lo que garantiza bajo acoplamiento y facilita la integración con sensores reales.
+
+La evaluación experimental demuestra que el sistema escala de forma aproximadamente lineal
+con el número de sensores: para 2000 sensores, el ciclo completo de análisis y optimización
+se completó en 67{,}6~s ($\approx 0{,}014$~s por sensor), con consumo de memoria estable
+entre 198 y 219~MB. En cuanto al almacenamiento verificable, las transacciones alcanzaron
+confirmación en la red BlockDAG en $\approx$1~s, con un costo inferior a
+\$1{,}2$\times$10\textsuperscript{-5}~USD por operación, superando en más de cuatro órdenes
+de magnitud el costo operativo de Ethereum y reduciendo en más del 60\% la latencia de
+persistencia verificable respecto a plataformas IoT--cloud centralizadas. Los
+resultados respaldan la viabilidad del sistema para despliegues municipales con recursos
+computacionales limitados, incluyendo hardware embebido de bajo costo. Los hallazgos
+principales fueron presentados en la 2025 IEEE CHILEAN Conference on Electrical,
+Electronics Engineering, Information and Communication Technologies (CHILECON~2025).
+
 \vspace{0.5cm}
 
 \noindent
-\textbf{Palabras Clave}:
+\textbf{Palabras Clave}: optimización de tráfico urbano, control semafórico adaptativo,
+lógica difusa, optimización por enjambre de partículas, IPFS, BlockDAG, almacenamiento
+verificable, microservicios, ciudad inteligente.

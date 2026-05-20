@@ -1,10 +1,11 @@
-\centerline{\textbf{\large Title }}
+\centerline{\textbf{\large Scalable and Decentralized Urban Traffic Optimization}}
+\centerline{\textbf{\large with Verifiable Storage for Smart City Deployments}}
 
 \vspace{2cm}
 
-\rightline{Author: full name}
+\rightline{Authors: Kevin Mathias Galeano Saldivar, María José Duarte Kowalewski}
 \vspace{0.5cm}
-\rightline{Advisor: full name}
+\rightline{Advisor: Cristian Cappo}
 
 \vspace{0.5cm}
 
@@ -14,9 +15,31 @@
 \vspace{0.5cm}
 
 \noindent
-This is the abstract
+This work presents the design, implementation, and experimental evaluation of a modular,
+decentralized system for adaptive urban traffic signal optimization and verifiable data
+persistence. The proposed architecture integrates four microservices: a SUMO-based traffic
+simulation module (\textit{traffic-sim}), an analysis and optimization module combining
+Mamdani fuzzy inference with Particle Swarm Optimization (\textit{traffic-sync}), a
+distributed storage module built on IPFS and smart contracts over a BlockDAG network
+(\textit{traffic-storage}), and an orchestration module with a REST interface
+(\textit{traffic-control}). All modules communicate via HTTP/JSON APIs, ensuring loose
+coupling and straightforward integration with real-world sensor infrastructure.
+
+Experimental evaluation demonstrates approximately linear scalability with the number of
+sensors: for 2000 sensors, the full analysis-and-optimization cycle completed in 67.6~s
+($\approx 0.014$~s per sensor), with stable memory consumption between 198 and 219~MB.
+For verifiable storage, transactions reached confirmation on the BlockDAG network in
+$\approx$1~s at a cost below \$1.2$\times$10\textsuperscript{-5}~USD per operation,
+outperforming Ethereum by more than four orders of magnitude in cost and reducing
+verifiable-persistence latency by over 60\% compared to centralized IoT--cloud platforms.
+These results support the system's viability for municipal deployments with limited
+computational resources, including low-cost embedded hardware. The main findings were
+presented at the \textit{2025 IEEE CHILEAN Conference on Electrical, Electronics
+Engineering, Information and Communication Technologies} (CHILECON~2025).
 
 \vspace{0.5cm}
 
 \noindent
-\textbf{Keywords}: 
+\textbf{Keywords}: urban traffic optimization, adaptive signal control, fuzzy logic,
+particle swarm optimization, IPFS, BlockDAG, verifiable storage, microservices,
+smart city.

@@ -1,0 +1,46 @@
+# -----------------------------------------------
+# Archivos temporales generados por compilación LaTeX
+# -----------------------------------------------
+
+# Auxiliares de compilación
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fls
+*.fdb_latexmk
+*.run.xml
+*.synctex.gz
+*.synctex\(busy\)
+
+# Índices y glosarios
+*.idx
+*.ilg
+*.ind
+*.ist
+*.glg
+*.glo
+*.gls
+
+# Listas (figuras, tablas, contenido)
+*.lof
+*.log
+*.lot
+*.toc
+*.out
+
+# Presentaciones Beamer
+*.nav
+*.snm
+*.vrb
+
+# Minted (código fuente resaltado)
+_minted-*/
+*.pyg
+
+# Otros
+*.dvi
+*.xdv
+*.listing
+*.bak
+*~

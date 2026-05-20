@@ -1,1 +1,129 @@
-\section{Introducción}
+La congestión del tráfico urbano representa uno de los problemas más persistentes y
+costosos de las ciudades contemporáneas. El crecimiento sostenido del parque automotor,
+combinado con una infraestructura vial que raramente crece al mismo ritmo, genera demoras
+acumuladas que impactan directamente en la productividad económica, la calidad del aire y
+la calidad de vida de los habitantes \cite{papageorgiou2003review,garber2019traffic}. En
+ciudades de tamaño medio de América Latina, donde los recursos para grandes obras de
+infraestructura son escasos, la optimización del control semafórico existente se presenta
+como una de las intervenciones de mayor relación costo-beneficio para mejorar la fluidez
+del tráfico sin requerir expansión física de la red vial \cite{stevanovic2010adaptive}.
+
+Los sistemas de control semafórico tradicionales basados en tiempos fijos o predeterminados
+presentan limitaciones fundamentales frente a la variabilidad inherente de la demanda urbana.
+Un plan de señales diseñado para el pico de la mañana es ineficiente en el valle del mediodía;
+un plan calibrado para días laborables falla en eventos o festividades. Esta rigidez
+operativa motiva el desarrollo de estrategias adaptativas capaces de ajustar los parámetros
+de señalización (duración de ciclo, distribución de tiempos verdes, desplazamientos entre
+intersecciones) en respuesta a las condiciones observadas en tiempo real
+\cite{papageorgiou2003review,stevanovic2010adaptive,li2016realtime}.
+
+La convergencia de tres tendencias tecnológicas abre nuevas posibilidades para abordar este
+problema. En primer lugar, la disponibilidad masiva de sensores de bajo costo y plataformas
+de simulación de tráfico de código abierto, como SUMO (Simulation of Urban MObility),
+permite evaluar y validar estrategias de control bajo condiciones controladas y reproducibles
+antes de su despliegue en campo \cite{behrisch2011sumo}. En segundo lugar, las técnicas de
+inteligencia computacional, en particular la lógica difusa y los algoritmos de optimización
+metaheurística, ofrecen mecanismos para modelar el conocimiento experto sobre congestión y
+para buscar configuraciones semafóricas óptimas en espacios de decisión complejos, sin requerir
+modelos analíticos exactos de la demanda \cite{zadeh1965fuzzy,kennedy1995particle}. En tercer
+lugar, las tecnologías de almacenamiento descentralizado (IPFS y redes BlockDAG) permiten
+registrar los datos generados por el sistema de forma inmutable y auditable, sin depender de
+un operador central de confianza, lo que resulta especialmente relevante para infraestructuras
+de gestión pública donde la trazabilidad y la rendición de cuentas son requisitos
+institucionales \cite{benet2014ipfs,sompolinsky2021phantom}.
+
+\section{Motivación y contexto}
+
+En el contexto paraguayo, la gestión del tráfico urbano en ciudades intermedias y en el área
+metropolitana de Asunción enfrenta el desafío adicional de operar con presupuestos municipales
+limitados y con infraestructura tecnológica heterogénea. Las soluciones comerciales de control
+adaptativo, ampliamente desplegadas en ciudades de países desarrollados, suelen implicar costos
+de licenciamiento, dependencia de proveedores y dificultades de integración con sistemas
+legados, barreras que frenan su adopción a escala local. Este escenario plantea la necesidad
+de explorar alternativas basadas en software libre, componentes de hardware de consumo y
+arquitecturas abiertas que puedan desplegarse y mantenerse con los recursos técnicos disponibles
+en municipios de la región.
+
+Paralelamente, la creciente adopción de paradigmas de smart city en la planificación
+urbana de América Latina genera demanda de soluciones que no solo optimicen parámetros
+operativos, sino que también garanticen la integridad y disponibilidad de los datos generados.
+En sistemas de gestión pública, la capacidad de auditar retrospectivamente el comportamiento
+del sistema (verificar qué configuraciones se aplicaron, cuándo y con qué efecto) constituye
+un requisito de transparencia que las plataformas centralizadas tradicionales satisfacen de
+forma insuficiente.
+
+\section{Objetivos}
+
+\subsection{Objetivo general}
+
+Diseñar, implementar y evaluar experimentalmente un sistema modular y descentralizado para la
+optimización adaptativa del control semafórico urbano y la persistencia verificable de los
+datos asociados, utilizando técnicas de inteligencia computacional y tecnologías de
+almacenamiento distribuido sobre hardware de consumo estándar.
+
+\subsection{Objetivos específicos}
+
+\begin{itemize}
+    \item Desarrollar un módulo de simulación de tráfico que genere escenarios controlados
+          y reproducibles mediante SUMO, incluyendo detección automática de cuellos de botella
+          y exposición de métricas agregadas por intersección semafórica.
+
+    \item Diseñar e implementar un módulo de análisis y optimización que clasifique el estado
+          de congestión mediante inferencia difusa tipo Mamdani y ajuste los tiempos semafóricos
+          mediante optimización por enjambre de partículas (PSO).
+
+    \item Construir un módulo de persistencia verificable que almacene datos de tráfico y
+          resultados de optimización en IPFS, registrando los identificadores de contenido en
+          una red BlockDAG mediante contratos inteligentes para garantizar inmutabilidad y
+          trazabilidad.
+
+    \item Integrar los módulos anteriores mediante un servicio de orquestación con interfaz
+          REST que coordine el flujo completo desde la recepción de observaciones hasta la
+          confirmación del almacenamiento distribuido.
+
+    \item Evaluar experimentalmente el desempeño del sistema en términos de escalabilidad,
+          consumo de recursos, latencia de almacenamiento y costo operativo, comparando con
+          alternativas basadas en Ethereum y plataformas centralizadas IoT--cloud.
+\end{itemize}
+
+\section{Contribuciones}
+
+El presente trabajo realiza las siguientes contribuciones:
+
+\begin{enumerate}
+    \item Una arquitectura de microservicios de código abierto que integra simulación de
+          tráfico, optimización difusa-PSO y almacenamiento descentralizado en un flujo
+          operativo unificado, demostrada en hardware de consumo estándar.
+
+    \item Un protocolo de persistencia verificable para datos de tráfico urbano basado en
+          IPFS y contratos inteligentes sobre BlockDAG, con confirmación en $\approx$1~s y
+          costo inferior a \$1{,}2$\times$10\textsuperscript{-5}~USD por transacción,
+          superando en más de cuatro órdenes de magnitud el costo operativo de Ethereum.
+
+    \item Evidencia cuantitativa de la viabilidad del sistema para escenarios de hasta 2000
+          sensores en hardware embebido de bajo costo, con tiempo de procesamiento
+          $\approx 0{,}014$~s por sensor y consumo de memoria estable entre 198 y 219~MB.
+
+    \item Un conjunto de experimentos reproducibles, con configuraciones, datos y métricas
+          documentados, que sirven de línea base para investigaciones futuras en optimización
+          de tráfico con requisitos de trazabilidad verificable.
+\end{enumerate}
+
+Los hallazgos principales fueron publicados en el artículo \emph{Scalable and Decentralized
+Urban Traffic Optimization with Verifiable Storage for Smart City Deployments}, presentado en
+la 2025 IEEE CHILEAN Conference on Electrical, Electronics Engineering, Information and
+Communication Technologies (CHILECON~2025), Valparaíso, Chile \cite{chilecon2025}.
+
+\section{Estructura del documento}
+
+El resto del documento se organiza de la siguiente manera. El Capítulo~2 presenta el marco
+teórico que fundamenta el trabajo: ingeniería de tráfico y control semafórico, lógica difusa
+y sistemas de inferencia Mamdani, optimización por enjambre de partículas, IPFS como sistema
+de almacenamiento distribuido por contenido, y las estructuras BlockDAG y blockchain
+empleadas para el registro inmutable. El Capítulo~3 describe la visión general del sistema,
+su arquitectura modular y el flujo de información entre componentes. Los Capítulos~4 a 7
+detallan el diseño e implementación de cada módulo: simulación traffic-sim,
+optimización traffic-sync, almacenamiento verificable traffic-storage y
+orquestación traffic-control. El Capítulo~8 presenta la evaluación experimental con
+los resultados de escalabilidad, latencia y costo. Finalmente, el Capítulo~9 recoge las
+conclusiones, limitaciones y líneas de trabajo futuro.

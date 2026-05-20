@@ -1,3 +1,121 @@
 \noindent
-\textbf{\large LISTA DE SÍMBOLOS}
+\textbf{\large LISTA DE ACRÓNIMOS Y SÍMBOLOS}
 
+\vspace{1cm}
+
+\noindent\textbf{Infraestructura y arquitectura de software}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[API]     \textit{Application Programming Interface}; interfaz de programación que
+                 expone funcionalidades de un servicio para ser consumidas por otros módulos
+                 o clientes externos.
+  \item[REST]    \textit{Representational State Transfer}; estilo arquitectónico para el
+                 diseño de APIs HTTP basado en recursos y verbos estándar.
+  \item[HTTP /]  \textit{HyperText Transfer Protocol (Secure)}; protocolos de transporte
+  \item[HTTPS]   sobre los que se exponen las APIs del sistema.
+  \item[JSON]    \textit{JavaScript Object Notation}; formato de intercambio de datos
+                 estructurados utilizado en los mensajes entre módulos.
+  \item[URL]     \textit{Uniform Resource Locator}; identificador de recursos web utilizado
+                 para apuntar a endpoints y nodos del sistema.
+  \item[RPC]     \textit{Remote Procedure Call}; modelo de invocación remota empleado en la
+                 comunicación con nodos de la red BlockDAG.
+  \item[SQL]     \textit{Structured Query Language}; lenguaje de consulta utilizado en la
+                 base de datos relacional de metadatos operativos.
+  \item[CPU]     \textit{Central Processing Unit}; procesador principal del host, recurso
+                 monitoreado en los experimentos de rendimiento.
+  \item[RAM]     \textit{Random Access Memory}; memoria principal del host, recurso
+                 monitoreado en los experimentos de escalabilidad.
+  \item[IoT]     \textit{Internet of Things}; paradigma de dispositivos interconectados;
+                 fuente de datos real a integrar en despliegues futuros.
+  \item[FastAPI] \textit{FastAPI}; framework web asíncrono de Python utilizado para
+                 implementar las APIs REST de los módulos del sistema.
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Simulación y tráfico urbano}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[SUMO]    \textit{Simulation of Urban MObility}; plataforma de simulación de tráfico
+                 urbano de código abierto utilizada en el módulo \textit{traffic-sim}.
+  \item[TraCI]   \textit{Traffic Control Interface}; protocolo de comunicación de SUMO que
+                 permite controlar y consultar la simulación en tiempo real.
+  \item[ITS]     \textit{Intelligent Transportation Systems}; sistemas inteligentes de
+                 transporte; marco general en el que se inscribe este trabajo.
+  \item[MILP]    \textit{Mixed-Integer Linear Programming}; programación entera mixta;
+                 formulación clásica del problema de optimización de planes semafóricos.
+  \item[TPS]     Transacciones por segundo; métrica de rendimiento empleada para comparar
+                 el throughput de BlockDAG frente a blockchain lineal.
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Inteligencia computacional}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[PSO]     \textit{Particle Swarm Optimization}; algoritmo de optimización por
+                 enjambre de partículas utilizado para ajustar los tiempos semafóricos.
+  \item[FIS]     \textit{Fuzzy Inference System}; sistema de inferencia difusa; implementado
+                 con modelo Mamdani para clasificar el nivel de congestión.
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Almacenamiento descentralizado}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[IPFS]      \textit{InterPlanetary File System}; sistema de almacenamiento distribuido
+                   por contenido utilizado para persistir los datos de tráfico.
+  \item[CID]       \textit{Content Identifier}; identificador criptográfico de contenido en
+                   IPFS; permite verificar la integridad de los datos almacenados.
+  \item[DAG]       \textit{Directed Acyclic Graph}; grafo dirigido acíclico; estructura de
+                   datos base de IPFS y de las redes BlockDAG.
+  \item[BlockDAG]  Red de bloques organizada como grafo dirigido acíclico en lugar de cadena
+                   lineal; permite mayor throughput y confirmación rápida de transacciones.
+  \item[PHANTOM /] Protocolos de consenso y ordenamiento para redes BlockDAG que definen
+  \item[GHOSTDAG]  la cadena principal y resuelven conflictos entre bloques paralelos.
+  \item[PoW]       \textit{Proof of Work}; mecanismo de consenso basado en cómputo
+                   intensivo; referencia comparativa frente a BlockDAG.
+  \item[PoS]       \textit{Proof of Stake}; mecanismo de consenso basado en participación
+                   económica; alternativa energéticamente eficiente a PoW.
+  \item[P2P]       \textit{Peer-to-Peer}; modelo de red entre pares utilizado por IPFS y las
+                   redes BlockDAG para distribuir contenido y bloques.
+  \item[DHT]       \textit{Distributed Hash Table}; tabla de hash distribuida que usa IPFS
+                   para localizar nodos que almacenan un CID dado.
+  \item[Solidity]  Lenguaje de programación de contratos inteligentes utilizado para
+                   implementar el registro inmutable en la red BlockDAG.
+  \item[SHA]       \textit{Secure Hash Algorithm}; familia de funciones de resumen
+                   criptográfico empleadas en la construcción de CIDs e identificadores de
+                   bloque.
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Símbolos matemáticos}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[$x_i$]       Posición de la partícula $i$ en el espacio de búsqueda del PSO;
+                     representa una configuración candidata de tiempos semafóricos.
+  \item[$v_i$]       Velocidad de la partícula $i$ en el PSO; determina la magnitud y
+                     dirección del desplazamiento en cada iteración.
+  \item[$p_i$]       Mejor posición histórica (\textit{personal best}) de la partícula $i$.
+  \item[$g$]         Mejor posición global (\textit{global best}) encontrada por el enjambre.
+  \item[$w$]         Factor de inercia del PSO; controla el peso de la velocidad previa en
+                     la actualización de la trayectoria.
+  \item[$c_1, c_2$]  Coeficientes de aceleración cognitivo y social del PSO.
+  \item[$r_1, r_2$]  Números aleatorios uniformes en $[0,1]$ usados en la ecuación de
+                     actualización de velocidad del PSO.
+  \item[$C$]         Longitud de ciclo semafórico; duración total de una repetición completa
+                     de las fases.
+  \item[$g_k$]       Tiempo de verde asignado a la fase $k$ dentro del ciclo $C$.
+  \item[$\mu$]       Grado de pertenencia en lógica difusa; valor en $[0,1]$ que indica
+                     cuánto pertenece un valor a un conjunto difuso.
+  \item[$\phi_j$]    Función de pertenencia $j$; define la forma del conjunto difuso
+                     (triangular, trapezoidal, gaussiana).
+\end{description}
