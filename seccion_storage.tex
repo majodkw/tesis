@@ -1,7 +1,7 @@
 \section{Módulo de Almacenamiento de Datos}
 \label{sec:decentralized_tech_traffic_storage}
 
-El módulo \texttt{traffic-storage} actúa como capa de persistencia verificable del sistema, recibiendo métricas de tráfico y resultados de optimización, almacenando los datos en un repositorio distribuido y registrando huellas inmutables en infraestructuras descentralizadas. En este contexto, blockchain, BlockDAG e IPFS se utilizan de forma complementaria: blockchain y BlockDAG como ledgers inmutables para trazabilidad, e IPFS como almacén de archivos orientado a contenido \cite{nakamoto2008bitcoin,benet2014ipfs,sompolinsky2021phantom}.
+El módulo traffic-storage actúa como capa de persistencia verificable del sistema, recibiendo métricas de tráfico y resultados de optimización, almacenando los datos en un repositorio distribuido y registrando huellas inmutables en infraestructuras descentralizadas. En este contexto, blockchain, BlockDAG e IPFS se utilizan de forma complementaria: blockchain y BlockDAG como ledgers inmutables para trazabilidad, e IPFS como almacén de archivos orientado a contenido \cite{nakamoto2008bitcoin,benet2014ipfs,sompolinsky2021phantom}.
 
 % -----------------------------------------------------------------------------
 \subsection{Blockchain}
@@ -38,7 +38,7 @@ La Figura~\ref{fig:bloque_blockchain} ilustra la estructura básica de una caden
 
 En este trabajo, blockchain se utiliza para registrar metadatos de almacenamiento de tráfico de forma inmutable, actuando como capa de ``prueba de existencia'' para datos que residen físicamente fuera de la cadena. El contrato inteligente de almacenamiento expone operaciones de alto nivel para registrar eventos de almacenamiento: cada llamada almacena, al menos, un identificador de semáforo, una marca de tiempo y un identificador de contenido (CID de IPFS), junto con el tipo de dato al que hace referencia. Este contrato se despliega y prueba utilizando un entorno de desarrollo estándar, con scripts de despliegue y pruebas automatizadas que verifican su funcionamiento básico.
 
-El módulo \texttt{traffic-storage} ofrece una API HTTP que recibe cargas de datos en un formato unificado (versión 2.0), generadas por otros componentes del sistema (como los módulos de optimización y lógica difusa). Cuando llega una nueva medición o reporte, la API valida la carga útil, delega la persistencia de contenido a IPFS y, una vez obtenido el CID, invoca al contrato inteligente de almacenamiento para registrar ese CID junto con los metadatos relevantes en la blockchain. De este modo, los algoritmos de optimización y los módulos de monitoreo solo interactúan con una interfaz REST, mientras que los detalles de interacción on-chain quedan encapsulados en el módulo de almacenamiento.
+El módulo traffic-storage ofrece una API HTTP que recibe cargas de datos en un formato unificado (versión 2.0), generadas por otros componentes del sistema (como los módulos de optimización y lógica difusa). Cuando llega una nueva medición o reporte, la API valida la carga útil, delega la persistencia de contenido a IPFS y, una vez obtenido el CID, invoca al contrato inteligente de almacenamiento para registrar ese CID junto con los metadatos relevantes en la blockchain. De este modo, los algoritmos de optimización y los módulos de monitoreo solo interactúan con una interfaz REST, mientras que los detalles de interacción on-chain quedan encapsulados en el módulo de almacenamiento.
 
 % -----------------------------------------------------------------------------
 \subsection{BlockDAG}
@@ -70,7 +70,7 @@ Latencia de bloque & 10 min (Bitcoin), 12 s (Ethereum)\cite{ethereum_blocks} & S
 \end{tabular}
 \end{table}
 
-En el contexto de este sistema, BlockDAG se considera como infraestructura de registro distribuido complementaria a la blockchain tradicional, pensada para escenarios de mayor escala donde múltiples intersecciones reportan datos con alta frecuencia. El módulo \texttt{traffic-storage} incorpora una capa de abstracción que permite, según la configuración, registrar eventos de almacenamiento tanto en un contrato EVM como en una red BlockDAG compatible, utilizando un cliente dedicado que construye y envía mensajes de registro a un nodo remoto. Estos mensajes contienen, de forma análoga a la variante blockchain, el identificador de semáforo, la marca de tiempo y el resumen criptográfico de contenido (CID de IPFS u otro identificador criptográfico).
+En el contexto de este sistema, BlockDAG se considera como infraestructura de registro distribuido complementaria a la blockchain tradicional, pensada para escenarios de mayor escala donde múltiples intersecciones reportan datos con alta frecuencia. El módulo traffic-storage incorpora una capa de abstracción que permite, según la configuración, registrar eventos de almacenamiento tanto en un contrato EVM como en una red BlockDAG compatible, utilizando un cliente dedicado que construye y envía mensajes de registro a un nodo remoto. Estos mensajes contienen, de forma análoga a la variante blockchain, el identificador de semáforo, la marca de tiempo y el resumen criptográfico de contenido (CID de IPFS u otro identificador criptográfico).
 
 La lógica de alto nivel en el módulo de almacenamiento se mantiene independiente de la tecnología subyacente: la API recibe métricas y resultados de optimización, delega la persistencia de archivos a IPFS y, posteriormente, invoca una interfaz de "registro de evidencia" que puede mapearse a blockchain, BlockDAG o a un esquema dual. Esta separación permite que, a medida que se exploren o adopten redes DAG de mayor throughput para despliegues reales en entornos de ciudad inteligente, el resto del sistema (clasificación de congestión, PSO, paneles de monitoreo) continúe interactuando con un mismo punto de entrada consistente.
 
@@ -132,7 +132,7 @@ La Figura~\ref{fig:ipfs_architecture} ilustra el flujo básico de almacenamiento
     \label{fig:ipfs_architecture}
 \end{figure}
 
-En este trabajo, IPFS se emplea como almacén de datos off-chain para los artefactos generados y consumidos por el sistema: mediciones agregadas de tráfico por grupo (clúster), indicadores de congestión difusa, configuraciones optimizadas de tiempos semafóricos y reportes experimentales. El módulo \texttt{traffic-storage} incluye un cliente específico para interactuar con un nodo IPFS local o con un servicio compatible, ofreciendo operaciones sencillas para subir y recuperar objetos. El flujo básico consiste en que la API recibe una carga útil de datos, lo serializa (por ejemplo, como JSON), lo envía al nodo IPFS y obtiene de vuelta un CID.
+En este trabajo, IPFS se emplea como almacén de datos off-chain para los artefactos generados y consumidos por el sistema: mediciones agregadas de tráfico por grupo (clúster), indicadores de congestión difusa, configuraciones optimizadas de tiempos semafóricos y reportes experimentales. El módulo traffic-storage incluye un cliente específico para interactuar con un nodo IPFS local o con un servicio compatible, ofreciendo operaciones sencillas para subir y recuperar objetos. El flujo básico consiste en que la API recibe una carga útil de datos, lo serializa (por ejemplo, como JSON), lo envía al nodo IPFS y obtiene de vuelta un CID.
 
 Ese CID se utiliza a continuación como enlace entre IPFS y las capas de consenso: se registra en blockchain o en BlockDAG mediante las interfaces descritas anteriormente, de modo que cualquier módulo que necesite auditar o reanalizar un conjunto de datos solo requiera conocer el CID y el identificador de semáforo asociado. Desde la perspectiva del resto del sistema, IPFS y las tecnologías de registro inmutable quedan encapsuladas detrás del módulo de almacenamiento: los módulos de simulación, clasificación difusa y optimización interactúan únicamente con la API REST, mientras que las garantías de verificabilidad, integridad y persistencia se logran combinando direccionamiento por contenido en IPFS con registros inmutables en blockchain y/o BlockDAG.
 
@@ -178,7 +178,7 @@ La Figura~\ref{fig:storage_sequence} presenta un diagrama de secuencia que ilust
     
     \end{tikzpicture}
     \shorthandon{>}
-    \caption{Diagrama de secuencia del flujo de almacenamiento distribuido en \texttt{traffic-storage}.}
+    \caption{Diagrama de secuencia del flujo de almacenamiento distribuido en traffic-storage.}
     \label{fig:storage_sequence}
 \end{figure}
 

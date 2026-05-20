@@ -1,13 +1,13 @@
 \section{Módulo de Simulación de Tráfico}
 \label{sec:traffic_sim}
 
-El módulo \texttt{traffic-sim} implementa un entorno de simulación de tráfico urbano basado en SUMO (Simulation of Urban MObility), utilizado para evaluar el comportamiento del sistema propuesto bajo escenarios controlados y reproducibles. SUMO es un simulador microscópico de tráfico ampliamente adoptado en la comunidad científica, que permite modelar redes viales, rutas de vehículos y programas semafóricos, y ejecutar simulaciones paso a paso mediante una interfaz de control remoto (\texttt{traci}) \cite{sumo2025manual}. En este trabajo, \texttt{traffic-sim} se integra con el servicio de optimización \texttt{traffic-sync} para cerrar el ciclo “simulación–detección–optimización–aplicación” sobre redes generadas a partir de datos reales o escenarios de prueba.
+El módulo traffic-sim implementa un entorno de simulación de tráfico urbano basado en SUMO (Simulation of Urban MObility), utilizado para evaluar el comportamiento del sistema propuesto bajo escenarios controlados y reproducibles. SUMO es un simulador microscópico de tráfico ampliamente adoptado en la comunidad científica, que permite modelar redes viales, rutas de vehículos y programas semafóricos, y ejecutar simulaciones paso a paso mediante una interfaz de control remoto (\texttt{traci}) \cite{sumo2025manual}. En este trabajo, traffic-sim se integra con el servicio de optimización traffic-sync para cerrar el ciclo “simulación–detección–optimización–aplicación” sobre redes generadas a partir de datos reales o escenarios de prueba.
 
 % -----------------------------------------------------------------------------
 \subsection{Arquitectura del Módulo}
 \label{subsec:traffic_sim_architecture}
 
-La estructura de \texttt{traffic-sim} se organiza en torno a un orquestador de simulación y un conjunto de componentes especializados para detección, control y comunicación externa. El orquestador de simulación encapsula la lógica principal: carga la configuración de SUMO (archivos de configuración de red, aristas, nodos, rutas y semáforos), inicializa la simulación mediante la interfaz de control remoto y gestiona el avance de la simulación en pasos discretos \cite{sumo2025manual}. El punto de entrada recibe como argumento un archivo comprimido de escenario (generado, por ejemplo, mediante la herramienta auxiliar de construcción de mapas) y ejecuta la simulación en modo sin interfaz gráfica o con interfaz gráfica.
+La estructura de traffic-sim se organiza en torno a un orquestador de simulación y un conjunto de componentes especializados para detección, control y comunicación externa. El orquestador de simulación encapsula la lógica principal: carga la configuración de SUMO (archivos de configuración de red, aristas, nodos, rutas y semáforos), inicializa la simulación mediante la interfaz de control remoto y gestiona el avance de la simulación en pasos discretos \cite{sumo2025manual}. El punto de entrada recibe como argumento un archivo comprimido de escenario (generado, por ejemplo, mediante la herramienta auxiliar de construcción de mapas) y ejecuta la simulación en modo sin interfaz gráfica o con interfaz gráfica.
 
 Los detectores de cuellos de botella monitorean métricas como densidad de vehículos, velocidad promedio y longitud de cola por tramo o aproximación. Los umbrales y parámetros de detección (por ejemplo, densidad mínima, velocidad máxima para considerar congestión, intervalo entre detecciones, duración mínima del evento) se centralizan en la configuración del sistema, lo que permite ajustar la sensibilidad del sistema sin modificar la lógica de detección. El controlador de semáforos expone métodos para actualizar dinámicamente los tiempos de verde y de ciclo de los semáforos modelados en SUMO, aplicando las optimizaciones recibidas desde el servicio de optimización.
 
@@ -15,7 +15,7 @@ El cliente HTTP se comunica con la API del módulo de optimización: cuando se d
 
 Las herramientas de visualización proporcionan análisis posterior de resultados: parsers de archivos de salida de SUMO (información de viajes, resúmenes, datos de vehículos), funciones para generar gráficos de distribución de tiempos de viaje, evolución temporal de congestión y comparaciones entre diferentes configuraciones de semáforos, así como envoltorios sobre herramientas nativas de SUMO. Estas utilidades permiten cuantificar el impacto de las estrategias de control sobre métricas clave como tiempo de viaje, tiempos de espera y niveles de congestión.
 
-La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo \texttt{traffic-sim}, mostrando los componentes principales y sus interacciones con SUMO y el servicio \texttt{traffic-sync}.
+La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo traffic-sim, mostrando los componentes principales y sus interacciones con SUMO y el servicio traffic-sync.
 
 \begin{figure}[htbp]
     \centering
@@ -68,7 +68,7 @@ La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo \texttt
     
     \end{tikzpicture}
     \shorthandon{>}
-    \caption{Arquitectura del módulo \texttt{traffic-sim} y sus componentes principales \cite{sumo2025manual}.}
+    \caption{Arquitectura del módulo traffic-sim y sus componentes principales \cite{sumo2025manual}.}
     \label{fig:sim_architecture}
     \end{figure}     
 
@@ -76,7 +76,7 @@ La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo \texttt
 \subsection{Flujo de Integración}
 \label{subsec:traffic_sim_integration}
 
-El flujo de integración entre \texttt{traffic-sim} y \texttt{traffic-sync} sigue una secuencia cíclica que replica el comportamiento de un sistema de control de tráfico en línea:
+El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia cíclica que replica el comportamiento de un sistema de control de tráfico en línea:
 
 \begin{enumerate}
     \item \textbf{Ejecución de la simulación}: el orquestador inicia SUMO con el escenario suministrado y avanza la simulación paso a paso, según las rutas y patrones de demanda definidos en los archivos de configuración.
@@ -87,5 +87,5 @@ El flujo de integración entre \texttt{traffic-sim} y \texttt{traffic-sync} sigu
     \item \textbf{Continuación de la simulación}: la simulación se reanuda con los nuevos parámetros de control y se repite el proceso de detección y optimización mientras existan vehículos en red o hasta alcanzar el tiempo límite definido.
 \end{enumerate}
 
-De esta manera, \texttt{traffic-sim} se comporta como un ``laboratorio virtual'' donde se puede evaluar en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO integrados en el módulo de optimización, utilizando escenarios sintéticos o construidos a partir de mapas reales. La salida de herramientas auxiliares de construcción de escenarios (por ejemplo, generadores de redes y rutas compatibles con SUMO) sirve como entrada directa para el módulo de simulación, lo que facilita la creación sistemática de casos de prueba. Los resultados de las simulaciones, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan posteriormente mediante las utilidades de visualización para cuantificar de forma objetiva el impacto de las políticas de control propuestas.
+De esta manera, traffic-sim se comporta como un ``laboratorio virtual'' donde se puede evaluar en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO integrados en el módulo de optimización, utilizando escenarios sintéticos o construidos a partir de mapas reales. La salida de herramientas auxiliares de construcción de escenarios (por ejemplo, generadores de redes y rutas compatibles con SUMO) sirve como entrada directa para el módulo de simulación, lo que facilita la creación sistemática de casos de prueba. Los resultados de las simulaciones, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan posteriormente mediante las utilidades de visualización para cuantificar de forma objetiva el impacto de las políticas de control propuestas.
 

@@ -1,19 +1,19 @@
 \section{Módulo de Control y Orquestación}
 \label{sec:traffic_control}
 
-El módulo \texttt{traffic-control} actúa como orquestador central del sistema distribuido de gestión de tráfico: recibe observaciones vehiculares desde simulaciones o despliegues reales, valida y registra los datos, coordina el envío de información hacia los servicios de optimización (\texttt{traffic-sync}) y almacenamiento distribuido (\texttt{traffic-storage}), y expone una API REST unificada para clientes externos. Su objetivo es desacoplar los productores de datos (por ejemplo, \texttt{traffic-sim}) de los módulos especializados de optimización y persistencia, garantizando un flujo coherente y trazable de información a través del sistema.
+El módulo traffic-control actúa como orquestador central del sistema distribuido de gestión de tráfico: recibe observaciones vehiculares desde simulaciones o despliegues reales, valida y registra los datos, coordina el envío de información hacia los servicios de optimización (traffic-sync) y almacenamiento distribuido (traffic-storage), y expone una API REST unificada para clientes externos. Su objetivo es desacoplar los productores de datos (por ejemplo, traffic-sim) de los módulos especializados de optimización y persistencia, garantizando un flujo coherente y trazable de información a través del sistema.
 
 % -----------------------------------------------------------------------------
 \subsection{Arquitectura del Módulo}
 \label{subsec:traffic_control_architecture}
 
-La estructura de \texttt{traffic-control} se organiza en capas bien definidas: configuración, API, modelos de datos, servicios de dominio y utilidades de soporte. El servicio web principal (basado en FastAPI) implementa el punto de entrada \texttt{/process}, que procesa observaciones vehiculares completas, y puntos de entrada auxiliares como \texttt{/healthcheck} y operaciones sobre metadatos. El módulo de configuración centraliza parámetros del sistema, como las URLs de los servicios de almacenamiento y optimización, la cadena de conexión a la base de datos y los niveles de logging. El módulo de configuración de logs define la estructura de registro para toda la aplicación.
+La estructura de traffic-control se organiza en capas bien definidas: configuración, API, modelos de datos, servicios de dominio y utilidades de soporte. El servicio web principal (basado en FastAPI) implementa el punto de entrada \texttt{/process}, que procesa observaciones vehiculares completas, y puntos de entrada auxiliares como \texttt{/healthcheck} y operaciones sobre metadatos. El módulo de configuración centraliza parámetros del sistema, como las URLs de los servicios de almacenamiento y optimización, la cadena de conexión a la base de datos y los niveles de logging. El módulo de configuración de logs define la estructura de registro para toda la aplicación.
 
 La capa de modelos incluye esquemas de validación para estructurar peticiones y respuestas (esquemas de datos, optimización y descarga) y modelos de respuesta estandarizados. El módulo de validación encapsula la validación semántica de los datos: verifica versión de la carga útil, formato de marcas de tiempo, tipo de mensaje (datos u optimización), límites de tamaño de lote (1–10 sensores) e integridad de campos como identificador de semáforo, métricas y estadísticas vehiculares. Cualquier inconsistencia o violación de estos contratos se transforma en una respuesta de error coherente mediante el manejador centralizado de errores.
 
 La persistencia principal del sistema se realiza mediante IPFS y BlockDAG a través del módulo de almacenamiento, que garantiza almacenamiento distribuido, inmutabilidad y trazabilidad verificable. Complementariamente, el módulo de base de datos gestiona un índice auxiliar de metadatos en una base de datos SQL local, con el punto de entrada a la conexión de base de datos y el modelo de metadatos definiendo el esquema de almacenamiento: cada registro guarda, como mínimo, el identificador del semáforo, la marca de tiempo, el tipo de dato (por ejemplo, observación de tráfico u optimización) y referencias a los identificadores de contenido (CIDs y resúmenes criptográficos de transacción) almacenados en el módulo de almacenamiento. El servicio de base de datos proporciona operaciones de alto nivel para crear y consultar este índice local, que se exponen a través de puntos de entrada de metadatos (por ejemplo, \texttt{/metadata/traffic-light/\{id\}}, \texttt{/metadata/recent}, \texttt{/metadata/stats}) para facilitar consultas rápidas, mientras que los datos completos permanecen en el almacenamiento distribuido.
 
-La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo \texttt{traffic-control}, mostrando las capas de API, validación, servicios de dominio y persistencia, así como la integración con los módulos especializados del sistema.
+La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo traffic-control, mostrando las capas de API, validación, servicios de dominio y persistencia, así como la integración con los módulos especializados del sistema.
 
 \begin{figure}[htbp]
 \centering
@@ -64,7 +64,7 @@ La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo \te
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Arquitectura del módulo \texttt{traffic-control} mostrando el flujo de orquestación. El almacenamiento principal se realiza mediante IPFS y BlockDAG a través de \texttt{traffic-storage}, mientras que la base de datos SQL se utiliza únicamente como índice auxiliar de metadatos.}
+\caption{Arquitectura del módulo traffic-control mostrando el flujo de orquestación. El almacenamiento principal se realiza mediante IPFS y BlockDAG a través de traffic-storage, mientras que la base de datos SQL se utiliza únicamente como índice auxiliar de metadatos.}
 \label{fig:control_architecture}
 \end{figure}
 
@@ -72,7 +72,7 @@ La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo \te
 \subsection{Flujo de Procesamiento}
 \label{subsec:traffic_control_process}
 
-El punto de entrada \texttt{POST /process} es el principal para observaciones de tráfico, tanto provenientes de \texttt{traffic-sim} como de otros clientes. El flujo de procesamiento sigue una secuencia de pasos bien definida:
+El punto de entrada \texttt{POST /process} es el principal para observaciones de tráfico, tanto provenientes de traffic-sim como de otros clientes. El flujo de procesamiento sigue una secuencia de pasos bien definida:
 
 \begin{enumerate}
     \item \textbf{Recepción y validación}: la API recibe una carga útil en formato unificado (versión 2.0), que puede contener uno o varios sensores asociados a un mismo identificador de semáforo. El módulo de validación verifica que el mensaje cumpla con la estructura esperada (campos obligatorios en métricas y estadísticas vehiculares, rango de tamaño de lote, formatos de fecha, tipo de mensaje), generando errores explícitos en caso de inconsistencias.
@@ -89,13 +89,13 @@ Durante todo el flujo, el manejador centralizado de errores proporciona mecanism
 \subsection{Interacción con los Módulos}
 \label{subsec:traffic_control_integration}
 
-Desde el punto de vista del sistema global, \texttt{traffic-control} se posiciona como el módulo de orquestación que articula la interacción entre simulación, optimización y almacenamiento distribuido:
+Desde el punto de vista del sistema global, traffic-control se posiciona como el módulo de orquestación que articula la interacción entre simulación, optimización y almacenamiento distribuido:
 
 \begin{itemize}
-    \item \textbf{Relación con \texttt{traffic-sim}}: el módulo de simulación basado en SUMO detecta cuellos de botella y, cuando identifica una situación crítica en una intersección, construye una carga útil con métricas agregadas de tráfico y lo envía a \texttt{traffic-control} mediante el punto de entrada \texttt{/process}. De este modo, \texttt{traffic-sim} no necesita conocer detalles sobre \texttt{traffic-sync} ni \texttt{traffic-storage}; sólo interactúa con un servicio central que gestiona validación, almacenamiento y consulta de optimizaciones.
+    \item \textbf{Relación con traffic-sim}: el módulo de simulación basado en SUMO detecta cuellos de botella y, cuando identifica una situación crítica en una intersección, construye una carga útil con métricas agregadas de tráfico y lo envía a traffic-control mediante el punto de entrada \texttt{/process}. De este modo, traffic-sim no necesita conocer detalles sobre traffic-sync ni traffic-storage; sólo interactúa con un servicio central que gestiona validación, almacenamiento y consulta de optimizaciones.
 \end{itemize}
 
-La Figura~\ref{fig:control_sequence} muestra un diagrama de secuencia detallado del flujo completo de procesamiento en \texttt{traffic-control}, ilustrando las interacciones entre todos los componentes del sistema desde la recepción de datos hasta la persistencia distribuida.
+La Figura~\ref{fig:control_sequence} muestra un diagrama de secuencia detallado del flujo completo de procesamiento en traffic-control, ilustrando las interacciones entre todos los componentes del sistema desde la recepción de datos hasta la persistencia distribuida.
 
 \begin{figure}[htbp]
     \centering
@@ -147,9 +147,9 @@ La Figura~\ref{fig:control_sequence} muestra un diagrama de secuencia detallado 
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Relación con el módulo de optimización}: \texttt{traffic-control} actúa como cliente del módulo de optimización a través del proxy de sincronización. Para cada observación (o lote) recibida, reenvía los datos relevantes al módulo de optimización, que ejecuta el pipeline de lógica difusa y PSO para producir tiempos de verde optimizados y categorías de congestión. La respuesta del módulo de optimización se integra en la respuesta de \texttt{traffic-control}, permitiendo que los consumidores (por ejemplo, el módulo de simulación) apliquen las configuraciones recomendadas.
-    \item \textbf{Relación con el módulo de almacenamiento}: mediante el proxy de almacenamiento, \texttt{traffic-control} sube y recupera datos hacia/desde el módulo de almacenamiento, que a su vez utiliza IPFS, blockchain y BlockDAG como backend de almacenamiento y registro inmutable. \texttt{traffic-control} registra en su base de datos los identificadores de contenido (por ejemplo, CIDs) devueltos por el módulo de almacenamiento, de modo que las consultas de metadatos pueden resolverse localmente y, cuando es necesario, seguir la cadena de referencias hasta los datos almacenados en el sistema distribuido.
+    \item \textbf{Relación con el módulo de optimización}: traffic-control actúa como cliente del módulo de optimización a través del proxy de sincronización. Para cada observación (o lote) recibida, reenvía los datos relevantes al módulo de optimización, que ejecuta el pipeline de lógica difusa y PSO para producir tiempos de verde optimizados y categorías de congestión. La respuesta del módulo de optimización se integra en la respuesta de traffic-control, permitiendo que los consumidores (por ejemplo, el módulo de simulación) apliquen las configuraciones recomendadas.
+    \item \textbf{Relación con el módulo de almacenamiento}: mediante el proxy de almacenamiento, traffic-control sube y recupera datos hacia/desde el módulo de almacenamiento, que a su vez utiliza IPFS, blockchain y BlockDAG como backend de almacenamiento y registro inmutable. traffic-control registra en su base de datos los identificadores de contenido (por ejemplo, CIDs) devueltos por el módulo de almacenamiento, de modo que las consultas de metadatos pueden resolverse localmente y, cuando es necesario, seguir la cadena de referencias hasta los datos almacenados en el sistema distribuido.
 \end{itemize}
 
-Esta arquitectura modular permite que cada componente se especialice en su responsabilidad principal: \texttt{traffic-sim} en la generación de escenarios y detección de cuellos de botella; \texttt{traffic-sync} en la evaluación de congestión y optimización de tiempos semafóricos mediante lógica difusa y PSO; \texttt{traffic-storage} en la persistencia verificable de datos; y \texttt{traffic-control} en la validación, coordinación y exposición de un punto de entrada unificado al sistema. En conjunto, estos módulos forman una plataforma escalable y descentralizada para la gestión inteligente de tráfico urbano.
+Esta arquitectura modular permite que cada componente se especialice en su responsabilidad principal: traffic-sim en la generación de escenarios y detección de cuellos de botella; traffic-sync en la evaluación de congestión y optimización de tiempos semafóricos mediante lógica difusa y PSO; traffic-storage en la persistencia verificable de datos; y traffic-control en la validación, coordinación y exposición de un punto de entrada unificado al sistema. En conjunto, estos módulos forman una plataforma escalable y descentralizada para la gestión inteligente de tráfico urbano.
 
