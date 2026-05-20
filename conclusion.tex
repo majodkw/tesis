@@ -1,1 +1,123 @@
+% =============================================================================
+% CAPÍTULO: CONCLUSIÓN
+% =============================================================================
 
+El presente trabajo de tesis abordó el diseño, la implementación y la evaluación experimental
+de un sistema modular y descentralizado para la optimización del tráfico urbano y la
+persistencia verificable de datos asociados. La arquitectura propuesta integra simulación de
+tráfico mediante SUMO, clasificación de congestión con inferencia difusa tipo Mamdani,
+ajuste adaptativo de temporización semafórica mediante optimización por enjambre de partículas
+(PSO) y almacenamiento distribuido basado en IPFS y contratos inteligentes sobre una red
+BlockDAG. A diferencia de plataformas centralizadas convencionales, el sistema procesa datos
+provenientes de fuentes externas heterogéneas, expone sus capacidades mediante APIs REST y
+garantiza trazabilidad e integridad de los registros sin depender de un operador único de
+confianza.
+
+Los capítulos anteriores desarrollaron los fundamentos teóricos, el diseño de cada módulo y
+su interacción dentro del flujo completo: desde la generación de escenarios controlados y la
+detección de cuellos de botella en traffic-sim, pasando por el análisis y la
+optimización en traffic-sync, hasta la publicación auditable de resultados en
+traffic-storage. El capítulo de evaluación experimental consolidó estas piezas con
+mediciones reproducibles en hardware de consumo,
+demostrando que el sistema es viable para entornos municipales con recursos limitados.
+
+\section{Resultados principales}
+
+La evaluación del módulo traffic-sync confirmó una escalabilidad aproximadamente
+lineal del tiempo de procesamiento conforme aumenta el número de sensores simulados: para
+2000 sensores, el ciclo completo de análisis y optimización se completó en 67,6~s
+($\approx 0{,}014$~s por sensor). El consumo de memoria RAM se mantuvo estable entre
+198 y 219~MB en todos los escenarios, y el uso de CPU disminuyó del 72,3\% al 50,3\% a
+medida que creció la concurrencia, comportamiento coherente con el procesamiento asíncrono
+de FastAPI y con el bajo costo computacional unitario de los componentes difuso y PSO.
+Estos resultados respaldan la viabilidad de despliegues sobre hardware embebido de bajo costo,
+como unidades Raspberry~Pi en campo.
+
+En traffic-storage, las transacciones de almacenamiento alcanzaron confirmación en
+la red BlockDAG en $\approx$1~s, con costos inferiores a \$1{,}2$\times$10\textsuperscript{-5}~USD
+por transacción. Los tiempos de subida extremo a extremo se situaron entre 6,7 y 7,3~s según
+la densidad vehicular del escenario, mientras que la descarga se completó en $\approx$1,75~s,
+adecuado para flujos de auditoría y consulta sobre datos agregados de ciclos completados, no
+sobre control en tiempo estricto. La verificación de integridad mediante el CID de IPFS
+demostró que los contenidos recuperados conservan fielmente el original. Frente a Ethereum,
+el sistema superó en más del 95\% la latencia de confirmación y en más de cuatro órdenes de
+magnitud el costo operativo; frente a arquitecturas IoT-cloud centralizadas, la reducción de
+latencia de persistencia verificable superó el 60\%, con inmutabilidad garantizada por
+consenso distribuido y no por confianza en un operador central.
+
+En conjunto, los experimentos establecen que la combinación IPFS+BlockDAG constituye una
+alternativa técnicamente competitiva para monitoreo urbano de alta frecuencia con requisitos
+de trazabilidad auditables, mientras que el núcleo analítico escala de forma predecible hacia
+escenarios de optimización por zonas urbanas.
+
+\section{Divulgación científica}
+
+Los hallazgos centrales de esta investigación fueron sintetizados y publicados en el
+artículo de conferencia internacional titulado \emph{Scalable and Decentralized Urban Traffic
+Optimization with Verifiable Storage for Smart City Deployments},
+presentado en la \textit{2025 IEEE CHILEAN Conference on Electrical, Electronics Engineering,
+Information and Communication Technologies} (CHILECON), celebrada en Valparaíso, Chile, en
+octubre de 2025.\footnote{Disponible en IEEE Xplore:
+\nolinkurl{https://ieeexplore.ieee.org/document/11476672}.}
+El artículo documenta, en formato condensado,
+la arquitectura modular del sistema, las métricas de escalabilidad y almacenamiento aquí
+ampliadas, y la comparación con plataformas basadas en Ethereum y soluciones centralizadas.
+La publicación valida externamente los resultados experimentales de la tesis y posiciona la
+propuesta en el ámbito de sistemas inteligentes para ciudades con almacenamiento verificable
+y despliegue en dispositivos de bajo costo.
+
+\section{Limitaciones}
+
+Pese a los resultados favorables, deben reconocerse limitaciones relevantes para un
+despliegue productivo. En primer lugar, las evaluaciones se realizaron principalmente en
+entorno simulado y sobre hardware de laboratorio; la transferencia a escenarios urbanos reales
+implica heterogeneidad de sensores, variabilidad en las comunicaciones y resistencia
+institucional a soluciones descentralizadas, aspectos aún no validados en pilotos de campo.
+
+En segundo lugar, el módulo traffic-sync procesa actualmente un sensor por solicitud;
+si bien la arquitectura y las pruebas de estrés anticipan la evaluación conjunta por zonas,
+la optimización multivariable por clústeres de semáforos permanece como trabajo pendiente para
+lograr una dispersión efectiva del tráfico a escala territorial.
+
+En tercer lugar, traffic-storage dependió de un nodo IPFS gestionado por terceros
+(Pinata), introduce variabilidad en los tiempos de minado de la red pública de pruebas
+BlockDAG y concentra el cuello de botella en la confirmación on-chain ($\approx$3,5~s dentro
+del pipeline de subida). No se implementaron aún mecanismos activos de tolerancia a fallos ni
+replicación automática de contenido.
+
+Finalmente, la configuración operativa de las APIs requiere validación exhaustiva del entorno
+antes del despliegue, como evidenció el incidente de redirecciones HTTP~307 durante las primeras
+corridas del protocolo de prueba.
+
+\section{Trabajo futuro}
+
+Como continuación natural de este trabajo, se identifican las siguientes líneas de investigación
+y desarrollo:
+
+\begin{itemize}
+  \item Implementar agrupamiento jerárquico de sensores y optimización PSO por zonas urbanas,
+        habilitando la coordinación de clústeres de semáforos en paralelo.
+  \item Integrar fuentes de datos reales provenientes de dispositivos de conteo, sensores IoT
+        con conectividad LoRaWAN y sistemas de visión por computadora.
+  \item Desplegar nodos IPFS propios y evaluar redes BlockDAG privadas o permisionadas para
+        despliegues municipales, reduciendo la variabilidad de confirmación y la dependencia
+        de proveedores externos.
+  \item Optimizar la gestión de nonces y la precarga del estado de gas para acortar la fase de
+        confirmación en el pipeline de almacenamiento.
+  \item Diseñar esquemas de comunicación asíncrona mediante instancias intermedias que alimenten
+        en tiempo real los módulos del sistema desde el campo.
+  \item Ejecutar pilotos en ciudades intermedias de la región para medir resiliencia, calidad de
+        servicio e impacto en la fluidez del tráfico frente a plataformas centralizadas.
+  \item Explorar la integración con marcos de \textit{digital twins} urbanos para planificación
+        y simulación avanzada.
+\end{itemize}
+
+\section{Síntesis final}
+
+El sistema desarrollado en esta tesis ofrece una base tecnológica sólida que responde a
+criterios de trazabilidad, seguridad, integridad y eficiencia operativa en la gestión del
+tráfico urbano. Su enfoque modular y descentralizado, respaldado por evidencia cuantitativa y
+por la publicación derivada en CHILECON~2025, lo posiciona como una propuesta
+viable para municipios con presupuesto limitado. Las mejoras futuras deberán cerrar la brecha
+entre los resultados de laboratorio y la evidencia práctica en entornos urbanos reales,
+fortaleciendo la tolerancia a fallos y la optimización territorial del control semafórico.
