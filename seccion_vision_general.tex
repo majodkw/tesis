@@ -1,6 +1,6 @@
 El sistema propuesto se concibe como un ecosistema modular de microservicios para el monitoreo, análisis y optimización del tráfico urbano en tiempo (casi) real, diseñado para operar en entornos de ciudad inteligente. La arquitectura se compone de cuatro módulos principales, cada uno con responsabilidades bien definidas y comunicándose mediante interfaces estandarizadas (APIs REST y mensajes JSON). Esta organización modular facilita la escalabilidad, el mantenimiento independiente de componentes y la integración con fuentes de datos heterogéneas.
 
-\subsection{Módulos Principales}
+\section{Módulos Principales}
 
 El sistema se estructura en torno a cuatro módulos fundamentales:
 
@@ -14,7 +14,7 @@ El sistema se estructura en torno a cuatro módulos fundamentales:
     \item \textbf{traffic-storage}: Módulo de persistencia verificable que almacena datos del sistema en infraestructuras descentralizadas, garantizando trazabilidad, integridad e inmutabilidad de los registros históricos mediante el uso de tecnologías de almacenamiento distribuido y registro de auditoría.
 \end{itemize}
 
-\subsection{Flujo General de Información}
+\section{Flujo General de Información}
 
 El flujo operativo del sistema sigue un ciclo cerrado de captura, análisis, optimización y registro:
 
@@ -28,20 +28,26 @@ El flujo operativo del sistema sigue un ciclo cerrado de captura, análisis, opt
     \item \textbf{Persistencia verificable}: Los datos originales y los resultados de optimización se almacenan de forma distribuida, registrando identificadores de contenido en estructuras inmutables que permiten auditar y verificar el comportamiento histórico del sistema.
 \end{enumerate}
 
-\subsection{Ventajas de la Arquitectura Modular}
+\section{Justificación de la Arquitectura}
 
-La separación de responsabilidades en módulos independientes proporciona varios beneficios arquitectónicos y operativos:
+La elección de una arquitectura de microservicios sobre un diseño monolítico responde a requisitos concretos del sistema. Los cuatro módulos tienen ciclos de vida y stacks tecnológicos radicalmente distintos: traffic-sim depende de SUMO y librerías de red vial; traffic-sync combina scikit-fuzzy con optimización metaheurística; traffic-storage requiere un cliente web3 y el daemon de IPFS; traffic-control actúa exclusivamente como orquestador sin procesamiento intensivo. Empaquetar estos cuatro dominios en un solo proceso eliminaría la posibilidad de reemplazar, por ejemplo, el simulador por sensores IoT reales sin recompilar el núcleo analítico.
+
+La comunicación mediante REST/JSON se eligió frente a alternativas binarias como gRPC porque las latencias dominantes del sistema son la carga a IPFS ($\approx$1,2~s) y la confirmación en BlockDAG ($\approx$3,5~s), por lo que la sobrecarga de serialización JSON no es el cuello de botella. REST también reduce la barrera de integración con infraestructura municipal existente y con sensores IoT estándar que ya exponen APIs HTTP.
+
+La división en exactamente cuatro módulos refleja cuatro responsabilidades sin superposición: generar datos (traffic-sim), coordinar y validar (traffic-control), analizar y optimizar (traffic-sync), y persistir con verificabilidad (traffic-storage). Fusionar, por ejemplo, orquestación y optimización acoplaría la lógica de validación de entradas con el ciclo difuso-PSO, dificultando las pruebas independientes de cada componente.
+
+Las propiedades que resultan de estas decisiones son:
 
 \begin{itemize}
-    \item \textbf{Bajo acoplamiento}: Los módulos se comunican exclusivamente mediante interfaces REST bien definidas, lo que permite evolucionar o reemplazar componentes individuales sin afectar al resto del sistema.
-    
-    \item \textbf{Escalabilidad}: Cada módulo puede desplegarse de forma independiente en diferentes servidores o contenedores, permitiendo distribuir la carga computacional según las necesidades operativas.
-    
-    \item \textbf{Trazabilidad}: La combinación de almacenamiento distribuido con registros inmutables permite auditar el comportamiento del sistema, verificar la integridad de los datos y validar la conformidad con políticas operativas.
-    
-    \item \textbf{Reproducibilidad}: El uso de simulación permite evaluar el sistema bajo condiciones controladas, generando evidencias objetivas sobre el impacto de las estrategias de control propuestas.
-    
-    \item \textbf{Interoperabilidad}: La arquitectura basada en APIs REST facilita la integración con dispositivos IoT, plataformas de gestión urbana y otros sistemas externos que requieran consumir o producir datos de tráfico.
+    \item \textbf{Bajo acoplamiento}: Los módulos se comunican exclusivamente mediante contratos REST/JSON; evolucionar o reemplazar un componente no requiere modificar los demás.
+
+    \item \textbf{Escalabilidad}: traffic-sync escala linealmente con el número de sensores ($\approx 0{,}034$~s/sensor hasta 2000 sensores), como se demuestra en el Capítulo~\ref{chp:experimentos}.
+
+    \item \textbf{Trazabilidad verificable}: cada lote de datos recibe un CID de IPFS inmutable, registrado en el contrato \texttt{TrafficStorage.sol}, lo que permite auditar retroactivamente cualquier decisión de control.
+
+    \item \textbf{Reproducibilidad}: SUMO genera escenarios con semillas deterministas, garantizando que los experimentos del Capítulo~\ref{chp:experimentos} puedan reproducirse de forma independiente.
+
+    \item \textbf{Interoperabilidad}: la interfaz REST de traffic-control permite sustituir traffic-sim por sensores físicos sin cambios en los módulos de análisis ni de almacenamiento.
 \end{itemize}
 
 La Figura~\ref{fig:arquitectura_sistema_general} ilustra de forma esquemática la organización modular del sistema, mostrando los cuatro módulos principales y sus relaciones.
