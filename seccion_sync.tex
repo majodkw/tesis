@@ -1,10 +1,9 @@
-\section{Módulo de Optimización de Tiempos Semafóricos}
 \label{sec:algoritmos_traffic_sync}
 
 El módulo traffic-sync implementa el servicio de optimización de tráfico del sistema, exponiendo una API que recibe mediciones macroscópicas de tráfico por semáforo y devuelve configuraciones de tiempos optimizadas. Para ello combina dos componentes principales: un sistema de inferencia difusa tipo Mamdani, que evalúa el nivel de congestión a partir de variables de flujo, velocidad y densidad; y un algoritmo de optimización Particle Swarm Optimization (PSO), que ajusta dinámicamente los tiempos de verde con el objetivo de reducir la congestión estimada \cite{mamdani1975experiment,zadeh1965fuzzy,kennedy1995particle}.
 
 % -----------------------------------------------------------------------------
-\subsection{Lógica Difusa Mamdani}
+\section{Lógica Difusa Mamdani}
 \label{subsec:fuzzy_traffic_sync}
 
 La lógica difusa proporciona un marco formal para representar razonamiento humano impreciso mediante variables lingüísticas y conjuntos difusos con grados de pertenencia entre 0 y 1 \cite{zadeh1965fuzzy,zadeh1971similarity}. En un sistema de inferencia Mamdani, las reglas tienen la forma ``SI condición ENTONCES acción'', donde tanto antecedentes como consecuentes se modelan como conjuntos difusos, y la salida final se obtiene tras un proceso de agregación y defuzzificación \cite{mamdani1975experiment,ross2010fuzzy}. Este enfoque resulta especialmente adecuado para describir estados de tráfico como ``flujo libre'', ``denso'' o ``congestionado'' a partir de variables macroscópicas continuas \cite{erdinc2023application,musriroh2020application}.
@@ -159,7 +158,7 @@ Alto  & Alta  & Alta  & Severa \\
 \end{table}
 
 % -----------------------------------------------------------------------------
-\subsection{Optimización de Enjambre de Partículas (PSO)}
+\section{Optimización de Enjambre de Partículas (PSO)}
 \label{subsec:pso_traffic_sync}
 
 Optimización de Enjambre de Partículas (PSO) es un algoritmo de optimización metaheurística inspirado en el comportamiento colectivo de bandadas de aves y bancos de peces, en el que un conjunto de partículas explora el espacio de búsqueda guiado por su mejor experiencia individual y la mejor experiencia global del grupo \cite{kennedy1995particle,eberhart1995new}. Cada partícula representa una solución candidata (en este caso, una posible asignación de tiempo de verde para un grupo de semáforos) y actualiza su posición combinando tres componentes: inercia, atracción hacia su mejor posición personal y atracción hacia la mejor posición global conocida, ponderadas por parámetros que controlan el equilibrio entre exploración y explotación \cite{clerc2002particle,shi1998parameter}.
@@ -312,7 +311,7 @@ La Figura~\ref{fig:sync_architecture} ilustra la arquitectura general del módul
 \end{figure}
 
 % -----------------------------------------------------------------------------
-\subsection{Ejemplos de Ciclos de Optimización}
+\section{Ejemplos de Ciclos de Optimización}
 \label{subsec:sync_ejemplos}
 
 La Tabla~\ref{tab:sync_ejemplos} presenta cuatro ejecuciones reales del endpoint \texttt{POST /evaluate} de traffic-sync, con condiciones de tráfico que cubren el rango de operación del sistema: desde flujo libre hasta congestión severa. En cada caso se muestran las métricas de entrada observadas, el nivel de congestión evaluado por el sistema Mamdani antes de la optimización, el tiempo de verde asignado por PSO y el nivel de congestión estimado con ese tiempo de verde.

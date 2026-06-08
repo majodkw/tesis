@@ -1,10 +1,9 @@
-\section{Módulo de Simulación de Tráfico}
 \label{sec:traffic_sim}
 
 El módulo traffic-sim implementa un entorno de simulación de tráfico urbano basado en SUMO (Simulation of Urban MObility), utilizado para evaluar el comportamiento del sistema propuesto bajo escenarios controlados y reproducibles. SUMO es un simulador microscópico de tráfico ampliamente adoptado en la comunidad científica, que permite modelar redes viales, rutas de vehículos y programas semafóricos, y ejecutar simulaciones paso a paso mediante una interfaz de control remoto (\texttt{traci}) \cite{sumo2025manual}. En este trabajo, traffic-sim se integra con el servicio de optimización traffic-sync para cerrar el ciclo “simulación–detección–optimización–aplicación” sobre redes generadas a partir de datos reales o escenarios de prueba.
 
 % -----------------------------------------------------------------------------
-\subsection{Arquitectura del Módulo}
+\section{Arquitectura del Módulo}
 \label{subsec:traffic_sim_architecture}
 
 La estructura de traffic-sim se organiza en torno a un orquestador de simulación y un conjunto de componentes especializados para detección, control y comunicación externa. El orquestador de simulación encapsula la lógica principal: carga la configuración de SUMO (archivos de configuración de red, aristas, nodos, rutas y semáforos), inicializa la simulación mediante la interfaz de control remoto y gestiona el avance de la simulación en pasos discretos \cite{sumo2025manual}. El punto de entrada recibe como argumento un archivo comprimido de escenario (generado, por ejemplo, mediante la herramienta auxiliar de construcción de mapas) y ejecuta la simulación en modo sin interfaz gráfica o con interfaz gráfica.
@@ -73,7 +72,7 @@ La Figura~\ref{fig:sim_architecture} ilustra la arquitectura del módulo traffic
     \end{figure}     
 
 % -----------------------------------------------------------------------------
-\subsection{Flujo de Integración}
+\section{Flujo de Integración}
 \label{subsec:traffic_sim_integration}
 
 El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia cíclica que replica el comportamiento de un sistema de control de tráfico en línea:
@@ -90,7 +89,7 @@ El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia c�
 De esta manera, traffic-sim se comporta como un laboratorio virtual donde se evalúa en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO, con escenarios construidos a partir de mapas reales. Los resultados, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan mediante las utilidades de visualización.
 
 % -----------------------------------------------------------------------------
-\subsection{Escenario de Simulación y Parámetros de Detección}
+\section{Escenario de Simulación y Parámetros de Detección}
 \label{subsec:traffic_sim_scenario}
 
 \textbf{Red vial.} La red se construyó a partir de datos de OpenStreetMap para un sector del área metropolitana de Asunción, Paraguay (latitud $-25{,}34$--$-25{,}35$~S, longitud $-57{,}50$--$-57{,}51$~O), abarcando aproximadamente 0{,}8~km$^2$. La red comprende 22~nodos, 33~tramos y 7~intersecciones semaforizadas, con vehículos clasificados en automóvil, motocicleta, ómnibus y camión.

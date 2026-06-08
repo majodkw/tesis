@@ -1,10 +1,9 @@
-\section{Módulo de Control y Orquestación}
 \label{sec:traffic_control}
 
 El módulo traffic-control actúa como orquestador central del sistema distribuido de gestión de tráfico: recibe observaciones vehiculares desde simulaciones o despliegues reales, valida y registra los datos, coordina el envío de información hacia los servicios de optimización (traffic-sync) y almacenamiento distribuido (traffic-storage), y expone una API REST unificada para clientes externos. Su objetivo es desacoplar los productores de datos (por ejemplo, traffic-sim) de los módulos especializados de optimización y persistencia, garantizando un flujo coherente y trazable de información a través del sistema.
 
 % -----------------------------------------------------------------------------
-\subsection{Arquitectura del Módulo}
+\section{Arquitectura del Módulo}
 \label{subsec:traffic_control_architecture}
 
 La estructura de traffic-control se organiza en capas bien definidas: configuración, API, modelos de datos, servicios de dominio y utilidades de soporte. El servicio web principal (basado en FastAPI) implementa el punto de entrada \texttt{/process}, que procesa observaciones vehiculares completas, y puntos de entrada auxiliares como \texttt{/healthcheck} y operaciones sobre metadatos. El módulo de configuración centraliza parámetros del sistema, como las URLs de los servicios de almacenamiento y optimización, la cadena de conexión a la base de datos y los niveles de logging. El módulo de configuración de logs define la estructura de registro para toda la aplicación.
@@ -69,7 +68,7 @@ La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo tra
 \end{figure}
 
 % -----------------------------------------------------------------------------
-\subsection{Flujo de Procesamiento}
+\section{Flujo de Procesamiento}
 \label{subsec:traffic_control_process}
 
 El punto de entrada \texttt{POST /process} es el principal para observaciones de tráfico, tanto provenientes de traffic-sim como de otros clientes. El flujo de procesamiento sigue una secuencia de pasos bien definida:
@@ -86,7 +85,7 @@ El punto de entrada \texttt{POST /process} es el principal para observaciones de
 Durante todo el flujo, el manejador centralizado de errores proporciona mecanismos para capturar y clasificar errores en distintas categorías (validación, almacenamiento, sincronización, base de datos, errores genéricos), generando respuestas HTTP adecuadas y registros de log con contexto detallado para facilitar la depuración.
 
 % -----------------------------------------------------------------------------
-\subsection{Interacción con los Módulos}
+\section{Interacción con los Módulos}
 \label{subsec:traffic_control_integration}
 
 Desde el punto de vista del sistema global, traffic-control se posiciona como el módulo de orquestación que articula la interacción entre simulación, optimización y almacenamiento distribuido:
@@ -154,7 +153,7 @@ La Figura~\ref{fig:control_sequence} muestra un diagrama de secuencia detallado 
 Esta arquitectura modular permite que cada componente se especialice en su responsabilidad principal: traffic-sim en la generación de escenarios y detección de cuellos de botella; traffic-sync en la evaluación de congestión y optimización de tiempos semafóricos mediante lógica difusa y PSO; traffic-storage en la persistencia verificable de datos; y traffic-control en la validación, coordinación y exposición de un punto de entrada unificado al sistema. En conjunto, estos módulos forman una plataforma escalable y descentralizada para la gestión inteligente de tráfico urbano.
 
 % -----------------------------------------------------------------------------
-\subsection{Contrato de la API REST}
+\section{Contrato de la API REST}
 \label{subsec:traffic_control_api}
 
 La Tabla~\ref{tab:api_traffic_control} describe el contrato público de traffic-control: los endpoints disponibles, el método HTTP, los parámetros o cuerpo esperado y el código de respuesta en el caso exitoso.

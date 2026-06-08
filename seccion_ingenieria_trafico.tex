@@ -2,14 +2,13 @@
 % SECCIÓN X: INGENIERÍA DE TRÁFICO – CONTROL SEMAFÓRICO
 % =============================================================================
 
-\section{Ingeniería de Tráfico y Control Semafórico}
 \label{sec:traffic_engineering_signals}
 
 La ingeniería de tráfico es la rama de la ingeniería del transporte que se ocupa del planeamiento, diseño, operación y gestión de instalaciones viales, con el objetivo de proporcionar un movimiento seguro y eficiente de personas y mercancías \cite{garber2019traffic,roess2019traffic}. Su enfoque combina el análisis de la interacción entre usuarios, vehículos e infraestructura con el estudio de parámetros macroscópicos de flujo, como volumen, velocidad y densidad, para evaluar y mejorar el desempeño de redes viales urbanas y periurbanas.
 
 Dentro de este campo, el control semafórico constituye una de las herramientas centrales para regular el derecho de paso en intersecciones donde confluyen flujos vehiculares y peatonales conflictivos \cite{garber2019traffic,fhwa2008signal}. El diseño de planes de señalización semafórica abarca la definición de fases, la asignación de tiempos de verde, amarillo y rojo, y la coordinación entre intersecciones vecinas, con el fin de equilibrar seguridad, capacidad y niveles de servicio. La evolución desde esquemas de tiempos fijos hacia controles actuados y adaptativos refleja la necesidad de responder a patrones de demanda cada vez más variables, especialmente en entornos urbanos complejos.
 
-\subsection{Semáforos para el Control del Tránsito de Vehículos}
+\section{Semáforos para el Control del Tránsito de Vehículos}
 \label{subsec:semaforos_control_vehiculos}
 
 Los semáforos constituyen el principal dispositivo de control del derecho de paso en intersecciones urbanas y periurbanas con conflictos significativos de circulación vehicular y peatonal \cite{mopc2019manual}. En el Manual de Carreteras del Paraguay se establece que los semáforos para el control del tránsito de vehículos deben emplearse para asignar tiempos de paso y de detención a los distintos movimientos que confluyen en la intersección, con el objetivo de reducir conflictos, ordenar las maniobras y aumentar la seguridad vial \cite{mopc2019manual}. Esta función se complementa con el control de flujos peatonales y, cuando corresponde, con fases específicas para giros, carriles exclusivos y prioridades especiales (por ejemplo, transporte público o vehículos de emergencia) \cite{mopc2019manual}.
@@ -21,7 +20,7 @@ En la normativa paraguaya se especifican además criterios de ubicación, númer
 % -----------------------------------------------------------------------------
 
 
-\subsection{Semáforos de Tiempos Fijos o Predeterminados}
+\section{Semáforos de Tiempos Fijos o Predeterminados}
 \label{subsec:semaforos_tiempo_fijo}
 
 Los semáforos de tiempos fijos o predeterminados operan con un plan de señales cuya secuencia de fases y tiempos se define previamente y se repite cíclicamente, sin interacción directa con el tránsito en tiempo real \cite{mopc2019manual}. El Manual de Carreteras del Paraguay indica que estos equipos asignan a cada fase un tiempo de verde y un tiempo intermedio (amarillo y, si corresponde, tiempo de despeje en rojo) calculados a partir de volúmenes de tránsito de diseño, análisis de capacidad y niveles de servicio objetivo \cite{mopc2019manual}. Los tiempos de fase se mantienen constantes durante el período de operación del plan, aunque se contempla el uso de distintos planes fijos según la franja horaria (pico de la mañana, valle, pico de la tarde, periodo nocturno) \cite{mopc2019manual,garber2019traffic}.
@@ -38,7 +37,7 @@ Diversos estudios en ingeniería de tráfico han mostrado que, en condiciones de
 % -----------------------------------------------------------------------------
 
 
-\subsection{Semáforos Accionados por el Tránsito}
+\section{Semáforos Accionados por el Tránsito}
 \label{subsec:semaforos_accionados_transito}
 
 Los semáforos accionados por el tránsito utilizan información en tiempo real captada por detectores (por ejemplo, lazos inductivos, sensores de radar o cámaras de video) ubicados en las aproximaciones para modificar la duración de las fases dentro de límites mínimos y máximos definidos \cite{mopc2019manual}. El Manual de Carreteras del Paraguay distingue entre control parcialmente actuado (al menos una aproximación bajo control por detectores) y totalmente actuado (todas las aproximaciones controladas por demanda), estableciendo criterios de diseño para la ubicación de detectores, la distancia respecto de la línea de detención y los períodos iniciales mínimos y extensiones de verde en función de la velocidad que comprende el 85\,\% del tránsito en el acceso \cite{mopc2019manual}.
@@ -51,7 +50,7 @@ El uso de detectores también permite implementar estrategias avanzadas como ext
 % -----------------------------------------------------------------------------
 
 
-\subsection{Técnicas Algorítmicas y Computacionales para Control Adaptativo}
+\section{Técnicas Algorítmicas y Computacionales para Control Adaptativo}
 \label{subsec:tecnicas_algoritmicas}
 
 La creciente disponibilidad de sensores de tráfico en tiempo real, el incremento de la capacidad de procesamiento computacional y los avances en inteligencia artificial han posibilitado el desarrollo de estrategias de control semafórico que van más allá de los enfoques clásicos basados en planes de tiempo fijo o en lógicas actuadas simples \cite{papageorgiou2003review,stevanovic2010adaptive}. Estas técnicas algorítmicas y computacionales permiten abordar el problema de optimización de tiempos semafóricos en condiciones de demanda estocástica y no estacionaria, superando las limitaciones de los métodos analíticos tradicionales que asumen flujos uniformes y equilibrio de estado \cite{papageorgiou2003review,li2016realtime}.
@@ -70,7 +69,7 @@ En conjunto, estas técnicas algorítmicas y computacionales representan una evo
 % -----------------------------------------------------------------------------
 
 
-\subsection{Parámetros Clásicos de Diseño de Tiempos Semafóricos}
+\section{Parámetros Clásicos de Diseño de Tiempos Semafóricos}
 \label{subsec:parametros_diseno_tiempos}
 
 En el diseño clásico de control semafórico, la configuración de una intersección se describe mediante un conjunto reducido de parámetros numéricos que determinan su desempeño operativo: la longitud de ciclo, la repartición de verdes por fase (splits), los tiempos de amarillo y todo–rojo, y los tiempos perdidos en cada etapa del ciclo \cite{garber2019traffic,roess2019traffic}. La longitud de ciclo $C$ representa la duración total de una repetición completa de las fases del semáforo, mientras que los splits determinan qué fracción de ese ciclo se asigna al verde efectivo de cada movimiento o grupo de movimientos. Los tiempos de amarillo y todo–rojo se definen para advertir el fin del derecho de paso y garantizar el despeje seguro de la intersección antes de otorgar el verde a flujos conflictivos, y los tiempos perdidos agrupan intervalos en los que, por razones de seguridad o arranque, la capacidad efectiva de la intersección es menor a la teórica \cite{garber2019traffic}.
@@ -83,7 +82,7 @@ Métodos de diseño tradicional, como la formulación de Webster, proporcionan e
 % -----------------------------------------------------------------------------
 
 
-\subsection{Modelado del Control Semafórico como Problema de Optimización}
+\section{Modelado del Control Semafórico como Problema de Optimización}
 \label{subsec:modelado_optimizacion}
 
 El diseño y operación de sistemas de control semafórico puede formularse como un problema de optimización combinatoria en el que se busca determinar los valores de un conjunto de variables de decisión que minimicen (o maximicen) una función objetivo, respetando un conjunto de restricciones operativas y de seguridad \cite{wong1998optimizing,hillier1967mixed}. Esta perspectiva permite trascender los enfoques tradicionales basados en fórmulas empíricas y abordar de manera sistemática la complejidad inherente a redes urbanas con demanda variable y múltiples intersecciones interdependientes.
@@ -104,7 +103,7 @@ En síntesis, la formulación del control semafórico como problema de optimizac
 % -----------------------------------------------------------------------------
 
 
-\subsection{Coordinación de Semáforos y Progresión de Pelotones}
+\section{Coordinación de Semáforos y Progresión de Pelotones}
 \label{subsec:coordinacion_semaforos}
 
 En redes urbanas, los semáforos rara vez operan de manera completamente aislada; por el contrario, se busca coordinar varios equipos a lo largo de un corredor para facilitar la progresión de pelotones de vehículos y reducir el número de paradas sucesivas \cite{garber2019traffic,roess2019traffic}. La coordinación se logra ajustando parámetros como la longitud de ciclo común entre intersecciones, los offsets (desplazamientos temporales entre inicios de verde) y, en algunos casos, la secuencia de fases, de modo que un grupo de vehículos que parte con verde en una intersección encuentre verdes sucesivos en las siguientes, configurando la llamada ``onda verde'' \cite{fhwa2008signal,erdogan2013coordination}. Estos esquemas buscan compatibilizar la operación de múltiples nodos de control, sacrificando a veces el óptimo local de una intersección en beneficio del desempeño global del corredor.
@@ -115,7 +114,7 @@ La coordinación introduce dependencias fuertes entre los parámetros de distint
 % -----------------------------------------------------------------------------
 
 
-\subsection{Consideraciones Operativas y Métricas de Desempeño}
+\section{Consideraciones Operativas y Métricas de Desempeño}
 \label{subsec:metricas_desempeno}
 
 La evaluación de un plan de tiempos semafóricos se basa en un conjunto de métricas operativas que permiten cuantificar su impacto sobre los usuarios de la vía. Entre las más utilizadas se encuentran el retraso medio por vehículo, el número de paradas, la longitud de colas y el nivel de servicio (Level of Service, LOS); en estudios recientes se añaden además indicadores de consumo de combustible y emisiones contaminantes \cite{garber2019traffic,roess2019traffic,papageorgiou2003review}. El retraso medio mide la diferencia entre el tiempo de viaje real y el tiempo teórico sin interferencias, mientras que el número de paradas y la longitud de colas caracterizan la discontinuidad del flujo y la probabilidad de bloqueo de accesos o de intersecciones adyacentes \cite{garber2019traffic,fhwa2008signal}.
@@ -128,7 +127,7 @@ En el contexto de este trabajo, el desempeño de los planes semafóricos se eval
 % -----------------------------------------------------------------------------
 
 
-\subsection{Integración de Técnicas de Optimización y Control Difuso}
+\section{Integración de Técnicas de Optimización y Control Difuso}
 \label{subsec:integracion_optimizacion_difuso}
 
 La convergencia entre técnicas de optimización metaheurística y sistemas de inferencia difusa ha dado lugar a enfoques híbridos que combinan la capacidad de razonamiento aproximado y manejo de incertidumbre de la lógica difusa con la potencia de búsqueda y ajuste paramétrico de algoritmos como Particle Swarm Optimization (PSO), algoritmos genéticos y otras metaheurísticas \cite{papageorgiou2003review,dellorco2013harmony}. En el contexto del control semafórico, estos sistemas híbridos fuzzy--metaheurísticos permiten abordar de manera integrada dos desafíos complementarios: por un lado, la captura y formalización del conocimiento experto sobre las relaciones entre variables de tráfico y decisiones de control mediante reglas lingüísticas y funciones de pertenencia difusas; por otro, la optimización automática de los parámetros del sistema difuso (formas y umbrales de las funciones de pertenencia, pesos de las reglas, ganancias de salida) de forma que se maximice una función objetivo operativa, como la minimización de retrasos o la maximización del throughput de la red \cite{azimirad2010novel,yadav2021fuzzy}.
