@@ -47,6 +47,37 @@ La Figura~\ref{fig:fuzzy_velocidad} ilustra un ejemplo de variable lingüística
 
 En traffic-sync, el sistema de inferencia difusa se implementa en el módulo de lógica difusa, que está compuesto principalmente por el módulo de definición del sistema y el módulo de evaluación. El módulo de definición del sistema define las variables lingüísticas de entrada (por ejemplo, vehículos por minuto, velocidad media, tiempo medio de circulación, densidad) y la variable de salida asociada al nivel de congestión, junto con sus funciones de membresía triangulares y trapezoidales calibradas en base a datos de tráfico y criterios de ingeniería \cite{ross2010fuzzy,erdinc2023application}. La base de reglas Mamdani captura relaciones cualitativas del tipo ``SI flujo es alto Y velocidad es baja ENTONCES congestión es severa'', que reflejan tanto conocimiento experto como patrones observados en los datos \cite{musriroh2020application}.
 
+La Tabla~\ref{tab:fuzzy_mf} especifica los parámetros exactos de cada función de membresía implementada.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.25}
+\caption{Parámetros de las funciones de membresía del sistema difuso Mamdani en traffic-sync}
+\label{tab:fuzzy_mf}
+\centering
+\footnotesize
+\begin{tabular}{llll}
+\hline
+\textbf{Variable} & \textbf{Término} & \textbf{Tipo} & \textbf{Parámetros} \\
+\hline
+\multirow{3}{*}{Vehículos/min [0--50]} & Bajo  & Trapezoidal & $[0,\ 0,\ 15,\ 25]$ \\
+                                        & Medio & Gaussiana   & $\mu=30,\ \sigma=5$ \\
+                                        & Alto  & Trapezoidal & $[35,\ 40,\ 50,\ 50]$ \\
+\hline
+\multirow{3}{*}{Velocidad km/h [0--60]} & Baja  & Trapezoidal & $[0,\ 0,\ 20,\ 30]$ \\
+                                         & Media & Gaussiana   & $\mu=35,\ \sigma=5$ \\
+                                         & Alta  & Trapezoidal & $[40,\ 50,\ 60,\ 60]$ \\
+\hline
+\multirow{3}{*}{Densidad veh/km [0--150]} & Baja  & Trapezoidal & $[0,\ 0,\ 50,\ 80]$ \\
+                                           & Media & Gaussiana   & $\mu=100,\ \sigma=15$ \\
+                                           & Alta  & Trapezoidal & $[120,\ 130,\ 150,\ 150]$ \\
+\hline
+\multirow{3}{*}{Congestión [0--10]}    & Ninguna & Trapezoidal & $[0,\ 0,\ 2,\ 4]$ \\
+                                        & Leve    & Triangular  & $[3,\ 5,\ 7]$ \\
+                                        & Severa  & Trapezoidal & $[6,\ 8,\ 10,\ 10]$ \\
+\hline
+\end{tabular}
+\end{table}
+
 La Figura~\ref{fig:mamdani_flujo} resume el flujo de procesamiento en un sistema de inferencia Mamdani aplicado al problema de congestión vehicular, mostrando las etapas desde la fuzzificación de entradas hasta la defuzzificación que produce el nivel de congestión final.
 
 \begin{figure}[htbp]
@@ -80,6 +111,53 @@ La Figura~\ref{fig:mamdani_flujo} resume el flujo de procesamiento en un sistema
 
 El módulo de evaluación expone funciones de alto nivel que reciben vectores de métricas de tráfico en formato estructurado y devuelven, para cada sensor o semáforo, un valor numérico de congestión y su categoría lingüística asociada. Estas funciones se utilizan en el pipeline principal del servicio web: el punto de entrada \texttt{/evaluate} recibe un lote de sensores, construye las entradas para el sistema difuso, ejecuta la evaluación Mamdani sobre cada uno y genera un conjunto de salidas que se utilizarán como insumo para la etapa de optimización PSO. De esta forma, la lógica difusa actúa como módulo de evaluación de desempeño que transforma mediciones de tráfico en un índice de congestión interpretable, que el optimizador buscará reducir.
 
+La Tabla~\ref{tab:fuzzy_rules} presenta la base de reglas completa del sistema de inferencia
+Mamdani implementado en traffic-sync. Las 27 reglas cubren todas las combinaciones
+posibles de los tres términos lingüísticos de cada variable de entrada.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.2}
+\caption{Base de reglas completa del sistema de inferencia difusa Mamdani (27 reglas)}
+\label{tab:fuzzy_rules}
+\centering
+\footnotesize
+\begin{tabular}{ccc|c}
+\hline
+\textbf{Vehículos/min} & \textbf{Velocidad} & \textbf{Densidad} & \textbf{Congestión} \\
+\hline
+Bajo  & Baja  & Baja  & Leve \\
+Bajo  & Baja  & Media & Leve \\
+Bajo  & Baja  & Alta  & Severa \\
+Bajo  & Media & Baja  & Ninguna \\
+Bajo  & Media & Media & Leve \\
+Bajo  & Media & Alta  & Leve \\
+Bajo  & Alta  & Baja  & Ninguna \\
+Bajo  & Alta  & Media & Ninguna \\
+Bajo  & Alta  & Alta  & Leve \\
+\hline
+Medio & Baja  & Baja  & Leve \\
+Medio & Baja  & Media & Severa \\
+Medio & Baja  & Alta  & Severa \\
+Medio & Media & Baja  & Leve \\
+Medio & Media & Media & Leve \\
+Medio & Media & Alta  & Severa \\
+Medio & Alta  & Baja  & Ninguna \\
+Medio & Alta  & Media & Leve \\
+Medio & Alta  & Alta  & Leve \\
+\hline
+Alto  & Baja  & Baja  & Severa \\
+Alto  & Baja  & Media & Severa \\
+Alto  & Baja  & Alta  & Severa \\
+Alto  & Media & Baja  & Leve \\
+Alto  & Media & Media & Severa \\
+Alto  & Media & Alta  & Severa \\
+Alto  & Alta  & Baja  & Leve \\
+Alto  & Alta  & Media & Leve \\
+Alto  & Alta  & Alta  & Severa \\
+\hline
+\end{tabular}
+\end{table}
+
 % -----------------------------------------------------------------------------
 \subsection{Optimización de Enjambre de Partículas (PSO)}
 \label{subsec:pso_traffic_sync}
@@ -95,21 +173,21 @@ La Figura~\ref{fig:pso_enjambre} ilustra esquemáticamente el concepto del enjam
         % Ejes
         \draw[->,line width=1.3pt] (-0.2,0) -- (6.2,0) node[below,font=\Large] {$x_1$};
         \draw[->,line width=1.3pt] (0,-0.2) -- (0,4.2) node[left,font=\Large] {$x_2$};
-        
+
         % Partículas
         \fill[red] (1.0,3.0) circle (2.5pt) node[above left,font=\large] {$\mathbf{x}_1$};
         \fill[red] (2.0,2.5) circle (2.5pt) node[above,font=\large] {$\mathbf{x}_2$};
         \fill[red] (4.5,2.2) circle (2.5pt) node[above right,font=\large] {$\mathbf{x}_3$};
-        
+
         % Mejor personal de una partícula
         \fill[orange] (1.8,3.4) circle (2.5pt) node[above,font=\large] {$p_1$};
         \draw[->,orange,dashed,line width=1.8pt] (1.0,3.0) -- (1.8,3.4);
-        
+
         % Mejor global
         \fill[green!70!black] (3.0,1.6) circle (3pt) node[below right,font=\large] {$g$};
         \draw[->,green!70!black,dashed,line width=1.8pt] (2.0,2.5) -- (3.0,1.6);
         \draw[->,green!70!black,dashed,line width=1.8pt] (4.5,2.2) -- (3.0,1.6);
-        
+
         % Leyenda
         \node[draw,fill=white,anchor=west] at (6.5,2.0) {%
           \begin{tabular}{@{}l@{}}
@@ -126,7 +204,60 @@ La Figura~\ref{fig:pso_enjambre} ilustra esquemáticamente el concepto del enjam
 
 En el módulo traffic-sync, la lógica de PSO se implementa en el módulo de optimización por enjambre de partículas, que incluye el módulo de función de aptitud y el módulo de optimización. El módulo de optimización define la función principal de PSO, que recibe información agregada de tráfico por grupo (clúster) y aplica PSO para determinar el tiempo de verde óptimo por grupo. Cada partícula codifica un tiempo de verde propuesto para el ciclo semafórico, inicializado alrededor de un valor base calculado mediante fórmulas clásicas de ingeniería de tráfico (función de cálculo de tiempo de verde en el módulo de aptitud), y restringido por límites mínimos y máximos coherentes con la normativa \cite{webster1958traffic,garber2019traffic}. El algoritmo utiliza configuraciones típicas de PSO (número de partículas, peso de inercia, componentes cognitiva y social, límites de velocidad) y añade mecanismos prácticos como parada temprana y reinicios parciales para evitar estancamiento en óptimos locales pobres.
 
-La función de aptitud evalúa cada propuesta de tiempo de verde combinando la lógica difusa y las métricas de tráfico: dado un tiempo de verde candidato, recalcula métricas derivadas (como volumen efectivo, velocidad y densidad ajustadas) y vuelve a evaluar el nivel de congestión mediante el sistema Mamdani, obteniendo un valor numérico que se utiliza como medida a minimizar \cite{papageorgiou2003review,stevanovic2010adaptive}. De este modo, PSO busca explícitamente reducir el índice de congestión proporcionado por el módulo difuso, en lugar de optimizar una función analítica cerrada.
+La Tabla~\ref{tab:pso_params} especifica la configuración completa del algoritmo PSO
+implementado en traffic-sync.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.25}
+\caption{Parámetros de configuración del algoritmo PSO en traffic-sync}
+\label{tab:pso_params}
+\centering
+\footnotesize
+\begin{tabular}{lll}
+\hline
+\textbf{Parámetro} & \textbf{Símbolo} & \textbf{Valor} \\
+\hline
+Número de partículas      & $N_p$   & 30 \\
+Iteraciones máximas       & $T_{max}$ & 100 \\
+Factor de inercia         & $w$     & 0,8 \\
+Componente cognitiva      & $c_1$   & 1,5 \\
+Componente social         & $c_2$   & 1,5 \\
+Paciencia (parada temprana) & ---   & 10 iteraciones \\
+Umbral de mejora          & $\varepsilon$ & $1 \times 10^{-3}$ \\
+Tiempo de verde mínimo    & $t_{min}$ & 10~s \\
+Ciclo semafórico total    & $T_c$   & 90~s \\
+Espacio de búsqueda       & $t_v$   & $[10,\ 70]$~s \\
+\hline
+\end{tabular}
+\end{table}
+
+La función de aptitud evalúa cada propuesta de tiempo de verde $t_v$ combinando las métricas
+del clúster con el sistema difuso Mamdani \cite{papageorgiou2003review,stevanovic2010adaptive}.
+Dado un clúster con valores medios de vehículos por minuto ($VPM$), velocidad ($v$) y
+densidad ($\rho$), se computan los parámetros ajustados según la asignación $t_v$:
+
+\begin{align}
+VPM_{\text{adj}} &= VPM \cdot \frac{t_v}{T_c} \label{eq:vpm_adj} \\
+v_{\text{adj}}   &= v \cdot \bigl(1 + 0{,}01 \cdot (t_v - t_{\min})\bigr) \label{eq:v_adj} \\
+\rho_{\text{adj}} &= \rho \cdot \frac{T_c - t_v}{T_c} \label{eq:rho_adj}
+\end{align}
+
+\noindent donde $T_c = 90$~s es el ciclo semafórico total y $t_{\min} = 10$~s es el tiempo
+mínimo de verde. La aptitud de la partícula se define como el nivel de congestión difusa
+re-evaluado con los parámetros ajustados:
+
+\begin{equation}
+f(t_v) = \text{Mamdani}(VPM_{\text{adj}},\ v_{\text{adj}},\ \rho_{\text{adj}})
+\label{eq:fitness}
+\end{equation}
+
+\noindent El PSO minimiza $f(t_v)$ sobre $t_v \in [t_{\min},\ T_c - 20]$. La interpretación
+es directa: un mayor tiempo de verde permite que más vehículos atraviesen la intersección
+por ciclo (aumenta $VPM_{\text{adj}}$), mejora levemente la velocidad media y reduce la
+densidad acumulada durante la fase roja; el sistema Mamdani re-evalúa esas condiciones
+ajustadas y devuelve un índice de congestión menor. De este modo, el PSO busca
+explícitamente reducir el índice de congestión proporcionado por el módulo difuso,
+sin requerir una función analítica cerrada.
 
 En el pipeline de traffic-sync, orquestado por la función principal del servicio web, el flujo es el siguiente: (i) el servicio recibe un lote de sensores en la API \texttt{/evaluate}; (ii) las mediciones se pasan al módulo difuso para obtener un nivel de congestión por sensor; (iii) se agrupan sensores con características similares (agrupamiento jerárquico), produciendo un conjunto de grupos de tráfico; (iv) se construye un conjunto de datos por grupo con métricas agregadas (por ejemplo, vehículos por minuto, velocidad media, densidad media, categoría de congestión); y (v) se aplica la función de optimización PSO sobre estos grupos para obtener tiempos de verde optimizados por grupo. La respuesta de la API se construye como un lote de optimizaciones, donde cada entrada incluye el tiempo de verde recomendado, el tiempo de rojo derivado, el nivel de congestión original y optimizado, y las categorías lingüísticas correspondientes, preparados para su consumo posterior por el módulo de control de semáforos y por el módulo de almacenamiento.
 
@@ -148,23 +279,23 @@ La Figura~\ref{fig:sync_architecture} ilustra la arquitectura general del módul
 
     % Entrada
     \node[data] (input) {Métricas de\\tráfico};
-    
+
     % Lógica difusa
     \node[block, below=of input] (fuzzy) {Sistema Difuso\\Mamdani};
     \node[data, below=of fuzzy] (congestion) {Nivel de\\congestión};
-    
+
     % Agrupamiento
     \node[block, right=2.5cm of fuzzy] (clustering) {Agrupamiento\\jerárquico};
-    
+
     % PSO
     \node[block, below=of clustering] (pso) {Optimización\\PSO};
-    
+
     % Función de aptitud
     \node[block, left=2.5cm of pso] (fitness) {Función de\\aptitud};
-    
+
     % Salida
     \node[data, below=of pso] (output) {Tiempos\\optimizados};
-    
+
     % Flechas
     \draw[arrow] (input) -- (fuzzy);
     \draw[arrow] (fuzzy) -- (congestion);
@@ -179,4 +310,33 @@ La Figura~\ref{fig:sync_architecture} ilustra la arquitectura general del módul
 \caption{Arquitectura del módulo traffic-sync integrando lógica difusa Mamdani y optimización PSO.}
 \label{fig:sync_architecture}
 \end{figure}
+
+% -----------------------------------------------------------------------------
+\subsection{Ejemplos de Ciclos de Optimización}
+\label{subsec:sync_ejemplos}
+
+La Tabla~\ref{tab:sync_ejemplos} presenta cuatro ejecuciones reales del endpoint \texttt{POST /evaluate} de traffic-sync, con condiciones de tráfico que cubren el rango de operación del sistema: desde flujo libre hasta congestión severa. En cada caso se muestran las métricas de entrada observadas, el nivel de congestión evaluado por el sistema Mamdani antes de la optimización, el tiempo de verde asignado por PSO y el nivel de congestión estimado con ese tiempo de verde.
+
+\begin{table}[htbp]
+\centering
+\caption{Resultados reales del módulo traffic-sync ante cuatro escenarios de tráfico.}
+\label{tab:sync_ejemplos}
+\renewcommand{\arraystretch}{1.3}
+\footnotesize
+\begin{tabular}{lrrrcrcc}
+\toprule
+\multicolumn{4}{c}{\textbf{Entrada (observada)}} & \multicolumn{4}{c}{\textbf{Salida PSO}} \\
+\cmidrule(lr){1-4} \cmidrule(lr){5-8}
+\textbf{Escenario} & \textbf{VPM} & \textbf{Vel.} & \textbf{Dens.} & \textbf{Cong. orig.} & \textbf{Verde (s)} & \textbf{Cong. optim.} & \textbf{Categ.} \\
+& & \textbf{(km/h)} & & \textbf{(0--10)} & & \textbf{(0--10)} & \textbf{orig. → optim.} \\
+\midrule
+Flujo libre       &  8 & 48,0 & 0,12 & 1 & 14 & 1 & \textit{none} → \textit{none} \\
+Flujo moderado    & 18 & 22,0 & 0,39 & 4 & 64 & 1 & \textit{mild} → \textit{none} \\
+Flujo alto        & 28 & 32,0 & 0,52 & 5 & 19 & 1 & \textit{mild} → \textit{none} \\
+Congestión severa & 42 & 14,0 & 0,81 & 8 & 47 & 4 & \textit{severe} → \textit{mild} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+En los escenarios de flujo libre y moderado el optimizador reduce la congestión estimada a nivel \textit{none} (valor~1), asignando tiempos de verde acordes con la demanda observada. En el escenario de congestión severa (42~vehículos/min, 14~km/h, densidad~0,81), PSO no logra eliminar la congestión pero sí la reduce de categoría \textit{severe} a \textit{mild} (de~8 a~4 en la escala de~0 a~10), asignando un tiempo de verde de 47~s frente a los 14~s del caso de flujo libre. Este comportamiento es coherente con el diseño del sistema: la función de aptitud proyecta el efecto del tiempo de verde candidato sobre las variables macroscópicas de tráfico y re-evalúa la congestión con el sistema difuso, de modo que tiempos de verde más largos reducen la densidad y el tiempo de circulación estimados, desplazando la salida del sistema Mamdani hacia categorías de menor congestión.
 
