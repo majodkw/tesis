@@ -11,7 +11,7 @@ La estructura de traffic-sim se organiza en torno a un orquestador de simulació
 
 Los detectores de cuellos de botella monitorean métricas como densidad de vehículos, velocidad promedio y longitud de cola por tramo o aproximación. Los umbrales y parámetros de detección (por ejemplo, densidad mínima, velocidad máxima para considerar congestión, intervalo entre detecciones, duración mínima del evento) se centralizan en la configuración del sistema, lo que permite ajustar la sensibilidad del sistema sin modificar la lógica de detección. El controlador de semáforos expone métodos para actualizar dinámicamente los tiempos de verde y de ciclo de los semáforos modelados en SUMO, aplicando las optimizaciones recibidas desde el servicio de optimización.
 
-El cliente HTTP se comunica con la API del módulo de optimización: cuando se detecta un cuello de botella, este cliente construye una carga útil con métricas agregadas de tráfico para la intersección crítica y lo envía al punto de entrada correspondiente (por ejemplo, \texttt{/evaluate}). Las utilidades de cálculo y validación de métricas calculan y validan las métricas macroscópicas a partir de los datos de SUMO (por ejemplo, viajes completados, tiempos de viaje, velocidades y colas), garantizando que la información enviada al módulo de optimización siga el esquema esperado por el sistema difuso y el optimizador PSO.
+El cliente HTTP se comunica con la API del módulo de optimización: cuando se detecta un cuello de botella, este cliente construye una carga útil con métricas agregadas de tráfico para la intersección crítica y lo envía al punto de entrada correspondiente (por ejemplo, \texttt{/evaluate}). Las utilidades de métricas agregan y validan las variables macroscópicas de SUMO (viajes completados, tiempos de viaje, velocidades y colas), garantizando que la información enviada al módulo de optimización siga el esquema esperado por el sistema difuso y el optimizador PSO.
 
 Las herramientas de visualización proporcionan análisis posterior de resultados: parsers de archivos de salida de SUMO (información de viajes, resúmenes, datos de vehículos), funciones para generar gráficos de distribución de tiempos de viaje, evolución temporal de congestión y comparaciones entre diferentes configuraciones de semáforos, así como envoltorios sobre herramientas nativas de SUMO. Estas utilidades permiten cuantificar el impacto de las estrategias de control sobre métricas clave como tiempo de viaje, tiempos de espera y niveles de congestión.
 
@@ -87,5 +87,49 @@ El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia c�
     \item \textbf{Continuación de la simulación}: la simulación se reanuda con los nuevos parámetros de control y se repite el proceso de detección y optimización mientras existan vehículos en red o hasta alcanzar el tiempo límite definido.
 \end{enumerate}
 
-De esta manera, traffic-sim se comporta como un ``laboratorio virtual'' donde se puede evaluar en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO integrados en el módulo de optimización, utilizando escenarios sintéticos o construidos a partir de mapas reales. La salida de herramientas auxiliares de construcción de escenarios (por ejemplo, generadores de redes y rutas compatibles con SUMO) sirve como entrada directa para el módulo de simulación, lo que facilita la creación sistemática de casos de prueba. Los resultados de las simulaciones, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan posteriormente mediante las utilidades de visualización para cuantificar de forma objetiva el impacto de las políticas de control propuestas.
+De esta manera, traffic-sim se comporta como un laboratorio virtual donde se evalúa en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO, con escenarios construidos a partir de mapas reales. Los resultados, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan mediante las utilidades de visualización.
+
+% -----------------------------------------------------------------------------
+\subsection{Escenario de Simulación y Parámetros de Detección}
+\label{subsec:traffic_sim_scenario}
+
+\textbf{Red vial.} La red se construyó a partir de datos de OpenStreetMap para un sector del área metropolitana de Asunción, Paraguay (latitud $-25{,}34$--$-25{,}35$~S, longitud $-57{,}50$--$-57{,}51$~O), abarcando aproximadamente 0{,}8~km$^2$. La red comprende 22~nodos, 33~tramos y 7~intersecciones semaforizadas, con vehículos clasificados en automóvil, motocicleta, ómnibus y camión.
+
+\textbf{Demanda vehicular.} Se inyectaron 5\,000~vehículos con tiempos de salida distribuidos uniformemente en el horizonte de simulación (0--3\,600~s), correspondiendo a una tasa media de $\approx 83$~vehículos/minuto. La simulación avanza en pasos de 1~s durante 3\,600~pasos (1~hora de tráfico urbano), con un máximo de 1\,000~vehículos simultáneos en red.
+
+\textbf{Configuración semafórica base.} Cada semáforo opera inicialmente con un ciclo de 90~s, tiempos de verde ajustables entre 10~s y 120~s por fase, 3~s de luz amarilla y 1~s de todo--rojo entre fases conflictivas.
+
+\textbf{Umbrales del detector de cuellos de botella.} El detector analiza cada intersección cada 15~pasos de simulación (15~s) y confirma un evento solo si la condición persiste al menos 3~s. Se requiere un mínimo de 4~vehículos presentes y al menos dos de las siguientes condiciones:
+
+\begin{itemize}
+    \item Densidad $> 50$~veh/km.
+    \item Velocidad media $< 15$~km/h.
+    \item Cola $\geq 3$~vehículos detenidos ($< 1$~m/s).
+\end{itemize}
+
+La severidad se clasifica como \emph{alta} (densidad elevada y velocidad baja), \emph{media} (densidad elevada y cola significativa, o velocidad baja y cola significativa) o \emph{baja} (solo densidad elevada o velocidad muy reducida).
+
+\textbf{Carga útil hacia el módulo de optimización.} Al detectar un cuello de botella, el cliente HTTP construye una carga útil JSON con el esquema de la Tabla~\ref{tab:sim_payload}.
+
+\begin{table}[htbp]
+\centering
+\caption{Esquema del payload enviado de traffic-sim a traffic-sync ante un cuello de botella.}
+\label{tab:sim_payload}
+\begin{tabular}{lll}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Descripción / Ejemplo} \\
+\midrule
+\texttt{version} & string & Versión del protocolo (\texttt{"2.0"}) \\
+\texttt{type} & string & Tipo de mensaje (\texttt{"data"}) \\
+\texttt{timestamp} & string & ISO 8601 UTC (\texttt{"2025-09-12T14:23:01Z"}) \\
+\texttt{traffic\_light\_id} & string & ID del semáforo SUMO (\texttt{"20928101"}) \\
+\texttt{sensors[].controlled\_edges} & array & Tramos controlados (\texttt{["-143977090\#0", ...]}) \\
+\texttt{sensors[].metrics.vehicles\_per\_minute} & int & Volumen observado (\texttt{18}) \\
+\texttt{sensors[].metrics.avg\_speed\_kmh} & float & Velocidad media en km/h (\texttt{12.4}) \\
+\texttt{sensors[].metrics.avg\_circulation\_time\_sec} & float & Tiempo medio de circulación en s (\texttt{47.3}) \\
+\texttt{sensors[].metrics.density} & float & Densidad en veh/km (\texttt{67.2}) \\
+\texttt{sensors[].vehicle\_stats} & object & Conteo por tipo: \texttt{\{car, motorcycle, bus, truck\}} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
