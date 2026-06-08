@@ -182,3 +182,57 @@ La Figura~\ref{fig:storage_sequence} presenta un diagrama de secuencia que ilust
     \label{fig:storage_sequence}
 \end{figure}
 
+% -----------------------------------------------------------------------------
+\subsection{Interfaz del Contrato \texttt{TrafficStorage}}
+\label{subsec:trafficStorage_interface}
+
+El contrato inteligente \texttt{TrafficStorage} (Solidity \texttt{\^{}0.8.19}) es la única pieza de código desplegada on-chain en el sistema. Su diseño deliberadamente minimalista reduce la huella de gas al mínimo: no almacena datos en bruto sino únicamente los CID de IPFS junto con tres claves de búsqueda.
+
+\textbf{Tipos.} El enum \texttt{DataType} distingue dos categorías de registros:
+
+\begin{itemize}
+    \item \texttt{Data} (valor~0): lote de métricas de tráfico sin procesar.
+    \item \texttt{Optimization} (valor~1): resultado del ciclo difuso-PSO (tiempos de verde óptimos).
+\end{itemize}
+
+El almacenamiento interno es un mapeo triple privado:
+
+\medskip
+\centerline{\texttt{mapping(string => mapping(uint256 => mapping(DataType => string))) private records;}}
+\medskip
+
+\noindent indexado por \texttt{(trafficLightId, timestamp, dataType)}, lo que permite acceso O(1) a cualquier registro conociendo las tres claves.
+
+\textbf{Funciones y evento.} La Tabla~\ref{tab:trafficStorage_interface} describe la interfaz pública completa del contrato.
+
+\begin{table}[htbp]
+\centering
+\caption{Interfaz pública del contrato \texttt{TrafficStorage.sol}.}
+\label{tab:trafficStorage_interface}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{p{4.2cm}p{1.5cm}p{7.5cm}}
+\toprule
+\textbf{Nombre} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\texttt{storeRecord(} & \texttt{external} & Escribe \texttt{cid} bajo la clave compuesta \\
+\quad\texttt{string trafficLightId,} & & \texttt{(trafficLightId, timestamp, dataType)} \\
+\quad\texttt{uint256 timestamp,} & & y emite \texttt{RecordStored}. Sin modificador \\
+\quad\texttt{DataType dataType,} & & de acceso: cualquier cuenta puede invocarla. \\
+\quad\texttt{string cid)} & & \\
+\midrule
+\texttt{getRecord(} & \texttt{external view} & Retorna el CID almacenado para la clave \\
+\quad\texttt{string trafficLightId,} & & compuesta. Revierte con \texttt{\textquotedbl Record not found\textquotedbl} \\
+\quad\texttt{uint256 timestamp,} & & si no existe entrada para esa combinación. \\
+\quad\texttt{DataType dataType)} & & \\
+\midrule
+\texttt{RecordStored(} & \texttt{event} & Emitido por \texttt{storeRecord} al completarse. \\
+\quad\texttt{string trafficLightId,} & & Los indexadores de la red pueden filtrar \\
+\quad\texttt{uint256 timestamp,} & & eventos por semáforo o por tipo para \\
+\quad\texttt{DataType dataType,} & & reconstruir el historial de una intersección. \\
+\quad\texttt{string cid)} & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Estimaciones de gas.} Medidas sobre la red BlockDAG de prueba con las cargas reales del sistema (véase Capítulo~\ref{chp:experimentos}), la llamada a \texttt{storeRecord} consume en promedio 36\,232~unidades de gas para registros de tipo \texttt{Data} y 95\,624~unidades para registros de tipo \texttt{Optimization}. La diferencia refleja el mayor tamaño del CID de IPFS en los paquetes de optimización, que contienen vectores de tiempos de verde además de los metadatos. La función \texttt{getRecord} es de solo lectura (\texttt{view}) y no incurre en costo de gas cuando se invoca off-chain.
+
