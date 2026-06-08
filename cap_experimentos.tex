@@ -133,14 +133,13 @@ de vehículos por minuto.
 La Figura~\ref{fig:sync_tiempo} muestra la evolución del tiempo total de ejecución en función
 de la cantidad de sensores simulados. Los valores obtenidos, que van desde 15,87~s para
 250~sensores hasta 67,59~s para 2000~sensores, evidencian un crecimiento aproximadamente
-lineal con una pendiente de $\approx 0{,}034$~s por sensor adicional procesado, o equivalentemente,
-$\approx 0{,}014$~segundos por sensor en promedio sobre todo el rango evaluado.
+lineal con una pendiente de $\approx 0{,}034$~s por sensor adicional procesado.
 Este comportamiento lineal es altamente favorable: indica que el módulo no incurre en
 sobrecarga superlineal a medida que se incrementa la carga de trabajo, y que los tiempos
 de respuesta son predecibles y controlables mediante particionamiento horizontal de los
 sensores. Para la escala más exigente evaluada (2000 sensores), el ciclo completo de
 análisis y optimización se completa en 67,6~s, lo que representa una capacidad de
-$\approx 0{,}014$~s/sensor y confirma la viabilidad del módulo para escenarios de
+$\approx 0{,}034$~s/sensor y confirma la viabilidad del módulo para escenarios de
 optimización por zonas a escala urbana real.
 
 \begin{figure}[htbp]
@@ -174,7 +173,7 @@ optimización por zonas a escala urbana real.
 \end{axis}
 \end{tikzpicture}
 \caption{Tiempo de ejecución del módulo traffic-sync en función de la cantidad de
-sensores simulados. El crecimiento aproximadamente lineal ($\approx$0,014~s/sensor) confirma
+sensores simulados. El crecimiento aproximadamente lineal ($\approx$0,034~s/sensor) confirma
 la escalabilidad del módulo.}
 \label{fig:sync_tiempo}
 \end{figure}
@@ -188,14 +187,18 @@ exhibe tendencias en apariencia contrapuestas pero explicables por la naturaleza
 implementación.
 
 El uso de CPU disminuye progresivamente desde el 72,3\% observado con 250~sensores
-hasta el 50,3\% con 2000~sensores. Esta reducción relativa se debe a que el servidor
-FastAPI gestiona las peticiones de forma asíncrona: a medida que el número de solicitudes
-simultáneas crece, el tiempo de espera entre operaciones I/O se amortiza mejor y el
-procesador puede intercalar trabajo útil de forma más eficiente, reduciendo así el porcentaje
-de ciclos activos sobre el total del tiempo transcurrido. Adicionalmente, tanto el sistema
-de inferencia difusa Mamdani como el optimizador PSO fueron seleccionados por su bajo costo
-computacional unitario, lo que les permite mantener un rendimiento constante independientemente
-del volumen de entradas paralelas.
+hasta el 50,3\% con 2000~sensores. Esta reducción relativa se explica por la naturaleza
+de la medición: el porcentaje de CPU se calcula como la razón entre el tiempo de procesador
+activo y el tiempo total transcurrido (tiempo de pared). A medida que el volumen de sensores
+crece, el tiempo de pared aumenta de forma aproximadamente lineal, mientras que el tiempo
+de CPU activo por unidad de trabajo permanece prácticamente constante; el denominador crece
+más rápido que el numerador. Entre lotes sucesivos existen períodos de relativa inactividad
+(serialización de respuestas, despacho de peticiones HTTP, sobrecarga del intérprete Python)
+que incrementan el tiempo de pared sin contribuir proporcionalmente a los ciclos de
+procesador. Cabe señalar que tanto el sistema de inferencia difusa Mamdani como el
+optimizador PSO son operaciones mayoritariamente CPU-\textit{bound} por unidad; la caída
+del porcentaje refleja un efecto de dilución temporal, no una reducción del trabajo
+computacional efectivo por sensor.
 
 El consumo de memoria RAM, por su parte, se mantiene estable en el rango de
 198--219~MB en todos los escenarios evaluados, creciendo apenas 20,8~MB al pasar de
@@ -286,9 +289,10 @@ bajo distintas densidades de datos.
 \label{subsec:storage_base}
 
 Para caracterizar el desempeño del pipeline de almacenamiento en condiciones controladas, se
-ejecutaron múltiples transacciones reales de subida y descarga
-midiendo cuatro indicadores: tiempo total de la operación extremo a extremo, tiempo de
-confirmación en la red BlockDAG, latencia de red y costo por transacción. La
+ejecutaron múltiples transacciones reales de subida y descarga sobre un nodo IPFS local
+(Kubo) con conexión directa a la red BlockDAG, midiendo cuatro indicadores: tiempo total
+de la operación extremo a extremo, tiempo de confirmación en la red BlockDAG, latencia de
+red y costo por transacción. La
 Tabla~\ref{tab:storage_metricas_base} resume los resultados obtenidos.
 
 \begin{table}[htbp]
@@ -304,16 +308,23 @@ Tabla~\ref{tab:storage_metricas_base} resume los resultados obtenidos.
 Tiempo total (s)       & $2{,}47 \pm 0{,}26$ & $1{,}91 \pm 0{,}19$ \\
 Confirmación (s)       & $1{,}12 \pm 0{,}14$ & $0{,}98 \pm 0{,}11$ \\
 Latencia de red (ms)   & $184 \pm 21$        & $167 \pm 19$        \\
-Gas utilizado          & $22{.}051 \pm 303$  & $21{.}187 \pm 265$  \\
-Costo estimado (USD)   & $0{,}000012 \pm 0{,}000002$ & $0{,}000009 \pm 0{,}000001$ \\
+Gas utilizado (upload) & $36.232$--$95.624$\textsuperscript{†}  & ---                 \\
+Costo estimado (USD)   & $<0{,}00002$--$<0{,}00005$\textsuperscript{†} & ---       \\
 \hline
 \end{tabular}
+\smallskip
+
+\noindent\textsuperscript{†}~Rango entre datos de tráfico (36.232 unidades,
+$<$\$0{,}00002) y resultados de optimización (95.624 unidades, $<$\$0{,}00005);
+la descarga usa \texttt{getRecord}, función \textit{view} sin costo on-chain.
+Detalle por tipo en Tabla~\ref{tab:storage_gas}.
 \end{table}
 
-Los tiempos de confirmación en la red BlockDAG, del orden de 1~segundo tanto para escritura
-como para lectura, y el costo por transacción, inferior a \$1{,}2 $\times$ 10\textsuperscript{-5}~USD,
-confirman la viabilidad del sistema para monitoreo de alta frecuencia; la comparación con
-tecnologías alternativas se detalla en la Sección~\ref{sec:experimentos_comparativa}.
+Los tiempos de confirmación en la red BlockDAG, del orden de 1~segundo, y el costo por
+transacción, inferior a \$5 $\times$ 10\textsuperscript{-5}~USD según el tipo de dato
+almacenado, confirman la viabilidad del sistema para monitoreo de alta frecuencia;
+la comparación con tecnologías alternativas se detalla en la
+Sección~\ref{sec:experimentos_comparativa}.
 
 % -----------------------------------------------------------------------------
 \subsection{Pruebas con Escenarios de Tráfico Vehicular}
@@ -327,9 +338,13 @@ y alto, con 150--200 vehículos en situación de congestión o pico de demanda.
 Los payloads de cada escenario se generaron de forma sintética utilizando el formato unificado
 versión~2.0 del sistema, incluyendo métricas por semáforo como vehículos por minuto,
 velocidad promedio, tiempo de circulación, densidad y clasificación por tipo de vehículo
-(motocicletas, automóviles, autobuses y camiones). Cada escenario se ejecutó mediante
-5~corridas independientes para obtener estimaciones estadísticamente representativas de
-media y desviación estándar.
+(motocicletas, automóviles, autobuses y camiones). A diferencia de las pruebas de la
+Sección~\ref{subsec:storage_base}, este protocolo utilizó Pinata como servicio IPFS
+gestionado en la nube, lo que introduce latencia adicional por autenticación remota y
+transferencia vía gateway externo; esto explica que los tiempos de subida reportados aquí
+(6,7--7,3~s) sean superiores a los obtenidos con nodo local (2,47~s). Cada escenario se
+ejecutó mediante 5~corridas independientes para obtener estimaciones estadísticamente
+representativas de media y desviación estándar.
 
 La Tabla~\ref{tab:storage_escenarios} presenta los tiempos promedio de subida y descarga
 para cada escenario, considerando únicamente las corridas con respuesta HTTP~200, que son
@@ -422,10 +437,13 @@ con la API de Pinata y la transferencia del contenido hasta obtener el CID insum
 aproximadamente 1,2~s. La segunda fase es la preparación de la transacción
 BlockDAG: incluye la verificación del estado del nodo y el balance de la cuenta,
 el cálculo dinámico del precio de gas, la obtención del nonce actual y la firma
-criptográfica de la transacción; en conjunto, esta fase demanda aproximadamente 3,3~s.
+criptográfica de la transacción; en conjunto, esta fase demanda aproximadamente 2,3~s.
 La tercera fase es la confirmación en la red: el tiempo que transcurre desde
 el envío de la transacción hasta que es incluida en un bloque minado y confirmada
-es de aproximadamente 3,5~s.
+es de aproximadamente 3,5~s en las pruebas por escenarios. Este valor es superior
+al registrado en las pruebas base (1,12~s, Tabla~\ref{tab:storage_metricas_base}),
+diferencia atribuible a las condiciones variables de la red BlockDAG pública entre
+sesiones de prueba realizadas en distintas fechas.
 
 La Figura~\ref{fig:storage_pipeline} muestra la composición proporcional de estas
 etapas para las operaciones de subida y descarga. En el caso de la descarga, el
@@ -444,7 +462,7 @@ un tiempo total de ~1,6~s.
     xlabel={Tiempo (s)},
     symbolic y coords={Descarga,Subida},
     ytick=data,
-    xmin=0, xmax=9,
+    xmin=0, xmax=8,
     xmajorgrids=true,
     grid style={dashed, gray!40},
     bar width=22pt,
@@ -460,7 +478,7 @@ un tiempo total de ~1,6~s.
 };
 \addlegendentry{IPFS / Consulta}
 \addplot+[fill=orange!60!white, draw=orange!80!black] coordinates {
-    (3.3,Subida)
+    (2.3,Subida)
     (0.7,Descarga)
 };
 \addlegendentry{Prep. tx / Descarga IPFS}
@@ -473,7 +491,7 @@ un tiempo total de ~1,6~s.
 \end{tikzpicture}
 \caption{Desglose del tiempo de ejecución en las operaciones de subida y descarga del
 módulo traffic-storage. La confirmación en la red BlockDAG domina la latencia
-de subida ($\approx$43\%), mientras que la descarga se completa en $\approx$1,6~s
+de subida ($\approx$50\%), mientras que la descarga se completa en $\approx$1,6~s
 sin necesidad de esperar confirmación.}
 \label{fig:storage_pipeline}
 \end{figure}
@@ -550,8 +568,13 @@ Incluso para el tipo de operación más costosa, el almacenamiento de resultados
 optimización con 95.624 unidades de gas, el costo por transacción se mantiene por
 debajo de \$0{,}00005~USD\@. Considerando una frecuencia de reporte típica de un ciclo
 cada 60~segundos por semáforo, el costo anual de almacenamiento on-chain para un
-semáforo individual sería inferior a \$0{,}88~USD, un valor operativamente negligible
-que contrasta de forma marcada con los costos de redes blockchain tradicionales.
+semáforo individual sería inferior a \$0{,}88~USD según las condiciones observadas
+durante los experimentos. Sin embargo, esta estimación debe interpretarse con cautela:
+los experimentos se realizaron sobre una red BlockDAG pública de pruebas (testnet), cuyo
+token no posee valor de mercado real. Los costos en una red de producción (mainnet)
+dependerán del precio del token en el momento del despliegue y de la demanda de la red,
+por lo que este valor constituye únicamente un orden de magnitud comparativo, no una
+proyección de costo operativo real.
 
 % =============================================================================
 \section{Comparación con Tecnologías Alternativas}
@@ -622,7 +645,8 @@ Más allá de la comparación entre plataformas descentralizadas, la arquitectur
 propuesta también supera a las soluciones IoT-cloud centralizadas convencionales
 en términos de latencia de persistencia verificable. Los sistemas centralizados
 típicos introducen latencias de confirmación de escritura del orden de 3--6~s
-cuando incluyen mecanismos de integridad (firmas digitales, logs de auditoría),
+cuando incluyen mecanismos de integridad (firmas digitales, logs de auditoría)
+\cite{singh2020blockchain,conoscenti2016blockchain},
 mientras que la confirmación BlockDAG obtenida en este trabajo alcanzó $\approx$1~s.
 Esto representa una reducción de latencia superior al 60\% respecto
 a dichos sistemas, con la ventaja adicional de que la inmutabilidad está garantizada
@@ -654,7 +678,8 @@ módulo traffic-storage, la latencia de almacenamiento (6{,}7--7{,}3~s de subida
 aceptable para el modelo de reporte periódico del sistema, que opera sobre datos agregados
 de ciclos completados, no sobre control en tiempo estricto; y la descarga
 ($\approx$1{,}75~s) es conveniente para flujos de auditoría y consulta. El cuello de
-botella identificado es el tiempo de confirmación en la red BlockDAG ($\approx$3{,}5~s),
+botella identificado es el tiempo de confirmación en la red BlockDAG ($\approx$3{,}5~s
+en las pruebas por escenarios; 1,12~s en las pruebas base con nodo local),
 cuyo impacto podría reducirse mediante la optimización de la gestión de nonces y la
 precarga del estado de gas antes del ciclo de almacenamiento, sin modificar la
 infraestructura de red.
@@ -672,8 +697,8 @@ experimenta interrupciones. La transición a un nodo IPFS propio (por ejemplo,
 Kubo) eliminaría esta dependencia a costa de mayor complejidad operativa.
 
 El segundo desafío es la variabilidad en los tiempos de minado de la
-red BlockDAG: si bien el promedio se sitúa en $\approx$3{,}5~s, los valores
-individuales pueden desviarse significativamente, especialmente bajo condiciones
+red BlockDAG: si bien el promedio en las pruebas por escenarios se sitúa en $\approx$3{,}5~s,
+los valores individuales pueden desviarse significativamente, especialmente bajo condiciones
 de congestión de la red pública de pruebas. En una red BlockDAG privada o
 permisionada, opción viable para despliegues municipales, este comportamiento
 sería más predecible y controlable.
@@ -689,7 +714,7 @@ contar con scripts de verificación previa del entorno como parte del proceso de
 despliegue.
 
 Las evaluaciones cubren los dos módulos nucleares del sistema: traffic-sync demostró
-escalabilidad lineal ($\approx$0{,}014~s/sensor) y operación estable en menos de
+escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de
 220~MB de RAM; traffic-storage alcanzó confirmación BlockDAG en $\approx$1~s a un
 costo inferior a \$1{,}2$\times$10\textsuperscript{-5}~USD por transacción, superando
 a Ethereum en latencia de confirmación (>95\%) y costo operativo (>4 órdenes de magnitud).
