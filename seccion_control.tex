@@ -153,3 +153,34 @@ La Figura~\ref{fig:control_sequence} muestra un diagrama de secuencia detallado 
 
 Esta arquitectura modular permite que cada componente se especialice en su responsabilidad principal: traffic-sim en la generación de escenarios y detección de cuellos de botella; traffic-sync en la evaluación de congestión y optimización de tiempos semafóricos mediante lógica difusa y PSO; traffic-storage en la persistencia verificable de datos; y traffic-control en la validación, coordinación y exposición de un punto de entrada unificado al sistema. En conjunto, estos módulos forman una plataforma escalable y descentralizada para la gestión inteligente de tráfico urbano.
 
+% -----------------------------------------------------------------------------
+\subsection{Contrato de la API REST}
+\label{subsec:traffic_control_api}
+
+La Tabla~\ref{tab:api_traffic_control} describe el contrato público de traffic-control: los endpoints disponibles, el método HTTP, los parámetros o cuerpo esperado y el código de respuesta en el caso exitoso.
+
+\begin{table}[htbp]
+\centering
+\caption{Endpoints de la API REST de traffic-control.}
+\label{tab:api_traffic_control}
+\renewcommand{\arraystretch}{1.3}
+\footnotesize
+\begin{tabular}{p{1.5cm}p{5.2cm}p{4.5cm}p{1.3cm}}
+\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Entrada / Parámetros} & \textbf{HTTP} \\
+\midrule
+GET & \texttt{/healthcheck} & — & 200 \\
+POST & \texttt{/process} & JSON \texttt{TrafficData} (versión 2.0; 1–10 sensores) & 200 \\
+GET & \texttt{/metadata/traffic-light/\{id\}} & \texttt{?limit=100} (int) & 200 \\
+GET & \texttt{/metadata/type/\{type\}} & \texttt{type}: \texttt{data} | \texttt{optimization}; \texttt{?limit=100} & 200 \\
+GET & \texttt{/metadata/recent} & \texttt{?limit=50} (int) & 200 \\
+GET & \texttt{/metadata/stats} & — & 200 \\
+DELETE & \texttt{/metadata/traffic-light/\{id\}} & — & 200 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El endpoint \texttt{POST /process} es el punto de entrada principal. Acepta un JSON con los campos \texttt{version} (cadena semver), \texttt{type} (\texttt{"data"}), \texttt{timestamp} (ISO 8601 UTC), \texttt{traffic\_light\_id} (solo dígitos) y \texttt{sensors} (lista de 1 a 10 elementos con \texttt{metrics} y \texttt{vehicle\_stats}). En caso de éxito, la respuesta contiene el estado del procesamiento, los tiempos de verde optimizados devueltos por traffic-sync y los identificadores de contenido (CID) y hash de transacción devueltos por traffic-storage. Los errores de validación retornan 422 (Unprocessable Entity) con detalle de campo; los errores de servicio externo retornan 503.
+
+Los módulos internos exponen sus propios endpoints de uso exclusivo del orquestador: traffic-sync ofrece \texttt{POST /evaluate} (lista de observaciones de sensores, retorna tiempos de verde y nivel de congestión por grupo), y traffic-storage ofrece \texttt{POST /upload/} (sube datos a IPFS y registra el CID en BlockDAG, retorna CID y hash de transacción) y \texttt{POST /download/} (recupera datos de IPFS a partir de un CID). Estos endpoints no forman parte de la interfaz pública del sistema y no son accedidos directamente por traffic-sim.
+
