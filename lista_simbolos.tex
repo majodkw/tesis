@@ -101,11 +101,14 @@
 
 \begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
   \item[$x_i$]       Posición de la partícula $i$ en el espacio de búsqueda del PSO;
-                     representa una configuración candidata de tiempos semafóricos.
+                     en traffic-sync representa un largo de ciclo semafórico candidato
+                     (variable escalar $C$, no un vector de tiempos por fase).
   \item[$v_i$]       Velocidad de la partícula $i$ en el PSO; determina la magnitud y
                      dirección del desplazamiento en cada iteración.
-  \item[$p_i$]       Mejor posición histórica (\textit{personal best}) de la partícula $i$.
-  \item[$g$]         Mejor posición global (\textit{global best}) encontrada por el enjambre.
+  \item[$p_i$]       Mejor posición histórica (\textit{personal best}) de la partícula $i$;
+                     denotada $p_{\text{best}_i}$ en la formulación de traffic-sync.
+  \item[$g$]         Mejor posición global (\textit{global best}) encontrada por el enjambre;
+                     denotada $g_{\text{best}}$ en la formulación de traffic-sync.
   \item[$w$]         Factor de inercia del PSO; controla el peso de la velocidad previa en
                      la actualización de la trayectoria.
   \item[$c_1, c_2$]  Coeficientes de aceleración cognitivo y social del PSO.

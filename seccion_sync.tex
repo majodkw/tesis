@@ -23,10 +23,13 @@ $V$ & Velocidad promedio observada & km/h \\
 $D$ & Densidad observada (vehicular por longitud de carril) & veh/km \\
 $\text{congestion}$ & Salida del sistema difuso de Mamdani & escala $[0,10]$ \\
 $C$ & Largo de ciclo, variable de decisión del PSO & s \\
+$C^{*}$ & Largo de ciclo óptimo hallado por el PSO & s \\
 $C_{\min}, C_{\max}$ & Cotas del rango admisible de $C$ (60 y 120) & s \\
 $C_{\text{ref}}$ & Ciclo de referencia bajo el cual se midieron $D$ y $V$ (90) & s \\
+$C_{\text{base}}$ & Semilla de ciclo con la que se inicializan las partículas del PSO & s \\
 $Y$ & Tiempo total de amarillos y todo-rojo por ciclo (6) & s \\
 $cf$, $cf_{\text{ref}}$ & Fracción de ciclo útil del candidato y del ciclo de referencia & adimensional \\
+$D_{\text{adj}}, V_{\text{adj}}$ & Densidad y velocidad reescaladas al ciclo candidato $C$ & veh/km, km/h \\
 $\text{load}$ & Índice compuesto de carga de la red & $[0,1]$ \\
 $\alpha, \beta, \gamma$ & Pesos de densidad, velocidad y flujo en $\text{load}$ (0,4/0,4/0,2) & adimensional \\
 $D_{\max}, V_{\max}, VPM_{\max}$ & Extremos de los universos de $D$, $V$ y $VPM$ (150, 60, 50) & veh/km, km/h, veh/min \\
@@ -348,11 +351,13 @@ Sección~\ref{subsec:fuzzy_traffic_sync}. A esa congestión se le suma un térmi
 capacidad ponderado por la carga normalizada del cruce:
 
 \begin{equation}
-\text{load} = 0{,}4 \cdot \min\!\left(\frac{D}{150},\,1\right)
-            + 0{,}4 \cdot \left(1 - \min\!\left(\frac{V}{60},\,1\right)\right)
-            + 0{,}2 \cdot \min\!\left(\frac{VPM}{50},\,1\right)
+\text{load} = \alpha \cdot \min\!\left(\frac{D}{150},\,1\right)
+            + \beta \cdot \left(1 - \min\!\left(\frac{V}{60},\,1\right)\right)
+            + \gamma \cdot \min\!\left(\frac{VPM}{50},\,1\right)
 \label{eq:load}
 \end{equation}
+
+\noindent con $\alpha = \beta = 0{,}4$ y $\gamma = 0{,}2$.
 
 \begin{equation}
 \mathit{wait\_cost} = (1 - \text{load}) \cdot \frac{C - C_{\min}}{C_{\max} - C_{\min}}, \qquad
@@ -362,12 +367,12 @@ capacidad ponderado por la carga normalizada del cruce:
 
 \begin{equation}
 f(C) = \text{Mamdani}(VPM,\ V_{\text{adj}},\ D_{\text{adj}})
-     + 2{,}0 \cdot (\mathit{wait\_cost} + \mathit{capacity\_cost})
+     + W \cdot (\mathit{wait\_cost} + \mathit{capacity\_cost})
 \label{eq:fitness}
 \end{equation}
 
-\noindent donde $C_{\min} = 60$~s y $C_{\max} = 120$~s son los límites del espacio de
-búsqueda. El término \emph{wait\_cost} penaliza ciclos largos con más fuerza cuanto menor es
+\noindent donde $C_{\min} = 60$~s, $C_{\max} = 120$~s son los límites del espacio de
+búsqueda y $W = 2{,}0$ es el peso relativo de los costos de espera y capacidad. El término \emph{wait\_cost} penaliza ciclos largos con más fuerza cuanto menor es
 la carga del cruce (un cruce poco cargado no necesita un ciclo largo y sufre más espera
 promedio si lo tiene), mientras que \emph{capacity\_cost} penaliza ciclos cortos con más
 fuerza cuanto mayor es la carga (un cruce muy cargado pierde capacidad proporcionalmente si
@@ -377,7 +382,7 @@ $V/60 \leq 0{,}05$ simultáneamente, condición que se denota \emph{gridlock}—
 además un término que penaliza explícitamente los ciclos largos:
 
 \begin{equation}
-f_{\text{gridlock}}(C) = f(C) + 2{,}0 \cdot \frac{C - C_{\min}}{C_{\max} - C_{\min}}
+f_{\text{gridlock}}(C) = f(C) + W \cdot \frac{C - C_{\min}}{C_{\max} - C_{\min}}
 \label{eq:fitness_gridlock}
 \end{equation}
 

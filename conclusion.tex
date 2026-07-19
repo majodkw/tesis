@@ -69,11 +69,13 @@ plan fijo bien dimensionado se aproxima a una asignación de verde casi óptima 
 existe asimetría de demanda que explotar, y de que el propio costo de conmutación de
 Max-Pressure erosiona parte del margen disponible en ese régimen.
 
-El trabajo publicado en \cite{chilecon2025} estableció la viabilidad de la arquitectura
-modular y del almacenamiento verificable, dejando pendiente la validación empírica sobre
-San Lorenzo. Esta tesis completó esa agenda con el rediseño jerárquico del control y
-demostró, en la validación que aquel trabajo anticipaba, su superioridad frente a los
-planes de tiempo fijo de referencia.
+Respecto de \cite{chilecon2025}, la diferencia sustantiva no es de escala sino de diseño
+del control: aquel trabajo ajustaba directamente los tiempos de señal, mientras que esta
+tesis introduce el esquema jerárquico (PSO de ciclo por clúster más Max-Pressure local) y
+lo somete a la prueba que el trabajo anterior había dejado como agenda, la validación
+sobre la red vial de San Lorenzo. El resultado de esa prueba, favorable en el 77,8\% de
+las comparaciones, confirma que el rediseño jerárquico no solo es viable sino
+cuantitativamente superior a la práctica de temporización fija vigente.
 
 \section{Divulgación científica}
 
