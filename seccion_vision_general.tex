@@ -9,7 +9,7 @@ El sistema se estructura en torno a cuatro módulos fundamentales:
     
     \item \textbf{traffic-control}: Módulo de orquestación que actúa como punto de entrada unificado al sistema. Recibe observaciones de tráfico, valida los datos, coordina las invocaciones a los servicios especializados de optimización y almacenamiento, y mantiene metadatos operativos en una base de datos relacional.
     
-    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional, y genera configuraciones optimizadas de tiempos semafóricos que buscan reducir demoras y mejorar el flujo vehicular.
+    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional y determina, mediante PSO, el largo de ciclo semafórico óptimo por clúster de sensores; el ajuste fino del reparto de fases dentro de ese ciclo ocurre localmente en traffic-sim mediante control por presión (Max-Pressure).
     
     \item \textbf{traffic-storage}: Módulo de persistencia verificable que almacena datos del sistema en infraestructuras descentralizadas, garantizando trazabilidad, integridad e inmutabilidad de los registros históricos mediante el uso de tecnologías de almacenamiento distribuido y registro de auditoría.
 \end{itemize}
