@@ -23,11 +23,22 @@ infraestructuras descentralizadas conservan fielmente el contenido original. En 
 se contextualiza el desempeño obtenido mediante una comparación con tecnologías
 alternativas de almacenamiento distribuido (particularmente con redes blockchain basadas en
 Ethereum) con el fin de evidenciar las ventajas operativas de la arquitectura propuesta para
-aplicaciones de monitoreo urbano de alta frecuencia.
+aplicaciones de monitoreo urbano de alta frecuencia. En quinto lugar, se valida el
+desempeño del control semafórico jerárquico (optimización de ciclo mediante PSO combinada
+con control local Max-Pressure) frente a planes de tiempo fijo de referencia, mediante una
+campaña de comparaciones A/B multi-escenario y multi-semilla que permite establecer bajo
+qué condiciones de demanda el sistema propuesto supera a la práctica de temporización fija
+vigente.
 
 Todos los experimentos se ejecutaron en hardware de consumo estándar, sin requerir
 infraestructura especializada, lo que pone de manifiesto la viabilidad del sistema para
 despliegues en entornos municipales con recursos computacionales limitados.
+
+Los resultados de escalabilidad de traffic-sync y de eficiencia de traffic-storage
+presentados en las Secciones~\ref{sec:experimentos_sync} y~\ref{sec:experimentos_storage}
+fueron publicados originalmente en \cite{chilecon2025} y se reproducen aquí como parte de
+la evaluación integral del sistema completo, incluyendo el control semafórico jerárquico
+descrito en la Sección~\ref{sec:experimentos_control_ab}.
 
 % =============================================================================
 \section{Evaluación del módulo traffic-sync}
@@ -660,6 +671,307 @@ aplicaciones de monitoreo urbano con alta frecuencia de reporte y requisitos de
 trazabilidad auditables.
 
 % =============================================================================
+\section{Evaluación del control semafórico: campaña A/B}
+\label{sec:experimentos_control_ab}
+
+Mientras que las secciones anteriores caracterizan el desempeño computacional de los
+módulos traffic-sync y traffic-storage de forma aislada, esta sección evalúa el
+efecto del control semafórico jerárquico propuesto, PSO de ciclo combinado con
+Max-Pressure local, sobre el tránsito vehicular en simulación, en comparación directa
+con planes de tiempo fijo de referencia representativos de la práctica vigente.
+Esta campaña constituye la validación empírica sobre un mapa real de la ciudad de San
+Lorenzo, Paraguay, que \cite{chilecon2025} planteó como trabajo en curso, ejecutada ahora
+sobre la versión jerárquica del control (PSO de ciclo por clúster más Max-Pressure local)
+en lugar del ajuste directo de tiempos de señal evaluado en aquel trabajo.
+
+\subsection{Diseño experimental}
+\label{subsec:control_diseno}
+
+El protocolo de evaluación se basa en comparaciones pareadas A/B: para cada combinación
+de un plan fijo de referencia, un escenario de demanda y una semilla aleatoria, se
+ejecutan dos corridas de simulación sobre la misma red vial, la misma matriz de demanda
+y la misma semilla del motor SUMO, difiriendo únicamente en el mecanismo de control
+semafórico. La corrida~A opera con el plan de tiempo fijo de referencia y la corrida~B
+con el sistema completo propuesto (PSO de ciclo más Max-Pressure local). La red vial
+utilizada corresponde al microcentro de la ciudad de San Lorenzo, con seis intersecciones
+semaforizadas cuya lógica de fases fue generada automáticamente mediante la opción
+\texttt{--tls.guess} de netconvert. Se consideraron tres planes fijos de referencia,
+seis escenarios de demanda y diez semillas aleatorias independientes por celda, lo que
+produce $3 \times 6 \times 10 = 180$ comparaciones A/B. Las semillas se generaron
+mediante un generador criptográficamente seguro (CSPRNG) y quedaron registradas para
+garantizar la reproducibilidad exacta de cada corrida.
+
+\subsection{Escenarios de demanda}
+\label{subsec:control_escenarios}
+
+Los seis escenarios evaluados se derivaron de forma determinista, sin componentes
+aleatorios, a partir de un mismo archivo base de rutas (\texttt{routes.rou.xml}), de
+modo que las diferencias entre escenarios provienen exclusivamente de la manipulación
+programática de los volúmenes y patrones de inserción, y no de variabilidad estocástica
+adicional. La Tabla~\ref{tab:control_escenarios} resume su definición.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Escenarios de demanda evaluados en la campaña A/B de control semafórico}
+\label{tab:control_escenarios}
+\centering
+\footnotesize
+\begin{tabular}{lp{0.72\textwidth}}
+\hline
+\textbf{Escenario} & \textbf{Definición} \\
+\hline
+demanda\_baja    & 35\% de la flota vehicular base. \\
+demanda\_media   & 65\% de la flota vehicular base. \\
+demanda\_alta    & 100\% de la flota vehicular base. \\
+demanda\_saturada & 140\% de la flota vehicular base, mediante duplicación intercalada de vehículos. \\
+hora\_pico        & Perfil de inserción triangular, con dos tercios de las salidas concentradas
+                      en el tercio central de la ventana de simulación. \\
+corredor          & Calle dominante con demanda duplicada respecto de la base y calles
+                      transversales reducidas al 20\%, dentro de una ventana de 1800~s. \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Planes fijos de referencia}
+\label{subsec:control_planes}
+
+Los tres planes fijos de referencia representan puntos distintos del espacio de diseño
+de temporización semafórica convencional, desde el reparto normativo igualitario hasta
+el residuo de un algoritmo de generación automática de planes. La
+Tabla~\ref{tab:control_planes} los resume.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Planes fijos de referencia utilizados en la campaña A/B}
+\label{tab:control_planes}
+\centering
+\footnotesize
+\begin{tabular}{lp{0.68\textwidth}}
+\hline
+\textbf{Plan} & \textbf{Definición y origen} \\
+\hline
+MOPC 60~s      & Ciclo de 60~s con 25~s de verde por fase, siguiendo el reparto igualitario
+                 recomendado por el Manual de Carreteras del Paraguay en ausencia de datos
+                 de volumen vehicular por aproximación (sección 113.14.3) \cite{mopc2019manual}.
+                 El tiempo perdido por ciclo asociado a este reparto es del 16,7\%. \\
+netconvert 90~s & Ciclo de 90~s con 42~s de verde, calculado como el residuo del algoritmo
+                 de generación automática de planes de netconvert: el valor por defecto
+                 \texttt{tls.cycle.time=90} (\texttt{NBFrame.cpp}, línea~584) y el verde
+                 semilla de 31~s (línea~587) se ajustan mediante estiramiento igualitario
+                 en \texttt{NBOwnTLDef.cpp} (líneas~803--816), de modo que
+                 $31+(90-68)/2=42$. El tiempo perdido por ciclo es del 6,7\%. \\
+Ciclo largo 120~s & Ciclo de 120~s con 57~s de verde. El tiempo perdido por ciclo es del 5\%. \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Metodología de evaluación insesgada}
+\label{subsec:control_metodologia}
+
+La comparación directa de tiempos de viaje promedio a partir del archivo
+\texttt{tripinfo.xml} de SUMO está expuesta a un sesgo de supervivencia: dicho archivo
+registra únicamente los viajes completados durante la ventana de simulación, de modo que,
+cuando uno de los dos lados de la comparación colapsa parcialmente (los vehículos quedan
+atrapados en congestión y no llegan a destino), su promedio de tiempo de viaje se calcula
+solo sobre los vehículos rápidos que lograron escapar, produciendo una estimación
+artificialmente favorable para el lado colapsado. Para neutralizar este efecto se adoptó
+un veredicto compuesto por comparación. En primer lugar, se aplica una guardia de
+throughput con autoridad sobre las métricas por viaje: si el número de vehículos que
+completan su viaje difiere en más de un 10\% entre las corridas A y B, el veredicto se
+determina por throughput, independientemente de lo que indiquen los tiempos de viaje
+promedio. En segundo lugar, se incorpora el tiempo total de sistema calculado a partir de
+\texttt{summary.xml}, que contabiliza a los vehículos aún circulando o atrapados al cierre
+de la ventana de simulación y por lo tanto no hereda el sesgo de supervivencia de
+\texttt{tripinfo.xml}. En tercer lugar, se construye evidencia pareada por vehículo,
+emparejando cada vehículo por su salida y ruta idénticas en las corridas A y B, sobre la
+cual se aplica un test de Wilcoxon de rangos con signo. Se define además una banda de
+empate del 2\%, dentro de la cual una comparación se considera neutra en lugar de
+favorable o desfavorable, y se registra el número de vehículos nunca insertados en cada
+corrida (diferencia entre vehículos cargados y vehículos efectivamente insertados en la
+red), indicador adicional de saturación de la demanda de entrada.
+
+\subsection{Resultados globales}
+\label{subsec:control_resultados}
+
+Sobre las 180 comparaciones A/B ejecutadas, el sistema propuesto resultó favorable en 140
+(77,8\%), con un desglose por plan de referencia de 48/60 comparaciones favorables frente
+al plan MOPC~60~s, 46/60 frente a netconvert~90~s y 46/60 frente al ciclo largo~120~s. La
+Tabla~\ref{tab:control_favorables_celda} desagrega estos resultados por escenario y
+campaña, indicando en cada celda el número de corridas favorables sobre 10 y las medianas
+de variación porcentual de throughput ($\Delta$thr) y de tiempo total de sistema
+($\Delta$sys). Es importante notar que estas medianas se calculan sobre el total de las
+10 corridas de cada celda, incluyendo tanto las favorables como las desfavorables, de
+modo de no reintroducir el sesgo de selección que la metodología de la
+Sección~\ref{subsec:control_metodologia} busca evitar.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Corridas favorables (de 10) y medianas de variación porcentual de throughput y
+tiempo de sistema, por escenario y campaña de comparación}
+\label{tab:control_favorables_celda}
+\centering
+\footnotesize
+\begin{tabular}{lccccccccc}
+\hline
+& \multicolumn{3}{c}{\textbf{MOPC 60~s}} & \multicolumn{3}{c}{\textbf{netconvert 90~s}} & \multicolumn{3}{c}{\textbf{Ciclo largo 120~s}} \\
+\textbf{Escenario} & fav. & $\Delta$thr & $\Delta$sys & fav. & $\Delta$thr & $\Delta$sys & fav. & $\Delta$thr & $\Delta$sys \\
+\hline
+corredor          & 10/10 & +207,5\% & +57,3\% & 10/10 & +159,6\% & +57,7\% & 10/10 & +22,6\% & +28,6\% \\
+demanda\_baja      & 9/10  & +5,5\%   & +42,8\% & 8/10  & +10,9\%  & +35,9\% & 8/10  & +14,8\% & +39,2\% \\
+demanda\_media     & 9/10  & +51,8\%  & +20,8\% & 9/10  & +25,5\%  & +9,1\%  & 9/10  & +48,6\% & +9,0\% \\
+demanda\_alta      & 5/10  & +9,0\%   & +1,9\%  & 5/10  & +7,6\%   & -7,2\%  & 5/10  & +15,4\% & -8,8\% \\
+demanda\_saturada  & 8/10  & +46,3\%  & +6,0\%  & 8/10  & +19,6\%  & -5,2\%  & 7/10  & +25,2\% & -7,3\% \\
+hora\_pico         & 7/10  & +22,7\%  & +3,0\%  & 6/10  & +15,3\%  & -1,3\%  & 7/10  & +23,8\% & -4,7\% \\
+\hline
+\end{tabular}
+\end{table}
+
+La Figura~\ref{fig:control_favorables} presenta gráficamente el conteo de corridas
+favorables por escenario y campaña, mientras que las Figuras~\ref{fig:control_thr} y
+\ref{fig:control_sys} muestran las medianas de variación porcentual de throughput y de
+tiempo de sistema, respectivamente.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=7pt,
+    width=0.95\linewidth,
+    height=7cm,
+    symbolic x coords={corredor,baja,media,alta,saturada,pico},
+    xtick=data,
+    xlabel={Escenario},
+    ylabel={Corridas favorables (de 10)},
+    ymin=0, ymax=11,
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+                  font=\footnotesize, draw=black, fill=white},
+    enlarge x limits=0.12,
+]
+\pgfplotstableread{datos/favorables.dat}\favtable
+\addplot table[x=escenario, y=mopc_60] {\favtable};
+\addlegendentry{MOPC 60~s}
+\addplot table[x=escenario, y=netconvert_90] {\favtable};
+\addlegendentry{netconvert 90~s}
+\addplot table[x=escenario, y=largo_120] {\favtable};
+\addlegendentry{Ciclo largo 120~s}
+\end{axis}
+\end{tikzpicture}
+\caption{Número de corridas favorables al sistema propuesto (de 10 semillas) por
+escenario de demanda y campaña de comparación. Cada barra agrupa las tres campañas frente
+a un mismo escenario; valores cercanos a 10 indican dominancia consistente del sistema
+propuesto sobre el plan fijo correspondiente, independientemente de la semilla.}
+\label{fig:control_favorables}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=7pt,
+    width=0.95\linewidth,
+    height=7cm,
+    symbolic x coords={corredor,baja,media,alta,saturada,pico},
+    xtick=data,
+    xlabel={Escenario},
+    ylabel={Mediana de $\Delta$throughput (\%)},
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+                  font=\footnotesize, draw=black, fill=white},
+    enlarge x limits=0.12,
+]
+\pgfplotstableread{datos/medianas_throughput.dat}\thrtable
+\addplot table[x=escenario, y=mopc_60] {\thrtable};
+\addlegendentry{MOPC 60~s}
+\addplot table[x=escenario, y=netconvert_90] {\thrtable};
+\addlegendentry{netconvert 90~s}
+\addplot table[x=escenario, y=largo_120] {\thrtable};
+\addlegendentry{Ciclo largo 120~s}
+\end{axis}
+\end{tikzpicture}
+\caption{Mediana de la variación porcentual del throughput (vehículos que completan viaje)
+del sistema propuesto respecto de cada plan fijo, por escenario. La mediana se calcula
+sobre las 10 corridas de cada celda, favorables y desfavorables por igual, para evitar
+sesgo de selección; valores positivos indican ventaja del sistema propuesto.}
+\label{fig:control_thr}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=7pt,
+    width=0.95\linewidth,
+    height=7cm,
+    symbolic x coords={corredor,baja,media,alta,saturada,pico},
+    xtick=data,
+    xlabel={Escenario},
+    ylabel={Mediana de $\Delta$tiempo de sistema (\%)},
+    ymajorgrids=true,
+    grid style={dashed, gray!40},
+    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+                  font=\footnotesize, draw=black, fill=white},
+    enlarge x limits=0.12,
+]
+\pgfplotstableread{datos/medianas_systime.dat}\systable
+\addplot table[x=escenario, y=mopc_60] {\systable};
+\addlegendentry{MOPC 60~s}
+\addplot table[x=escenario, y=netconvert_90] {\systable};
+\addlegendentry{netconvert 90~s}
+\addplot table[x=escenario, y=largo_120] {\systable};
+\addlegendentry{Ciclo largo 120~s}
+\end{axis}
+\end{tikzpicture}
+\caption{Mediana de la variación porcentual del tiempo total de sistema (\texttt{summary.xml})
+del sistema propuesto respecto de cada plan fijo, por escenario. Valores negativos, presentes
+en demanda\_alta, demanda\_saturada y hora\_pico frente a los planes de 90~s y 120~s, indican
+que el plan fijo de referencia iguala o supera al sistema propuesto en esa métrica agregada.}
+\label{fig:control_sys}
+\end{figure}
+
+\subsection{Análisis de patrones}
+\label{subsec:control_patrones}
+
+Del conjunto de resultados se desprenden tres patrones consistentes. El primero es que
+la ventaja del sistema propuesto crece con la asimetría de la demanda entre
+aproximaciones: el escenario corredor, en el que la calle dominante concentra el doble de
+demanda que las transversales, es el único en resultar favorable en las 10 corridas de
+las tres campañas simultáneamente, con una mediana de $\Delta$throughput de +207,5\%
+frente al plan MOPC~60~s y de +22,6\% frente al ciclo largo~120~s. Esta magnitud refleja
+que un reparto de verde igualitario resulta especialmente ineficiente cuando la demanda
+real está lejos de ser simétrica, condición que el control adaptativo del sistema
+propuesto explota de forma directa.
+
+El segundo patrón es que el tipo de ventaja que obtiene el sistema propuesto depende del
+ciclo del plan fijo contra el que se compara. Frente al plan MOPC de 60~s, cuyo ciclo
+corto y alto tiempo perdido relativo lo hacen más vulnerable a saturarse, la ventaja
+proviene principalmente de evitar el colapso: el sistema propuesto sostiene mayor
+throughput y menor tiempo de sistema incluso en escenarios de demanda alta y saturada. En
+cambio, frente a los planes de 90~s y 120~s, cuyo tiempo perdido por ciclo es menor y cuya
+capacidad de servicio está mejor dimensionada, la ventaja del sistema propuesto se
+concentra en los regímenes de demanda baja y media y en el escenario de asimetría marcada
+(corredor), mientras que en demanda alta y saturada las medianas de $\Delta$sys se
+vuelven negativas (-7,2\% y -5,2\% frente a netconvert~90~s; -8,8\% y -7,3\% frente al
+ciclo largo~120~s), señal de que el margen de mejora disponible se reduce cuando el plan
+de referencia ya opera cerca de su capacidad.
+
+El tercer patrón es el límite del sistema propuesto: el escenario demanda\_alta es el
+peor evaluado en las tres campañas, con solo 5 de 10 corridas favorables frente a cada uno
+de los tres planes fijos. La inspección de las corridas desfavorables de esta celda
+revela colapsos parciales autoinducidos, en los que el propio control adaptativo del
+sistema, al reaccionar localmente a la congestión mediante Max-Pressure, favorece
+temporalmente ciertos movimientos y produce bloqueos en cascada (spillback) en
+intersecciones vecinas. Estos colapsos se concentran de forma recurrente en un subconjunto
+reducido de semillas, lo que sugiere una sensibilidad estructural del sistema a
+configuraciones iniciales de demanda cercanas al punto de saturación de la red, más que un
+fallo aleatorio y disperso.
+
+% =============================================================================
 \section{Discusión}
 \label{sec:experimentos_discusion}
 
@@ -712,6 +1024,52 @@ almacenamiento ejecutado. Este incidente ilustra la importancia de una validaci�
 exhaustiva del entorno antes de ejecutar pruebas formales, y la necesidad de
 contar con scripts de verificación previa del entorno como parte del proceso de
 despliegue.
+
+\subsection{Hallazgos del control semafórico}
+\label{subsec:discusion_control}
+
+La campaña A/B de la Sección~\ref{sec:experimentos_control_ab} aporta una lectura
+complementaria a la de los módulos de análisis y almacenamiento: mide el efecto del
+sistema sobre el fenómeno que en última instancia justifica su existencia, la circulación
+vehicular, y lo hace bajo una metodología diseñada explícitamente para no premiar al
+sistema propuesto por artefactos de medición. La guardia de throughput desempeñó un papel
+central en esa metodología: al subordinar las métricas por viaje al conteo de vehículos
+que efectivamente completan su trayecto, evita que un colapso parcial de una de las dos
+corridas, que descarta del promedio de \texttt{tripinfo.xml} precisamente a los vehículos
+más perjudicados, se traduzca en un veredicto artificialmente favorable. Sin esta guardia,
+el sesgo de supervivencia habría inflado la tasa de éxito reportada, en particular en los
+escenarios de demanda alta y saturada, donde ambos lados de la comparación operan cerca
+del límite de capacidad de la red.
+
+El hecho de que el sistema propuesto no logre superar de forma consistente a los planes
+fijos en el escenario de demanda alta simétrica, con apenas 5 de 10 corridas favorables
+frente a cada uno de los tres planes de referencia, no debe leerse como una falla del
+control adaptativo sino como el reflejo de un límite estructural esperable. Cuando la
+demanda se aproxima a la capacidad de saturación de la red de forma razonablemente
+uniforme entre aproximaciones, un plan fijo bien dimensionado, en particular los de 90~s y
+120~s, se acerca a una asignación de verde casi óptima, dado que no existe margen
+significativo de reparto desigual que explotar. En ese régimen, el control adaptativo
+del sistema propuesto no solo carece de una ineficiencia estructural que corregir, sino
+que incurre en un costo de conmutación que el plan fijo no paga: cada reasignación de
+fase realizada por Max-Pressure implica tiempo perdido adicional en intervalos de
+transición (amarillo y despeje), que en condiciones de alta ocupación consume una fracción
+no despreciable del margen de capacidad disponible. El resultado observado, medianas de
+$\Delta$sys negativas frente a los planes de 90~s y 120~s en demanda alta y saturada, es
+consistente con esta interpretación: el sistema no pierde por un déficit de inteligencia
+en la asignación, sino porque el propio acto de adaptarse tiene un costo que solo se
+amortiza cuando existe asimetría de demanda que aprovechar.
+
+Finalmente, los colapsos parciales autoinducidos identificados en el escenario
+demanda\_alta, concentrados en un subconjunto recurrente de semillas, señalan una
+fragilidad residual del control local frente al gridlock: la naturaleza reactiva y local
+de Max-Pressure, que prioriza el movimiento con mayor presión instantánea sin una
+coordinación explícita entre intersecciones vecinas, puede en ciertas configuraciones de
+demanda producir bloqueos en cascada (spillback) que el propio sistema no logra deshacer
+dentro de la ventana de simulación. Esta fragilidad constituye una limitación conocida del
+enfoque, distinta de la simple pérdida de margen frente a planes fijos bien dimensionados,
+y sugiere como línea de trabajo futura la incorporación de mecanismos de detección de
+saturación de carril que restrinjan o penalicen decisiones locales cuando el riesgo de
+spillback hacia una intersección vecina sea alto.
 
 Las evaluaciones cubren los dos módulos nucleares del sistema: traffic-sync demostró
 escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de

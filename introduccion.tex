@@ -69,8 +69,16 @@ almacenamiento distribuido sobre hardware de consumo estándar.
           y exposición de métricas agregadas por intersección semafórica.
 
     \item Diseñar e implementar un módulo de análisis y optimización que clasifique el estado
-          de congestión mediante inferencia difusa tipo Mamdani y ajuste los tiempos semafóricos
-          mediante optimización por enjambre de partículas (PSO).
+          de congestión mediante inferencia difusa tipo Mamdani, agrupe sensores por
+          proximidad y ajuste, mediante optimización por enjambre de partículas (PSO), el
+          largo de ciclo semafórico por clúster, delegando en un control local por presión
+          (Max-Pressure) el reparto fino de las fases dentro de ese ciclo.
+
+    \item Evaluar experimentalmente el desempeño del control semafórico jerárquico propuesto
+          frente a planes de tiempo fijo de referencia representativos de la práctica vigente,
+          mediante una campaña de comparaciones pareadas A/B sobre múltiples escenarios de
+          demanda y semillas aleatorias, aplicando una metodología insesgada frente al sesgo
+          de supervivencia inherente a las métricas de tiempo de viaje.
 
     \item Construir un módulo de persistencia verificable que almacene datos de tráfico y
           resultados de optimización en IPFS, registrando los identificadores de contenido en
@@ -107,6 +115,13 @@ El presente trabajo realiza las siguientes contribuciones:
           línea base reproducible para comparaciones futuras con alternativas de control
           adaptativo en hardware de consumo estándar.
 
+    \item Una campaña de evaluación experimental A/B del control semafórico jerárquico
+          (PSO de ciclo por clúster combinado con Max-Pressure local) frente a tres planes
+          fijos de referencia, en seis escenarios de demanda y diez semillas aleatorias por
+          celda (180 comparaciones en total), con una metodología insesgada frente al sesgo
+          de supervivencia que arrojó 140 comparaciones favorables al sistema propuesto
+          (77,8\%).
+
     \item Un conjunto de experimentos reproducibles, con configuraciones, datos y métricas
           documentados, que sirven de línea base para investigaciones futuras en optimización
           de tráfico con requisitos de trazabilidad verificable.
@@ -115,7 +130,19 @@ El presente trabajo realiza las siguientes contribuciones:
 Los hallazgos principales fueron publicados en el artículo \emph{Scalable and Decentralized
 Urban Traffic Optimization with Verifiable Storage for Smart City Deployments}, presentado en
 la 2025 IEEE CHILEAN Conference on Electrical, Electronics Engineering, Information and
-Communication Technologies (CHILECON~2025), Valparaíso, Chile \cite{chilecon2025}.
+Communication Technologies (CHILECON~2025), Valparaíso, Chile \cite{chilecon2025}. Ese
+trabajo previo estableció la arquitectura modular de cuatro servicios, la clasificación
+difusa Mamdani, el ajuste de temporización semafórica mediante PSO y el almacenamiento
+verificable sobre IPFS y BlockDAG, con resultados de escalabilidad hasta 2000 sensores y
+costo de registro despreciable, pero dejó explícitamente planteada como trabajo en curso
+la validación empírica sobre un mapa real de la ciudad de San Lorenzo, Paraguay, mediante
+simulación con SUMO. La presente tesis parte de esa base publicada y la extiende en tres
+direcciones: un rediseño jerárquico del control, en el que el PSO deja de ajustar
+directamente los tiempos de señal y pasa a decidir el largo de ciclo por clúster,
+complementado con una capa local de control Max-Pressure; una metodología de evaluación
+A/B insesgada frente al sesgo de supervivencia; y la validación empírica sobre San
+Lorenzo anticipada en \cite{chilecon2025}, materializada aquí en una campaña de 180
+comparaciones A/B.
 
 \section{Estructura del documento}
 
@@ -128,5 +155,6 @@ su arquitectura modular y el flujo de información entre componentes. Los Capít
 detallan el diseño e implementación de cada módulo: simulación traffic-sim,
 optimización traffic-sync, almacenamiento verificable traffic-storage y
 orquestación traffic-control. El Capítulo~8 presenta la evaluación experimental con
-los resultados de escalabilidad, latencia y costo. Finalmente, el Capítulo~9 recoge las
+los resultados de escalabilidad, latencia y costo, así como la campaña A/B de evaluación
+del control semafórico frente a planes fijos de referencia. Finalmente, el Capítulo~9 recoge las
 conclusiones, limitaciones y líneas de trabajo futuro.

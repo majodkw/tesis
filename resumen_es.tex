@@ -20,7 +20,9 @@ modular y descentralizado para la optimización adaptativa del control semafóri
 persistencia verificable de los datos asociados. La arquitectura propuesta integra cuatro
 microservicios: un módulo de simulación de tráfico basado en SUMO (traffic-sim),
 un módulo de análisis y optimización que combina inferencia difusa tipo Mamdani con
-optimización por enjambre de partículas (traffic-sync), un módulo de almacenamiento
+optimización por enjambre de partículas para ajustar el largo de ciclo semafórico por
+clúster de sensores (traffic-sync), un módulo de control local por presión
+(Max-Pressure) que reparte finamente las fases dentro de ese ciclo, un módulo de almacenamiento
 distribuido basado en IPFS y contratos inteligentes sobre una red BlockDAG
 (traffic-storage), y un módulo de orquestación con interfaz REST
 (traffic-control). Los módulos se comunican mediante APIs HTTP/JSON,
@@ -35,7 +37,12 @@ confirmación en la red BlockDAG en $\approx$1~s, con un costo inferior a
 de magnitud el costo operativo de Ethereum y reduciendo en más del 60\% la latencia de
 persistencia verificable respecto a plataformas IoT--cloud centralizadas. Los
 resultados respaldan la viabilidad del sistema para despliegues municipales con recursos
-computacionales limitados, incluyendo hardware embebido de bajo costo. Los hallazgos
+computacionales limitados, incluyendo hardware embebido de bajo costo. Una campaña de
+evaluación experimental A/B de 180 comparaciones pareadas (tres planes de tiempo fijo de
+referencia, seis escenarios de demanda y diez semillas aleatorias, sobre la red vial de
+San Lorenzo) mostró que el control jerárquico propuesto resultó favorable en 140 de 180
+comparaciones (77,8\%), bajo una metodología diseñada para neutralizar el sesgo de
+supervivencia de las métricas de tiempo de viaje. Los hallazgos
 principales fueron presentados en la 2025 IEEE CHILEAN Conference on Electrical,
 Electronics Engineering, Information and Communication Technologies (CHILECON~2025).
 

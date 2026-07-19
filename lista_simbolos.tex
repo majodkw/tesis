@@ -58,7 +58,7 @@
 
 \begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
   \item[PSO]     \textit{Particle Swarm Optimization}; algoritmo de optimización por
-                 enjambre de partículas utilizado para ajustar los tiempos semafóricos.
+                 enjambre de partículas utilizado para seleccionar el largo de ciclo semafórico por clúster de intersecciones.
   \item[FIS]     \textit{Fuzzy Inference System}; sistema de inferencia difusa; implementado
                  con modelo Mamdani para clasificar el nivel de congestión.
 \end{description}
@@ -113,9 +113,54 @@
                      actualización de velocidad del PSO.
   \item[$C$]         Longitud de ciclo semafórico; duración total de una repetición completa
                      de las fases.
-  \item[$g_k$]       Tiempo de verde asignado a la fase $k$ dentro del ciclo $C$.
+  \item[$g_i$]       Tiempo de verde asignado a la fase o movimiento $i$ dentro del ciclo $C$.
   \item[$\mu$]       Grado de pertenencia en lógica difusa; valor en $[0,1]$ que indica
                      cuánto pertenece un valor a un conjunto difuso.
   \item[$\phi_j$]    Función de pertenencia $j$; define la forma del conjunto difuso
                      (triangular, trapezoidal, gaussiana).
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Control local por presión (Max-Pressure)}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[$P_i$]       Presión de la fase $i$; diferencia ponderada entre la congestión de
+                     entrada y de salida de sus carriles, más el bono de inanición;
+                     criterio de decisión del controlador Max-Pressure.
+  \item[$q/\kappa$]  Razón de cola de un carril; cociente entre vehículos detenidos $q$ y
+                     capacidad nominal $\kappa$ (aproximada como largo del carril entre
+                     7,5~m por vehículo), sin techo superior en 1.
+  \item[$o_\ell$]    Ocupación física del carril de salida $\ell$; fracción $[0,1]$ del
+                     largo del carril cubierta por vehículos.
+  \item[$0{,}85$]    Umbral de ocupación física de \emph{spillback}; a partir de este valor,
+                     combinado con velocidad $\leq 0{,}5$~m/s, un carril de salida se
+                     considera realmente atascado y penaliza a las fases que lo alimentan.
+  \item[$0{,}5$~m/s] Umbral de velocidad de \emph{spillback}; velocidad media del carril de
+                     salida por debajo de la cual se confirma un atasco real (no solo un
+                     carril lleno y fluyendo).
+  \item[$0{,}7$]     Fracción de vehículos detenidos que activa el supervisor de
+                     congelamiento del controlador Max-Pressure cuando se sostiene 60~s.
+\end{description}
+
+\vspace{0.8cm}
+\noindent\textbf{Metodología de comparación A/B}
+
+\vspace{0.3cm}
+
+\begin{description}[leftmargin=3cm, style=sameline, font=\normalfont]
+  \item[$C$]         Largo de ciclo semafórico, $C \in [60, 120]$~s; variable de decisión
+                     del optimizador PSO de traffic-sync.
+  \item[$\Delta$thr] Variación porcentual del número de vehículos que completan su viaje
+                     (\emph{throughput}) entre las corridas A y B de una comparación.
+  \item[$\Delta$sys] Variación porcentual del tiempo total de sistema, calculado a partir
+                     de \texttt{summary.xml}, entre las corridas A y B.
+  \item[Banda de]    Margen del $\pm 2\%$ dentro del cual una comparación A/B se considera
+  \item[empate]      neutra en lugar de favorable o desfavorable.
+  \item[Guardia de]  Umbral del $\pm 10\%$ de diferencia en vehículos completados entre las
+  \item[throughput]  corridas A y B; por encima de él, el veredicto se determina por
+                     throughput independientemente de los tiempos de viaje promedio.
+  \item[$p$-valor]   Probabilidad asociada al test de Wilcoxon de rangos con signo aplicado
+                     sobre evidencia pareada por vehículo entre las corridas A y B.
 \end{description}
