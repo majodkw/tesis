@@ -909,7 +909,7 @@ tiempo de sistema, por escenario y campaña de comparación}
 \begin{tabular}{lccccccccc}
 \hline
 & \multicolumn{3}{c}{\textbf{MOPC 60~s}} & \multicolumn{3}{c}{\textbf{netconvert 90~s}} & \multicolumn{3}{c}{\textbf{Ciclo largo 120~s}} \\
-\textbf{Escenario} & fav. & $\Delta$thr & $\Delta$sys & fav. & $\Delta$thr & $\Delta$sys & fav. & $\Delta$thr & $\Delta$sys \\
+\textbf{Escenario} & fav. & $\Delta$thr (\%) & $\Delta$sys (\%) & fav. & $\Delta$thr (\%) & $\Delta$sys (\%) & fav. & $\Delta$thr (\%) & $\Delta$sys (\%) \\
 \hline
 corredor          & 10/10 & +207,5\% & +57,3\% & 10/10 & +159,6\% & +57,7\% & 10/10 & +22,6\% & +28,6\% \\
 demanda\_baja      & 9/10  & +5,5\%   & +42,8\% & 8/10  & +10,9\%  & +35,9\% & 8/10  & +14,8\% & +39,2\% \\
@@ -1518,17 +1518,14 @@ consistente con esta interpretación: el sistema no pierde por un déficit de in
 en la asignación, sino porque el propio acto de adaptarse tiene un costo que solo se
 amortiza cuando existe asimetría de demanda que aprovechar.
 
-Finalmente, los colapsos parciales autoinducidos identificados en el escenario
-demanda\_alta, concentrados en un subconjunto recurrente de semillas, señalan una
-fragilidad residual del control local frente al gridlock: la naturaleza reactiva y local
-de Max-Pressure, que prioriza el movimiento con mayor presión instantánea sin una
-coordinación explícita entre intersecciones vecinas, puede en ciertas configuraciones de
-demanda producir bloqueos en cascada (spillback) que el propio sistema no logra deshacer
-dentro de la ventana de simulación. Esta fragilidad constituye una limitación conocida del
-enfoque, distinta de la simple pérdida de margen frente a planes fijos bien dimensionados,
-y sugiere como línea de trabajo futura la incorporación de mecanismos de detección de
-saturación de carril que restrinjan o penalicen decisiones locales cuando el riesgo de
-spillback hacia una intersección vecina sea alto.
+Finalmente, los colapsos parciales autoinducidos identificados en demanda\_alta
+(Sección~\ref{subsec:control_patrones}) constituyen una limitación conocida del enfoque,
+distinta de la simple pérdida de margen frente a planes fijos bien dimensionados: mientras
+esta última es un costo de oportunidad esperable cuando no hay asimetría que explotar, la
+fragilidad frente al gridlock es un riesgo de la propia estrategia de control reactivo y
+local. Se sugiere como línea de trabajo futura la incorporación de mecanismos de detección
+de saturación de carril que restrinjan o penalicen decisiones locales de Max-Pressure
+cuando el riesgo de spillback hacia una intersección vecina sea alto.
 
 Las evaluaciones cubren los dos módulos nucleares del sistema: traffic-sync demostró
 escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de

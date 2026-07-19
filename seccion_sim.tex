@@ -158,7 +158,7 @@ La Figura~\ref{fig:mp_ciclo} integra los mecanismos anteriores en el ciclo de de
     \node[block] (t) {\texttt{tick}($t$) por semáforo (TLS)};
     \node[decision, below=of t] (tr) {\textbf{¿transición en curso?}};
     \node[block, right=1.8cm of tr] (adv) {Sí: avanzar amarillo $\to$ todo-rojo $\to$ verde};
-    \node[decision, below=of tr] (frz) {\textbf{Supervisor: ¿red congelada?}\\ (fracci\'on de detenidos $\geq 0{,}7$ durante 60~s)};
+    \node[decision, below=of tr] (frz) {\textbf{Supervisor: ¿red congelada?}\\ (fracción de detenidos $\geq 0{,}7$ durante 60~s)};
     \node[block, right=1.8cm of frz] (rec) {Sí: modo recuperación —\\ restaurar plan fijo original 240~s y limpiar estado};
     \node[decision, below=of frz] (mg) {\textbf{¿verde mínimo cumplido?}\\ ($0{,}4 \times$ verde base)};
     \node[block, right=1.8cm of mg] (fin1) {No: mantener fase};
@@ -195,7 +195,7 @@ La Figura~\ref{fig:mp_ciclo} integra los mecanismos anteriores en el ciclo de de
 \label{fig:mp_ciclo}
 \end{figure}
 
-\textbf{Verdes mínimo y máximo, y relación con el optimizador estratégico.} El verde mínimo de cada fase es 0,4 veces el verde base equitativo del semáforo (definido como el promedio de las duraciones de fase del programa original de SUMO), y el verde máximo duro es 1,5 veces ese mismo valor. El presupuesto de ciclo que el optimizador PSO de traffic-sync puede fijar dinámicamente actúa únicamente como un techo blando de referencia por fase, calculado como $C/n$ con $C$ el largo de ciclo optimizado y $n$ el número de fases del semáforo: este techo puede acotar el verde máximo efectivo por debajo del máximo duro en régimen fluido, pero nunca constituye un reparto exacto ni puede impedir que Max-Pressure extienda una fase realmente saturada. De esta manera se resuelve el conflicto de autoridad entre la capa estratégica, que optimiza en el agregado y con retraso, y la capa táctica, que reacciona en tiempo casi real a la condición local de cada carril.
+\textbf{Verde mínimo y máximo, y relación con el optimizador estratégico.} El verde mínimo de cada fase es 0,4 veces el verde base equitativo del semáforo (definido como el promedio de las duraciones de fase del programa original de SUMO), y el verde máximo duro es 1,5 veces ese mismo valor. El presupuesto de ciclo que el optimizador PSO de traffic-sync puede fijar dinámicamente actúa únicamente como un techo blando de referencia por fase, calculado como $C/n$ con $C$ el largo de ciclo optimizado y $n$ el número de fases del semáforo: este techo puede acotar el verde máximo efectivo por debajo del máximo duro en régimen fluido, pero nunca constituye un reparto exacto ni puede impedir que Max-Pressure extienda una fase realmente saturada. De esta manera se resuelve el conflicto de autoridad entre la capa estratégica, que optimiza en el agregado y con retraso, y la capa táctica, que reacciona en tiempo casi real a la condición local de cada carril.
 
 \textbf{Transiciones seguras.} Todo cambio de fase intercala una etapa de luz amarilla de 3~s seguida de un despeje en rojo total de 1~s antes de habilitar la fase entrante, replicando la seguridad de las transiciones del plan fijo de SUMO.
 
@@ -209,8 +209,8 @@ El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia c�
     \item \textbf{Ejecución de la simulación}: el orquestador inicia SUMO con el escenario suministrado y avanza la simulación paso a paso, según las rutas y patrones de demanda definidos en los archivos de configuración.
     \item \textbf{Detección de cuellos de botella}: en intervalos configurables, el detector analiza para cada aproximación variables como densidad, velocidad y longitud de cola, y decide si existe un cuello de botella según los umbrales establecidos en la configuración del sistema.
     \item \textbf{Construcción de métricas de tráfico}: cuando se confirma un cuello de botella en una intersección con semáforo, se calcula un conjunto de métricas agregadas para esa localización (vehículos por minuto, velocidad media en km/h, tiempo medio de circulación, densidad y estadísticos por tipo de vehículo), que se empaquetan en una carga útil JSON siguiendo el formato consumido por el módulo de optimización.
-    \item \textbf{Comunicación con el módulo de optimización}: el cliente HTTP envía la carga útil al servicio de optimización mediante una petición HTTP (por ejemplo, al punto de entrada \texttt{/evaluate}), y espera la respuesta con los tiempos de verde optimizados y el impacto estimado sobre la congestión.
-    \item \textbf{Aplicación de optimizaciones}: el controlador de semáforos actualiza, a través de la interfaz de control remoto, los tiempos de verde y rojo de los programas semafóricos correspondientes en la simulación SUMO, utilizando los valores recibidos desde el módulo de optimización.
+    \item \textbf{Comunicación con el módulo de optimización}: el cliente HTTP envía la carga útil al servicio de optimización mediante una petición HTTP (por ejemplo, al punto de entrada \texttt{/evaluate}), y espera la respuesta con el largo de ciclo optimizado por clúster y el impacto estimado sobre la congestión.
+    \item \textbf{Aplicación de optimizaciones}: el controlador de semáforos incorpora, a través de la interfaz de control remoto, el largo de ciclo recibido desde el módulo de optimización. En modo estático lo traduce directamente en tiempos de verde y rojo por fase; en modo dinámico lo entrega como techo blando de referencia al controlador táctico Max-Pressure (Sección~\ref{subsec:traffic_sim_maxpressure}), que sigue decidiendo en tiempo real qué fase servir.
     \item \textbf{Continuación de la simulación}: la simulación se reanuda con los nuevos parámetros de control y se repite el proceso de detección y optimización mientras existan vehículos en red o hasta alcanzar el tiempo límite definido.
 \end{enumerate}
 
@@ -257,7 +257,7 @@ El escenario descrito en esta sección corresponde a las pruebas de integración
 
 \textbf{Configuración semafórica base.} Cada semáforo opera inicialmente con un ciclo de 90~s, tiempos de verde ajustables entre 10~s y 120~s por fase, 3~s de luz amarilla y 1~s de todo--rojo entre fases conflictivas.
 
-\textbf{Umbrales del detector de cuellos de botella.} El detector analiza cada intersección cada 15~pasos de simulación (15~s) y confirma un evento solo si la condición persiste al menos 3~s. Se requiere un mínimo de 4~vehículos presentes y al menos dos de las siguientes condiciones:
+\textbf{Umbrales del detector de cuellos de botella.} El detector analiza cada intersección cada 15~pasos de simulación (15~s) y confirma un evento solo si la condición persiste al menos 3~s. Se requiere un mínimo de 4~vehículos presentes y que se cumpla al menos una de las siguientes condiciones (dos de ellas simultáneas elevan la severidad, como se detalla más abajo):
 
 \begin{itemize}
     \item Densidad $> 50$~veh/km.
