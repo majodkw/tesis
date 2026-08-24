@@ -50,6 +50,33 @@ alternativa técnicamente competitiva para monitoreo urbano de alta frecuencia c
 de trazabilidad auditables, mientras que el núcleo analítico escala de forma predecible hacia
 escenarios de optimización por zonas urbanas.
 
+El hallazgo más destacado de esta tesis es la campaña de evaluación A/B del control
+semafórico jerárquico propuesto, PSO de ciclo por clúster combinado con Max-Pressure local,
+frente a tres planes fijos de referencia (MOPC~60~s, netconvert~90~s y ciclo largo~120~s),
+sobre seis escenarios de demanda y diez semillas aleatorias en la red vial de San Lorenzo.
+De las 180 comparaciones pareadas ejecutadas bajo una metodología insesgada frente al sesgo
+de supervivencia, el sistema propuesto resultó favorable en 140 (77,8\%), con un desglose
+estable entre los tres planes de referencia (48/60, 46/60 y 46/60 respectivamente), lo que
+indica que la ventaja no depende de la elección particular del plan fijo con el que se
+compare. La dominancia del sistema fue máxima en condiciones de demanda asimétrica: en el
+escenario corredor, donde una calle concentra el doble de la demanda base y las transversales
+se reducen al 20\%, el control propuesto resultó favorable en las 10 de 10 corridas frente a
+las tres campañas de comparación. Este resultado se complementa con un límite honesto del
+enfoque: en demanda alta simétrica, donde ambas aproximaciones a la intersección compiten en
+condiciones similares y cercanas a la capacidad de saturación, el sistema propuesto solo
+resultó favorable en 5 de 10 corridas frente a cada plan de referencia, reflejo de que un
+plan fijo bien dimensionado se aproxima a una asignación de verde casi óptima cuando no
+existe asimetría de demanda que explotar, y de que el propio costo de conmutación de
+Max-Pressure erosiona parte del margen disponible en ese régimen.
+
+Respecto de \cite{chilecon2025}, la diferencia sustantiva no es de escala sino de diseño
+del control: aquel trabajo ajustaba directamente los tiempos de señal, mientras que esta
+tesis introduce el esquema jerárquico (PSO de ciclo por clúster más Max-Pressure local) y
+lo somete a la prueba que el trabajo anterior había dejado como agenda, la validación
+sobre la red vial de San Lorenzo. El resultado de esa prueba, favorable en el 77,8\% de
+las comparaciones, confirma que el rediseño jerárquico no solo es viable sino
+cuantitativamente superior a la práctica de temporización fija vigente.
+
 \section{Divulgación científica}
 
 Los hallazgos centrales de esta investigación fueron sintetizados y publicados en el
@@ -74,10 +101,16 @@ entorno simulado y sobre hardware de laboratorio; la transferencia a escenarios 
 implica heterogeneidad de sensores, variabilidad en las comunicaciones y resistencia
 institucional a soluciones descentralizadas, aspectos aún no validados en pilotos de campo.
 
-En segundo lugar, el módulo traffic-sync procesa actualmente un sensor por solicitud;
-si bien la arquitectura y las pruebas de estrés anticipan la evaluación conjunta por zonas,
-la optimización multivariable por clústeres de semáforos permanece como trabajo pendiente para
-lograr una dispersión efectiva del tráfico a escala territorial.
+En segundo lugar, de las 180 comparaciones A/B de la campaña de evaluación del control
+semafórico, 40 (22,2\%) resultaron desfavorables al sistema propuesto, y esos casos se
+concentran de forma marcada en el escenario de demanda alta simétrica, donde la ventaja
+del control adaptativo se diluye frente a planes fijos bien dimensionados. Adicionalmente,
+se identificaron colapsos parciales autoinducidos en un subconjunto recurrente de semillas
+de ese mismo escenario: la naturaleza reactiva y local de Max-Pressure, sin coordinación
+explícita entre intersecciones vecinas, puede producir bloqueos en cascada (spillback) que
+el supervisor de congelamiento mitiga pero no elimina por completo dentro de la ventana de
+simulación, una fragilidad residual frente al gridlock que constituye una limitación
+conocida del enfoque.
 
 En tercer lugar, traffic-storage dependió de un nodo IPFS gestionado por terceros
 (Pinata), introduce variabilidad en los tiempos de minado de la red pública de pruebas
@@ -87,7 +120,10 @@ replicación automática de contenido.
 
 Finalmente, la configuración operativa de las APIs requiere validación exhaustiva del entorno
 antes del despliegue, como evidenció el incidente de redirecciones HTTP~307 durante las primeras
-corridas del protocolo de prueba.
+corridas del protocolo de prueba. A esto se suma que la evaluación del control semafórico se
+realizó exclusivamente en simulación (SUMO) sobre una única red vial urbana, la del microcentro
+de San Lorenzo, por lo que la generalización a otras topologías de red y a condiciones de
+tráfico de campo permanece por validar.
 
 \section{Trabajo futuro}
 
@@ -95,8 +131,12 @@ Como continuación natural de este trabajo, se identifican las siguientes línea
 y desarrollo:
 
 \begin{itemize}
-  \item Implementar agrupamiento jerárquico de sensores y optimización PSO por zonas urbanas,
-        habilitando la coordinación de clústeres de semáforos en paralelo.
+  \item Optimizar los desplazamientos (offsets) entre intersecciones coordinadas para
+        generar ondas verdes a lo largo de corredores viales, complementando el ciclo por
+        clúster con coordinación temporal explícita entre semáforos vecinos.
+  \item Diseñar predictores más tempranos de formación de gridlock que refuercen al
+        supervisor de congelamiento, anticipando los colapsos autoinducidos observados en
+        demanda alta simétrica antes de que la red alcance el punto de bloqueo en cascada.
   \item Integrar fuentes de datos reales provenientes de dispositivos de conteo, sensores IoT
         con conectividad LoRaWAN y sistemas de visión por computadora.
   \item Desplegar nodos IPFS propios y evaluar redes BlockDAG privadas o permisionadas para
@@ -107,7 +147,10 @@ y desarrollo:
   \item Diseñar esquemas de comunicación asíncrona mediante instancias intermedias que alimenten
         en tiempo real los módulos del sistema desde el campo.
   \item Ejecutar pilotos en ciudades intermedias de la región para medir resiliencia, calidad de
-        servicio e impacto en la fluidez del tráfico frente a plataformas centralizadas.
+        servicio e impacto en la fluidez del tráfico frente a plataformas centralizadas, y
+        validar con datos de campo los resultados obtenidos en simulación.
+  \item Comparar el control jerárquico propuesto con enfoques de aprendizaje por refuerzo
+        para la asignación de fases y ciclo, como referencia adicional de desempeño.
   \item Explorar la integración con marcos de \textit{digital twins} urbanos para planificación
         y simulación avanzada.
 \end{itemize}
@@ -116,8 +159,16 @@ y desarrollo:
 
 El sistema desarrollado en esta tesis ofrece una base tecnológica sólida que responde a
 criterios de trazabilidad, seguridad, integridad y eficiencia operativa en la gestión del
-tráfico urbano. Su enfoque modular y descentralizado, respaldado por evidencia cuantitativa y
+tráfico urbano. Dos pilares sostienen esta afirmación: por un lado, la trazabilidad
+verificable del almacenamiento distribuido, con confirmación en segundos y costo
+insignificante frente a Ethereum; por otro, la evidencia experimental de que el control
+semafórico jerárquico, PSO de ciclo por clúster combinado con Max-Pressure local, mejora
+la circulación vehicular frente a planes fijos de referencia en la mayoría de las
+condiciones de demanda evaluadas (140 de 180 comparaciones, 77,8\%), con una ventaja
+particularmente marcada ante demanda asimétrica y un límite reconocido en demanda alta
+simétrica. Este enfoque modular y descentralizado, respaldado por evidencia cuantitativa y
 por la publicación derivada en CHILECON~2025, lo posiciona como una propuesta
 viable para municipios con presupuesto limitado. Las mejoras futuras deberán cerrar la brecha
 entre los resultados de laboratorio y la evidencia práctica en entornos urbanos reales,
-fortaleciendo la tolerancia a fallos y la optimización territorial del control semafórico.
+fortaleciendo la coordinación entre intersecciones y la robustez del control local frente al
+gridlock.

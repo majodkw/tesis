@@ -191,7 +191,7 @@ El contrato inteligente \texttt{TrafficStorage} (Solidity \texttt{\^{}0.8.19}) e
 
 \begin{itemize}
     \item \texttt{Data} (valor~0): lote de métricas de tráfico sin procesar.
-    \item \texttt{Optimization} (valor~1): resultado del ciclo difuso-PSO (tiempos de verde óptimos).
+    \item \texttt{Optimization} (valor~1): resultado del ciclo difuso-PSO (largo de ciclo óptimo por clúster, usado aguas abajo como techo blando de referencia por el controlador táctico local).
 \end{itemize}
 
 El almacenamiento interno es un mapeo triple privado:
@@ -233,5 +233,5 @@ El almacenamiento interno es un mapeo triple privado:
 \end{tabular}
 \end{table}
 
-\textbf{Estimaciones de gas.} Medidas sobre la red BlockDAG de prueba con las cargas reales del sistema (véase Capítulo~\ref{chp:experimentos}), la llamada a \texttt{storeRecord} consume en promedio 36\,232~unidades de gas para registros de tipo \texttt{Data} y 95\,624~unidades para registros de tipo \texttt{Optimization}. La diferencia refleja el mayor tamaño del CID de IPFS en los paquetes de optimización, que contienen vectores de tiempos de verde además de los metadatos. La función \texttt{getRecord} es de solo lectura (\texttt{view}) y no incurre en costo de gas cuando se invoca off-chain.
+\textbf{Estimaciones de gas.} Medidas sobre la red BlockDAG de prueba con las cargas reales del sistema (véase Capítulo~\ref{chp:experimentos}), la llamada a \texttt{storeRecord} consume en promedio 36\,232~unidades de gas para registros de tipo \texttt{Data} y 95\,624~unidades para registros de tipo \texttt{Optimization}. La diferencia refleja el mayor tamaño del CID de IPFS en los paquetes de optimización, que contienen el largo de ciclo optimizado por clúster además de los metadatos. La función \texttt{getRecord} es de solo lectura (\texttt{view}) y no incurre en costo de gas cuando se invoca off-chain.
 
