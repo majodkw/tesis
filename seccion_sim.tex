@@ -86,118 +86,154 @@ P_i = \sum_{(\ell_\text{in}, \ell_\text{out}) \,\in\, i} \left[ \frac{q_{\ell_\t
 \label{eq:max_pressure}
 \end{equation}
 
-donde $q_{\ell}$ es el número de vehículos detenidos (velocidad $<0{,}1$~m/s) en el carril $\ell$ durante el último paso de simulación, y $\kappa_{\ell}$ es la capacidad nominal del carril, aproximada como $\kappa_{\ell} = \max(\text{largo}_\ell / 7{,}5, 1)$ vehículos, con 7,5~m como espacio promedio ocupado por vehículo. El cociente $q_{\ell_\text{in}}/\kappa_{\ell_\text{in}}$ es la razón de cola del carril de entrada, deliberadamente sin techo superior en 1: bajo saturación de corredor completo, varias fases en competencia alcanzan colas iguales o mayores a su capacidad nominal de forma simultánea, y recortar el cociente a 1 elimina precisamente la señal necesaria para discriminar entre ellas. Esta decisión de diseño se tomó tras observar empíricamente que introducir ese techo produce un deadlock estable: 40~vehículos quedaron congelados en la red durante más de 2\,000~s de simulación, porque la señal que debía distinguir entre fases igualmente saturadas quedaba aplanada por el recorte. El término $r_{\ell_\text{out}}$ es la razón de cola de salida, calculada como $r_{\ell_\text{out}} = \max(q_{\ell_\text{out}}/\kappa_{\ell_\text{out}}, \, o_{\ell_\text{out}})$, donde $o_{\ell_\text{out}} \in [0,1]$ es la ocupación física del carril de salida (fracción del largo cubierto por vehículos); esta combinación captura tanto el caso de cola detenida como el de un carril lleno pero fluyendo lentamente, que la sola métrica de vehículos detenidos no detecta; la ocupación solo participa del máximo cuando la velocidad media del carril de salida no supera 1{,}0~m/s, de modo que un carril lleno pero circulando a velocidad normal no penaliza a la fase que lo alimenta. El factor $w$ pondera el descuento por congestión de salida (en la configuración empleada, $w = 1{,}0$), y $\beta = 0{,}05$~s$^{-1}$ es un bono de inanición proporcional al tiempo transcurrido desde el último servicio de la fase $i$, $t - t_i^{\text{serv}}$, que evita la exclusión indefinida de fases de baja demanda.
+donde $q_{\ell}$ es el número de vehículos detenidos en el carril $\ell$ durante el último paso de simulación y $\kappa_{\ell}$ su capacidad nominal, aproximada a partir del largo del carril y del espacio promedio que ocupa un vehículo. El término $r_{\ell_\text{out}} = \max(q_{\ell_\text{out}}/\kappa_{\ell_\text{out}}, \, o_{\ell_\text{out}})$ mide la congestión del carril de salida combinando su razón de cola con su ocupación física $o_{\ell_\text{out}} \in [0,1]$, de modo que la presión reconozca tanto una cola detenida como un carril lleno que avanza con dificultad; la ocupación solo interviene cuando la velocidad media de la salida es baja, para no penalizar a una fase que alimenta un carril lleno pero circulando con normalidad. 
 
-\textbf{Gate anti-\emph{spillback}.} Un carril de salida con ocupación física $o_{\ell_\text{out}} \geq 0{,}85$ y velocidad media $\leq 0{,}5$~m/s se considera realmente atascado —no meramente lleno y drenando— y fuerza $r_{\ell_\text{out}}$ a un valor de penalización fijo de 2,0 para toda fase que lo alimente. Esta regla persigue evitar que vehículos queden varados físicamente dentro de la intersección al recibir verde hacia una salida sin capacidad disponible: con los teletransportes de SUMO deshabilitados, ese bloqueo constituye un interbloqueo (\emph{gridlock}) irreversible dentro de la simulación. La misma penalización se propaga a los carriles de entrada de un cruce vecino marcado como estancado, de modo que la señal de "aguas abajo no drena" viaje de intersección en intersección sin necesidad de comunicación explícita entre controladores.
+El factor $w$ pondera el descuento por congestión aguas abajo, y $\beta$ es un bono de inanición proporcional al tiempo transcurrido desde el último servicio de la fase, $t - t_i^{\text{serv}}$, que impide la exclusión indefinida de fases de baja demanda. Los valores adoptados para estos y los demás parámetros del controlador se resumen en la Tabla~\ref{tab:mp_parametros}.
 
-La Figura~\ref{fig:gridlock_spillback} resume la cadena causal que convierte una decisión local aparentemente razonable —dar verde hacia el carril de salida con mayor presión instantánea— en un bloqueo estructural de la red, y señala sobre qué eslabón de esa cadena actúa cada una de las tres contramedidas descritas en esta sección.
+La razón de cola de entrada $q_{\ell_\text{in}}/\kappa_{\ell_\text{in}}$ se deja deliberadamente sin techo superior en 1. Bajo saturación de corredor completo, varias fases en competencia alcanzan de forma simultánea colas iguales o mayores a su capacidad nominal, y recortar el cociente aplana justamente la señal que permite discriminar entre ellas; en pruebas preliminares, imponer ese techo derivó en bloqueos estables de los que la red no se recuperaba dentro del horizonte de simulación.
 
-\begin{figure}[htbp]
+\textbf{Gate anti-\emph{spillback}.} Un carril de salida que combina ocupación física alta con velocidad media casi nula se considera realmente atascado (no meramente lleno y drenando) y fuerza $r_{\ell_\text{out}}$ a un valor de penalización fijo, de modo que ninguna fase que lo alimente resulte elegida. La regla evita que un vehículo ingrese a la intersección sin posibilidad real de salir y termine bloqueando los movimientos transversales: con los teletransportes de SUMO deshabilitados, ese bloqueo constituye un interbloqueo (\emph{gridlock}) irreversible dentro de la simulación.
+
+La misma penalización opera además como mecanismo de coordinación entre cruces vecinos. Como todos los controladores locales comparten el proceso de simulación, cada uno consulta un mapa que asocia sus carriles de salida con el cruce que los controla aguas abajo y, si ese vecino ya fue marcado como estancado, penaliza el enlace correspondiente antes de calcular su propia presión. Así, la señal de ``aguas abajo no drena'' se propaga de intersección en intersección sin requerir mensajería ni un optimizador de \emph{offsets} centralizado, aunque, como se discute en las limitaciones del Capítulo~\ref{chp:experimentos}, esta coordinación implícita no sustituye a una optimización explícita de desfases entre semáforos coordinados.
+
+La Figura~\ref{fig:gridlock_spillback} resume la cadena causal que convierte una decisión local aparentemente razonable (dar verde hacia el carril de salida con mayor presión instantánea) en un bloqueo estructural de la red, y señala sobre qué eslabón de esa cadena actúa cada una de las tres contramedidas descritas en esta sección.
+
+\begin{figure}[ht]
 \centering
 \shorthandoff{>}
-\begin{tikzpicture}[node distance=0.9cm,>=latex]
+\begin{tikzpicture}[>=latex]
 
     \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=6.2cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
-    \tikzstyle{counter} = [rectangle, draw, rounded corners, fill=green!10,
-                         text width=4.3cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
-    \tikzstyle{line} = [draw,->]
-    \tikzstyle{dashedline} = [draw,->,dashed]
+                         text width=5.4cm, align=center,
+                         inner sep=4pt, font=\footnotesize]
+    \tikzstyle{cmbox} = [rectangle, draw, rounded corners, fill=green!10,
+                         text width=5.7cm, align=left,
+                         inner sep=4pt, font=\scriptsize]
+    \tikzstyle{line}   = [draw,->,thick]
+    \tikzstyle{leader} = [draw,-,dashed,gray]
 
-    \node[block] (a) {Fase recibe verde hacia un carril de salida casi lleno};
-    \node[block, below=of a] (b) {El vehículo entra al cruce pero no puede salir:\\ queda varado dentro de la intersección};
-    \node[block, below=of b] (c) {Bloquea los movimientos transversales del cruce};
-    \node[block, below=of c] (d) {Las colas transversales crecen y se propagan hacia atrás (\emph{spillback})};
-    \node[block, below=of d] (e) {El bloqueo alcanza al cruce vecino y cierra el ciclo: gridlock estructural};
-    \node[block, below=of e] (f) {Con teleport deshabilitado, el bloqueo es irreversible};
+    % --- cadena causal ---
+    \node[block]                     (n1) {Una fase recibe verde hacia un carril de salida casi lleno};
+    \node[block, below=2.0cm of n1] (n2) {El vehículo entra al cruce pero no puede salir: queda varado dentro de la intersección};
+    \node[block, below=1.3cm of n2] (n3) {Se bloquean los movimientos transversales del cruce};
+    \node[block, below=2.0cm of n3] (n4) {Las colas transversales crecen y se propagan hacia atrás (\emph{spillback})};
+    \node[block, below=2.0cm of n4] (n5) {El bloqueo alcanza al cruce vecino: \textbf{gridlock} irreversible};
 
-    \node[counter, right=1.6cm of a] (g) {Contramedida 1 — gate anti-\emph{spillback}\\ (ocupación $\geq 0{,}85$ y $v \leq 0{,}5$ m/s): la fase que alimenta un carril atascado pierde la elección};
-    \node[counter, right=1.6cm of d] (h) {Contramedida 2 — detector de estancamiento + modo drenaje: excluir fases que no drenan; servir el corredor crítico};
-    \node[counter, right=1.6cm of e] (i) {Contramedida 3 — supervisor de congelamiento: devolver el control al plan fijo 240~s antes del punto irreversible};
+    \path[line] (n1) -- (n2);
+    \path[line] (n2) -- (n3);
+    \path[line] (n3) -- (n4);
+    \path[line] (n4) -- (n5);
 
-    \path[line] (a) -- (b);
-    \path[line] (b) -- (c);
-    \path[line] (c) -- (d);
-    \path[line] (d) -- (e);
-    \path[line] (e) -- (f);
-    \path[dashedline] (a) -- (g);
-    \path[dashedline] (d) -- (h);
-    \path[dashedline] (e) -- (i);
+    % --- punto medio de cada eslabon intervenido: ancla comun de caja y guia ---
+    \coordinate (m1) at ($(n1.south)!0.5!(n2.north)$);
+    \coordinate (m2) at ($(n3.south)!0.5!(n4.north)$);
+    \coordinate (m3) at ($(n4.south)!0.5!(n5.north)$);
+
+    % --- contramedidas: alineadas al eslabon, conector horizontal ---
+    \node[cmbox, right=1.8cm of m1] (c1)
+        {\textbf{C1.} Gate anti-\emph{spillback}: no se elige la fase que alimenta un carril atascado};
+    \node[cmbox, right=1.8cm of m2] (c2)
+        {\textbf{C2.} Detector de estancamiento y modo drenaje: se excluye la fase que no drena};
+    \node[cmbox, right=1.8cm of m3] (c3)
+        {\textbf{C3.} Supervisor de congelamiento: retorno transitorio al plan fijo};
+
+    \path[leader] (m1) -- (c1.west);
+    \path[leader] (m2) -- (c2.west);
+    \path[leader] (m3) -- (c3.west);
+
+    % --- realimentacion: el bloqueo se cierra sobre si mismo ---
+    \draw[line,dashed] (n5.west) -- ([xshift=-1.2cm]n5.west)
+        -- node[left,font=\scriptsize,align=center,pos=0.5]
+           {el bloqueo\\ se realimenta}
+           ([xshift=-1.2cm]n1.west) -- (n1.west);
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Formación del gridlock por \emph{spillback} y contramedidas del controlador. Las flechas sólidas describen la cadena causal del bloqueo, de arriba hacia abajo; las flechas punteadas indican el eslabón de la cadena sobre el que interviene cada una de las tres contramedidas.}
+\caption{Formación del \emph{gridlock} por \emph{spillback} y contramedidas del controlador. La columna izquierda es la cadena causal del bloqueo; cada recuadro sombreado señala el eslabón sobre el que interviene una contramedida. La flecha discontinua de la izquierda indica que el bloqueo se realimenta: una vez cerrado el ciclo, y con los teletransportes de SUMO deshabilitados, la red no se recupera por sí sola.}
 \label{fig:gridlock_spillback}
 \end{figure}
 
-\textbf{Ciclo de decisión e histéresis.} El controlador evalúa un cambio de fase cada 5~s. Para desalentar cambios de fase innecesarios (\emph{flapping}) ante presiones casi empatadas, una fase distinta a la activa solo desplaza a esta última si su presión supera a la de la fase activa por un factor de histéresis de 1,3.
+\textbf{Ciclo de decisión.} El controlador reevalúa la fase activa a intervalos fijos y solo conmuta si se cumplen tres condiciones: que la fase en curso haya completado su verde mínimo, que exista al menos una alternativa no excluida, y que la presión de esa alternativa supere a la de la fase activa por un margen de histéresis. Ese margen desalienta los cambios de fase innecesarios (\emph{flapping}) ante presiones casi empatadas. Toda conmutación intercala una etapa de luz amarilla seguida de un despeje en rojo total antes de habilitar la fase entrante, replicando la seguridad de las transiciones del plan fijo de SUMO.
 
-\textbf{Detección de estancamiento y modo drenaje.} Si, tras tres servicios consecutivos, la cola de entrada de una fase no disminuye respecto del servicio anterior, se infiere que el bloqueo ocurre aguas abajo y no responde a asignar más verde local: la fase se excluye temporalmente, con un período de exclusión que comienza en 60~s y se duplica en cada reincidencia hasta un techo de 240~s (retroceso exponencial). Si en un momento dado todas las fases alternativas a la activa están excluidas, el controlador entra en modo drenaje: sirve únicamente la fase con mayor cola de entrada en volumen absoluto (no en razón normalizada), y limpia su estado de exclusión para poder atenderla de forma sostenida. El criterio de volumen absoluto, en lugar de la razón relativa que gobierna la presión en régimen normal, se adoptó porque bajo saturación total varias fases alcanzan simultáneamente razones de cola cercanas o iguales a 1,0 (por el diseño sin techo descrito arriba), de modo que la razón normalizada deja de discriminar entre ellas justo cuando el modo drenaje necesita elegir un único corredor crítico; el volumen absoluto de vehículos detenidos sí conserva esa capacidad de discriminación en el límite de saturación.
+\textbf{Detección de estancamiento y modo drenaje.} Si tras varios servicios consecutivos la cola de entrada de una fase no disminuye, se infiere que el bloqueo ocurre aguas abajo y no responde a asignar más verde local: la fase se excluye temporalmente, con un período de exclusión que se duplica en cada reincidencia hasta un techo máximo (retroceso exponencial). Cuando todas las alternativas a la fase activa están excluidas, el controlador entra en \emph{modo drenaje} y sirve de forma sostenida la fase con mayor cola de entrada en volumen absoluto.
 
-\textbf{Coordinación implícita entre cruces.} La red no cuenta con una capa de comunicación explícita entre semáforos: todos los controladores locales comparten el mismo proceso de simulación, y esa colocalización se aprovecha mediante un mapa que asocia cada carril de salida con el par (cruce, fase) que lo controla aguas abajo. Antes de calcular su propia presión, cada cruce consulta si alguno de sus carriles de salida alimenta la entrada de un cruce vecino que ya fue marcado como estancado, y en ese caso aplica al enlace correspondiente el mismo factor de penalización $\mathrm{COORDINATION\_BLOCK\_RATIO} = 2{,}0$ que usa el gate anti-\emph{spillback} local. De esta manera, la señal de ``aguas abajo no drena'' se propaga de intersección en intersección sin requerir mensajería ni un optimizador de offsets centralizado, aunque —como se discute en las limitaciones del Capítulo~\ref{chp:experimentos}— esta coordinación implícita no sustituye a una optimización explícita de desfases entre semáforos coordinados.
+El criterio de volumen absoluto, en lugar de la razón normalizada que gobierna la presión en régimen normal, responde al mismo argumento que justifica dejar la razón de entrada sin techo: bajo saturación total varias fases alcanzan razones de cola equivalentes, de modo que la métrica normalizada deja de discriminar entre ellas justo cuando el modo drenaje necesita elegir un único corredor crítico.
 
-\textbf{Supervisor de congelamiento.} Como resguardo de última instancia frente a un camino hacia el interbloqueo generalizado de la red, un supervisor independiente monitorea la fracción de vehículos con velocidad $<0{,}1$~m/s sobre el total de vehículos en red. Si esa fracción se mantiene igual o por encima de 0,7 durante 60~s continuos, el supervisor restaura en todos los semáforos el programa fijo original de SUMO —que por construcción no puede bloquearse— y suspende las decisiones de Max-Pressure durante 240~s, tras lo cual el control vuelve a Max-Pressure con el estado de estancamiento reiniciado.
+\textbf{Supervisor de congelamiento.} Como resguardo de última instancia frente a un interbloqueo generalizado, un supervisor independiente monitorea la fracción de vehículos detenidos sobre el total de vehículos en red. Si esa fracción se mantiene alta durante una ventana sostenida, restaura en todos los semáforos el programa fijo original de SUMO, que por construcción no puede bloquearse, y suspende las decisiones de Max-Pressure durante un período de recuperación, tras el cual el control vuelve a Max-Pressure con el estado de estancamiento reiniciado.
 
-La Figura~\ref{fig:mp_ciclo} integra los mecanismos anteriores en el ciclo de decisión completo que Max-Pressure ejecuta cada 5~s para cada intersección semaforizada, desde la resolución de una transición en curso hasta la actualización del detector de estancamiento tras un eventual cambio de fase.
+\textbf{Relación con el optimizador estratégico.} El verde mínimo y el verde máximo duro de cada fase se definen como múltiplos del verde base equitativo del semáforo, esto es, del promedio de las duraciones de fase de su programa original. El presupuesto de ciclo que el optimizador PSO de traffic-sync fija dinámicamente actúa únicamente como un techo blando de referencia por fase, calculado como $C/n$ con $C$ el largo de ciclo optimizado y $n$ el número de fases del semáforo: puede acotar el verde máximo efectivo por debajo del máximo duro en régimen fluido, pero no constituye un reparto exacto ni impide que Max-Pressure extienda una fase realmente saturada.
 
-\begin{figure}[htbp]
+Queda así resuelto el conflicto de autoridad entre la capa estratégica, que optimiza en el agregado y con retraso, y la capa táctica, que reacciona en tiempo casi real a la condición local de cada carril.
+
+\begin{table}[htbp]
 \centering
-\shorthandoff{>}
-\begin{tikzpicture}[node distance=0.8cm,>=latex]
+\caption{Parámetros del controlador táctico Max-Pressure.}
+\label{tab:mp_parametros}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} & \textbf{Rol} \\
+\midrule
+Período de decisión & 5~s & Cadencia de reevaluación de la fase activa \\
+$w$ & 1,0 & Peso del descuento por congestión de salida \\
+$\beta$ & 0,05~s$^{-1}$ & Bono de inanición por tiempo sin servicio \\
+Espacio por vehículo & 7,5~m & Base del cálculo de la capacidad $\kappa_{\ell}$ \\
+Umbral de detención & 0,1~m/s & Velocidad bajo la cual un vehículo cuenta como cola \\
+Salida de avance lento & 1,0~m/s & Habilita el uso de la ocupación en $r_{\ell_\text{out}}$ \\
+\midrule
+Ocupación de \emph{spillback} & 0,85 & Umbral de carril de salida atascado \\
+Velocidad de \emph{spillback} & 0,5~m/s & Umbral de carril de salida atascado \\
+Penalización por bloqueo & 2,0 & Valor forzado de $r_{\ell_\text{out}}$ ante atasco \\
+\midrule
+Factor de histéresis & 1,3 & Margen de presión exigido para conmutar \\
+Verde mínimo & $0{,}4 \times$ verde base & Duración mínima garantizada por fase \\
+Verde máximo duro & $1{,}5 \times$ verde base & Cota superior no anulable por el PSO \\
+Amarillo / todo-rojo & 3~s / 1~s & Transición segura entre fases \\
+\midrule
+Servicios sin drenaje & 3 & Disparan la exclusión temporal de una fase \\
+Exclusión inicial / máxima & 60~s / 240~s & Retroceso exponencial del estancamiento \\
+Fracción de congelamiento & $\geq 0{,}7$ durante 60~s & Dispara el supervisor \\
+Período de recuperación & 240~s & Duración del retorno al plan fijo \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-    \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=6.4cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
-    \tikzstyle{decision} = [rectangle, draw, dashed, rounded corners,
-                         text width=6.4cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
-    \tikzstyle{line} = [draw,->]
+El Algoritmo~\ref{alg:mp_ciclo} integra los mecanismos anteriores en el ciclo completo que el controlador ejecuta en cada intersección semaforizada, desde la resolución de una transición en curso hasta la actualización del detector de estancamiento tras un eventual cambio de fase. Las salvaguardas se evalúan antes que la presión, de modo que una red comprometida nunca queda a merced de la decisión local.
 
-    \node[block] (t) {\texttt{tick}($t$) por semáforo (TLS)};
-    \node[decision, below=of t] (tr) {\textbf{¿transición en curso?}};
-    \node[block, right=1.8cm of tr] (adv) {Sí: avanzar amarillo $\to$ todo-rojo $\to$ verde};
-    \node[decision, below=of tr] (frz) {\textbf{Supervisor: ¿red congelada?}\\ (fracción de detenidos $\geq 0{,}7$ durante 60~s)};
-    \node[block, right=1.8cm of frz] (rec) {Sí: modo recuperación —\\ restaurar plan fijo original 240~s y limpiar estado};
-    \node[decision, below=of frz] (mg) {\textbf{¿verde mínimo cumplido?}\\ ($0{,}4 \times$ verde base)};
-    \node[block, right=1.8cm of mg] (fin1) {No: mantener fase};
-    \node[block, below=of mg] (pr) {Presión por fase:\\ $\sum(\text{cola}_{\text{in}} - w\cdot\max(\text{cola}_{\text{out}},\text{ocup}_{\text{out}})) + $ bono inanición $0{,}05$/s};
-    \node[block, below=of pr] (spb) {Gate anti-\emph{spillback}:\\ salida ocupada $\geq 0{,}85$ y $v \leq 0{,}5$ m/s $\Rightarrow$ penalizar con razón 2,0};
-    \node[decision, below=of spb] (stl) {\textbf{¿alguna alternativa no estancada?}};
-    \node[block, below=of stl, xshift=-2.2cm] (cand) {Sí: candidatas = fases no estancadas};
-    \node[block, below=of stl, xshift=2.2cm] (drn) {No: modo drenaje —\\ solo la fase de mayor cola absoluta};
-    \node[decision, below=of cand, xshift=2.2cm] (hys) {\textbf{¿mejor presión $>$ actual $\times$ 1,3?}};
-    \node[block, right=1.8cm of hys] (fin2) {No: mantener fase};
-    \node[block, below=of hys] (sw) {Sí: iniciar transición —\\ amarillo 3~s $\to$ todo-rojo 1~s $\to$ verde};
-    \node[block, below=of sw] (upd) {Actualizar detector de estancamiento\\ (cola no baja tras 3 servicios $\Rightarrow$ cooldown $60 \to 240$~s)};
-
-    \path[line] (t) -- (tr);
-    \path[line] (tr) -- node[above,font=\scriptsize] {sí} (adv);
-    \path[line] (tr) -- node[left,font=\scriptsize] {no} (frz);
-    \path[line] (frz) -- node[above,font=\scriptsize] {sí} (rec);
-    \path[line] (frz) -- node[left,font=\scriptsize] {no} (mg);
-    \path[line] (mg) -- node[above,font=\scriptsize] {no} (fin1);
-    \path[line] (mg) -- node[left,font=\scriptsize] {sí} (pr);
-    \path[line] (pr) -- (spb);
-    \path[line] (spb) -- (stl);
-    \path[line] (stl) -| node[above,near start,font=\scriptsize] {sí} (cand);
-    \path[line] (stl) -| node[above,near start,font=\scriptsize] {no} (drn);
-    \path[line] (cand) -- (hys);
-    \path[line] (drn) |- (hys);
-    \path[line] (hys) -- node[above,font=\scriptsize] {no} (fin2);
-    \path[line] (hys) -- node[left,font=\scriptsize] {sí} (sw);
-    \path[line] (sw) -- (upd);
-
-\end{tikzpicture}
-\shorthandon{>}
-\caption{Ciclo de decisión de Max-Pressure ejecutado cada 5~s para cada intersección semaforizada. Se lee de arriba hacia abajo: primero se resuelven las transiciones en curso, luego se consulta al supervisor de congelamiento y el verde mínimo, después se calcula la presión por fase incorporando el gate anti-\emph{spillback}, y finalmente se decide si conmutar de fase según el margen de histéresis. Los recuadros de trazo discontinuo son decisiones binarias; los de trazo continuo son las acciones ejecutadas según el resultado de cada decisión.}
-\label{fig:mp_ciclo}
-\end{figure}
-
-\textbf{Verde mínimo y máximo, y relación con el optimizador estratégico.} El verde mínimo de cada fase es 0,4 veces el verde base equitativo del semáforo (definido como el promedio de las duraciones de fase del programa original de SUMO), y el verde máximo duro es 1,5 veces ese mismo valor. El presupuesto de ciclo que el optimizador PSO de traffic-sync puede fijar dinámicamente actúa únicamente como un techo blando de referencia por fase, calculado como $C/n$ con $C$ el largo de ciclo optimizado y $n$ el número de fases del semáforo: este techo puede acotar el verde máximo efectivo por debajo del máximo duro en régimen fluido, pero nunca constituye un reparto exacto ni puede impedir que Max-Pressure extienda una fase realmente saturada. De esta manera se resuelve el conflicto de autoridad entre la capa estratégica, que optimiza en el agregado y con retraso, y la capa táctica, que reacciona en tiempo casi real a la condición local de cada carril.
-
-\textbf{Transiciones seguras.} Todo cambio de fase intercala una etapa de luz amarilla de 3~s seguida de un despeje en rojo total de 1~s antes de habilitar la fase entrante, replicando la seguridad de las transiciones del plan fijo de SUMO.
+\begin{algorithm}[htbp]
+\caption{Ciclo de decisión de Max-Pressure, ejecutado cada 5~s en cada intersección semaforizada.}
+\label{alg:mp_ciclo}
+\begin{algorithmic}[1]
+\Require fase activa $a$; conjunto de fases $\mathcal{F}$; estado de estancamiento
+\Ensure fase a servir durante el próximo intervalo
+\If{hay una transición en curso}
+    \State avanzar la secuencia amarillo $\to$ todo-rojo $\to$ verde
+    \State \Return
+\EndIf
+\If{la fracción de vehículos detenidos se mantuvo alta durante la ventana del supervisor}
+    \State restaurar el plan fijo original y suspender el control táctico
+    \State \Return
+\EndIf
+\If{$a$ no completó su verde mínimo}
+    \State \Return \Comment{mantener la fase activa}
+\EndIf
+\ForEach{fase $i \in \mathcal{F}$}
+    \State $P_i \gets$ presión de $i$ según la Ecuación~\eqref{eq:max_pressure}
+    \If{alguna salida de $i$ está atascada}
+        \State forzar la penalización de bloqueo y recalcular $P_i$ \Comment{gate anti-\emph{spillback}}
+    \EndIf
+\EndFor
+\State $\mathcal{C} \gets \{\, i \in \mathcal{F} : i$ no está excluida por estancamiento $\}$
+\If{$\mathcal{C} = \emptyset$}
+    \State $\mathcal{C} \gets \{$ fase de mayor cola de entrada en volumen absoluto $\}$ \Comment{modo drenaje}
+\EndIf
+\State $i^{*} \gets \arg\max_{i \in \mathcal{C}} P_i$
+\If{$P_{i^{*}}$ supera a $P_a$ por el margen de histéresis}
+    \State iniciar la transición hacia $i^{*}$
+    \State actualizar el detector de estancamiento de $a$
+\EndIf
+\end{algorithmic}
+\end{algorithm}
 
 % -----------------------------------------------------------------------------
 \section{Flujo de Integración}
@@ -216,34 +252,30 @@ El flujo de integración entre traffic-sim y traffic-sync sigue una secuencia c�
 
 De esta manera, traffic-sim se comporta como un laboratorio virtual donde se evalúa en bucle el desempeño del controlador difuso Mamdani y del optimizador PSO, con escenarios construidos a partir de mapas reales. Los resultados, incluyendo métricas temporales y distribuciones de tiempos de viaje, se analizan mediante las utilidades de visualización.
 
-Esta secuencia de seis pasos no ocurre a una única cadencia: cada mecanismo del sistema opera en una escala temporal propia, y la separación entre ellas es precisamente lo que evita que las decisiones estratégicas de traffic-sync y las decisiones tácticas locales de Max-Pressure compitan por autoridad sobre el mismo instante de control. La Figura~\ref{fig:escalas_temporales} resume esas cinco escalas, de la microsimulación a la recuperación supervisada, ordenadas de la más rápida a la más lenta.
+Esta secuencia de seis pasos no ocurre a una única cadencia: cada mecanismo del sistema opera en una escala temporal propia, y la separación entre ellas es precisamente lo que evita que las decisiones estratégicas de traffic-sync y las decisiones tácticas locales de Max-Pressure compitan por autoridad sobre el mismo instante de control. La Tabla~\ref{tab:escalas_temporales} resume esas cinco escalas, de la microsimulación a la recuperación supervisada, ordenadas de la más rápida a la más lenta. El rango completo abarca poco más de dos órdenes de magnitud, y ningún par de capas contiguas comparte cadencia: esa separación es la que permite que cada una decida sin bloquear a la siguiente.
 
-\begin{figure}[htbp]
+\begin{table}[htbp]
 \centering
-\shorthandoff{>}
-\begin{tikzpicture}[node distance=0.3cm,>=latex]
+\caption{Escalas temporales del control jerárquico. Las cinco cadencias son concurrentes, no sucesivas: cada mecanismo decide sobre su propio período sin esperar a los demás.}
+\label{tab:escalas_temporales}
+\footnotesize
+\begin{tabular}{llll}
+\toprule
+\textbf{Mecanismo} & \textbf{Capa} & \textbf{Cadencia} & \textbf{Decisión que toma} \\
+\midrule
+Paso de microsimulación (SUMO) & Base         & $1$~s   & Avance del estado de la red \\
+Controlador Max-Pressure       & Táctica      & $5$~s   & Qué fase recibe verde \\
+Detector de cuellos de botella & Enlace       & $15$~s  & Si se solicita una optimización \\
+Optimización difuso--PSO       & Estratégica  & $60$~s\textsuperscript{a} & Largo de ciclo del clúster \\
+Supervisor de congelamiento    & Salvaguarda  & $240$~s\textsuperscript{b} & Si se devuelve el control al plan fijo \\
+\bottomrule
+\end{tabular}
 
-    \tikzstyle{block} = [rectangle, draw, rounded corners, fill=blue!8,
-                         text width=2.4cm, align=center,
-                         minimum height=1.3cm, font=\footnotesize]
-    \tikzstyle{line} = [draw,->,thick]
-
-    \node[block] (a) {SUMO\\ paso de simulación\\ \textbf{1 s}};
-    \node[block, right=1.0cm of a] (b) {Max-Pressure\\ decisión de fase\\ \textbf{cada 5 s}};
-    \node[block, right=1.0cm of b] (c) {Detección de\\ cuellos de botella\\ \textbf{cada 15 s}};
-    \node[block, right=1.0cm of c] (d) {Optimización\\ estratégica por clúster\\ \textbf{cooldown 60 s}};
-    \node[block, right=1.0cm of d] (e) {Recuperación ante\\ congelamiento\\ \textbf{ventanas de 240 s}};
-
-    \path[line] (a) -- (b);
-    \path[line] (b) -- (c);
-    \path[line] (c) -- (d);
-    \path[line] (d) -- (e);
-
-\end{tikzpicture}
-\shorthandon{>}
-\caption{Escalas de tiempo del control jerárquico. Cada capa decide con una cadencia propia, un orden de magnitud mayor que la anterior: la microsimulación de SUMO fija el paso base, Max-Pressure decide la fase a servir, el detector de cuellos de botella dispara la optimización estratégica sujeta a cooldown, y el supervisor de congelamiento gobierna la recuperación ante un bloqueo generalizado.}
-\label{fig:escalas_temporales}
-\end{figure}
+\vspace{0.2cm}
+{\footnotesize\raggedright
+\textsuperscript{a}~Período mínimo de enfriamiento entre optimizaciones de un mismo clúster, no una cadencia fija: la optimización se dispara por evento.\\
+\textsuperscript{b}~Duración de la ventana de recuperación, no un período de muestreo.\par}
+\end{table}
 
 % -----------------------------------------------------------------------------
 \section{Escenario de Simulación y Parámetros de Detección}
@@ -271,23 +303,30 @@ La severidad se clasifica como \emph{alta} (densidad elevada y velocidad baja), 
 
 \begin{table}[htbp]
 \centering
-\caption{Esquema del payload enviado de traffic-sim a traffic-sync ante un cuello de botella.}
+\caption{Esquema del payload enviado de traffic-sim a traffic-sync ante un cuello de botella. Los campos aparecen agrupados por su nivel de anidamiento en el documento JSON.}
 \label{tab:sim_payload}
-\begin{tabular}{lll}
+\footnotesize
+\shorthandoff{"}
+\begin{tabular}{@{}llp{7.4cm}@{}}
 \toprule
 \textbf{Campo} & \textbf{Tipo} & \textbf{Descripción / Ejemplo} \\
 \midrule
-\texttt{version} & string & Versión del protocolo (\texttt{"2.0"}) \\
-\texttt{type} & string & Tipo de mensaje (\texttt{"data"}) \\
-\texttt{timestamp} & string & ISO 8601 UTC (\texttt{"2025-09-12T14:23:01Z"}) \\
+\texttt{version}          & string & Versión del protocolo (\texttt{"2.0"}) \\
+\texttt{type}             & string & Tipo de mensaje (\texttt{"data"}) \\
+\texttt{timestamp}        & string & ISO 8601 UTC (\texttt{"2025-09-12T14:23:01Z"}) \\
 \texttt{traffic\_light\_id} & string & ID del semáforo SUMO (\texttt{"20928101"}) \\
-\texttt{sensors[].controlled\_edges} & array & Tramos controlados (\texttt{["-143977090\#0", ...]}) \\
-\texttt{sensors[].metrics.vehicles\_per\_minute} & int & Volumen observado (\texttt{18}) \\
-\texttt{sensors[].metrics.avg\_speed\_kmh} & float & Velocidad media en km/h (\texttt{12.4}) \\
-\texttt{sensors[].metrics.avg\_circulation\_time\_sec} & float & Tiempo medio de circulación en s (\texttt{47.3}) \\
-\texttt{sensors[].metrics.density} & float & Densidad en veh/km (\texttt{67.2}) \\
-\texttt{sensors[].vehicle\_stats} & object & Conteo por tipo: \texttt{\{car, motorcycle, bus, truck\}} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{En cada elemento de} \texttt{sensors[]}} \\
+\texttt{controlled\_edges} & array  & Tramos controlados (\texttt{["-143977090\#0", \ldots]}) \\
+\texttt{vehicle\_stats}    & object & Conteo por tipo: \texttt{\{car, motorcycle, bus, truck\}} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{En} \texttt{sensors[].metrics}} \\
+\texttt{vehicles\_per\_minute}     & int   & Volumen observado (\texttt{18}) \\
+\texttt{avg\_speed\_kmh}           & float & Velocidad media en km/h (\texttt{12.4}) \\
+\texttt{avg\_circulation\_time\_sec} & float & Tiempo medio de circulación en s (\texttt{47.3}) \\
+\texttt{density}                  & float & Densidad en veh/km (\texttt{67.2}) \\
 \bottomrule
 \end{tabular}
+\shorthandon{"}
 \end{table}
 
