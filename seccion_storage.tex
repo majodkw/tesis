@@ -45,33 +45,43 @@ El módulo traffic-storage ofrece una API HTTP que recibe cargas de datos en un 
 
 BlockDAG (Block Directed Acyclic Graph) generaliza la estructura lineal de blockchain permitiendo que cada bloque referencie a múltiples bloques padres anteriores, formando un grafo dirigido acíclico en lugar de una cadena única \cite{wang2023dag,sompolinsky2021phantom}. Esta arquitectura permite que bloques creados en paralelo se integren en el consenso sin ser descartados como huérfanos, mejorando el aprovechamiento del ancho de banda de la red y posibilitando mayores tasas de transacciones y menores latencias de confirmación que las típicamente alcanzables en cadenas lineales \cite{wang2023dag}.
 
-La Tabla~\ref{tab:blockchain_vs_blockdag} sintetiza las principales diferencias entre arquitecturas blockchain tradicionales y BlockDAG basadas en protocolos como GHOSTDAG. La comparación considera protocolos representativos de cada paradigma: Nakamoto consensus implementado en Bitcoin y Ethereum para blockchains lineales \cite{nakamoto2008bitcoin,buterin2014ethereum}, y PHANTOM/GHOSTDAG como generalización del consenso distribuido en estructuras DAG \cite{sompolinsky2021phantom}.
+La Tabla~\ref{tab:blockchain_vs_blockdag} sintetiza las diferencias estructurales entre ambas arquitecturas. La comparación considera protocolos representativos de cada paradigma: Nakamoto consensus implementado en Bitcoin y Ethereum para blockchains lineales \cite{nakamoto2008bitcoin,buterin2014ethereum}, y PHANTOM/GHOSTDAG como generalización del consenso distribuido en estructuras DAG \cite{sompolinsky2021phantom}.
 
 \begin{table}[htbp]
-\renewcommand{\arraystretch}{1.3}
-\caption{Comparación entre Blockchain Tradicional y BlockDAG}
-\label{tab:blockchain_vs_blockdag}
 \centering
+\caption{Diferencias estructurales entre una blockchain lineal y un BlockDAG con consenso GHOSTDAG \cite{sompolinsky2021phantom,zhang2025sok}. La comparación es cualitativa: las cifras de rendimiento medidas en este trabajo se presentan en la Tabla~\ref{tab:comparativa_blockchain}.}
+\label{tab:blockchain_vs_blockdag}
+\renewcommand{\arraystretch}{1.3}
 \footnotesize
-\begin{tabular}{lcc}
-\hline
-\textbf{Característica} & \textbf{Blockchain Tradicional} & \textbf{BlockDAG (GHOSTDAG)} \\
-\hline
-Topología & Lineal (1 padre)\cite{sompolinsky2021phantom} & Grafo acíclico (múltiples padres)\cite{sompolinsky2021phantom,zhang2025sok} \\
-Bloques huérfanos & Descartados\cite{sompolinsky2021phantom} & Integrados como padres\cite{sompolinsky2021phantom} \\
-Ordenamiento & Total (intrínseco) & Parcial $\rightarrow$ Total (vía algoritmo)\cite{sompolinsky2021phantom} \\
-Escalabilidad & Limitada\cite{sompolinsky2021phantom} & Alta (ancho de banda físico)\cite{sompolinsky2021phantom,zhang2025sok} \\
-Confirmación & Probabilística lenta & Probabilística rápida (segundos)\cite{zhang2025sok} \\
-Minería & Competitiva\cite{sompolinsky2021phantom} & Cooperativa\cite{sompolinsky2021phantom} \\
-Throughput típico & 7-30 TPS\cite{nakamoto2008bitcoin,buterin2014ethereum} & 100+ TPS\cite{zhang2025sok} \\
-Latencia de bloque & 10 min (Bitcoin), 12 s (Ethereum)\cite{ethereum_blocks} & Sub-segundo a segundos\cite{zhang2025sok} \\
-\hline
+\begin{tabular}{@{}p{2.9cm}p{5.6cm}p{5.6cm}@{}}
+\toprule
+\textbf{Característica} & \textbf{Blockchain lineal} & \textbf{BlockDAG (GHOSTDAG)} \\
+\midrule
+Topología
+  & Cada bloque referencia un único padre
+  & Cada bloque referencia varios padres \\
+Bloques concurrentes
+  & Se descartan como huérfanos
+  & Se integran al grafo y cuentan para el consenso \\
+Ordenamiento
+  & Total, inducido por la propia cadena
+  & Parcial en el grafo; el algoritmo de consenso lo completa a un orden total \\
+Minería
+  & Competitiva: el bloque que llega segundo se pierde
+  & Cooperativa: todo bloque válido aporta trabajo al consenso \\
+Límite de rendimiento
+  & El protocolo frena la tasa de bloques para evitar huérfanos
+  & El ancho de banda de la red es el límite práctico \\
+Confirmación
+  & Probabilística; exige esperar varios bloques sucesivos
+  & Probabilística; la espera se acorta al integrar bloques paralelos \\
+\bottomrule
 \end{tabular}
 \end{table}
 
 En el contexto de este sistema, BlockDAG se considera como infraestructura de registro distribuido complementaria a la blockchain tradicional, pensada para escenarios de mayor escala donde múltiples intersecciones reportan datos con alta frecuencia. El módulo traffic-storage incorpora una capa de abstracción que permite, según la configuración, registrar eventos de almacenamiento tanto en un contrato EVM como en una red BlockDAG compatible, utilizando un cliente dedicado que construye y envía mensajes de registro a un nodo remoto. Estos mensajes contienen, de forma análoga a la variante blockchain, el identificador de semáforo, la marca de tiempo y el resumen criptográfico de contenido (CID de IPFS u otro identificador criptográfico).
 
-La lógica de alto nivel en el módulo de almacenamiento se mantiene independiente de la tecnología subyacente: la API recibe métricas y resultados de optimización, delega la persistencia de archivos a IPFS y, posteriormente, invoca una interfaz de "registro de evidencia" que puede mapearse a blockchain, BlockDAG o a un esquema dual. Esta separación permite que, a medida que se exploren o adopten redes DAG de mayor throughput para despliegues reales en entornos de ciudad inteligente, el resto del sistema (clasificación de congestión, PSO, paneles de monitoreo) continúe interactuando con un mismo punto de entrada consistente.
+La lógica de alto nivel en el módulo de almacenamiento se mantiene independiente de la tecnología subyacente: la API recibe métricas y resultados de optimización, delega la persistencia de archivos a IPFS y, posteriormente, invoca una interfaz de ``registro de evidencia'' que puede mapearse a blockchain, BlockDAG o a un esquema dual. Esta separación permite que, a medida que se exploren o adopten redes DAG de mayor throughput para despliegues reales en entornos de ciudad inteligente, el resto del sistema (clasificación de congestión, PSO, paneles de monitoreo) continúe interactuando con un mismo punto de entrada consistente.
 
 % -----------------------------------------------------------------------------
 \section{IPFS}
