@@ -1,0 +1,7 @@
+escenario mopc_60 netconvert_90 largo_120
+corredor 10 10 10
+baja 9 8 8
+media 9 9 9
+alta 5 5 5
+saturada 8 8 7
+pico 7 6 7

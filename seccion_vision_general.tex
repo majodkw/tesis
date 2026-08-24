@@ -9,7 +9,7 @@ El sistema se estructura en torno a cuatro módulos fundamentales:
     
     \item \textbf{traffic-control}: Módulo de orquestación que actúa como punto de entrada unificado al sistema. Recibe observaciones de tráfico, valida los datos, coordina las invocaciones a los servicios especializados de optimización y almacenamiento, y mantiene metadatos operativos en una base de datos relacional.
     
-    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional, y genera configuraciones optimizadas de tiempos semafóricos que buscan reducir demoras y mejorar el flujo vehicular.
+    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional y determina, mediante PSO, el largo de ciclo semafórico óptimo por clúster de sensores; el ajuste fino del reparto de fases dentro de ese ciclo ocurre localmente en traffic-sim mediante control por presión (Max-Pressure).
     
     \item \textbf{traffic-storage}: Módulo de persistencia verificable que almacena datos del sistema en infraestructuras descentralizadas, garantizando trazabilidad, integridad e inmutabilidad de los registros históricos mediante el uso de tecnologías de almacenamiento distribuido y registro de auditoría.
 \end{itemize}
@@ -19,14 +19,20 @@ El sistema se estructura en torno a cuatro módulos fundamentales:
 El flujo operativo del sistema sigue un ciclo cerrado de captura, análisis, optimización y registro:
 
 \begin{enumerate}
-    \item \textbf{Captura de datos}: El módulo de simulación (o sensores reales en un despliegue futuro) genera observaciones de tráfico que incluyen métricas agregadas por intersección semafórizada.
-    
-    \item \textbf{Validación y orquestación}: El módulo de control recibe las observaciones, valida su estructura y coherencia, y coordina el flujo de información hacia los servicios especializados.
-    
-    \item \textbf{Análisis y optimización}: El módulo de sincronización procesa las métricas, clasifica el estado de congestión y determina configuraciones de tiempos semafóricos que mejoren el desempeño operativo.
-    
-    \item \textbf{Persistencia verificable}: Los datos originales y los resultados de optimización se almacenan de forma distribuida, registrando identificadores de contenido en estructuras inmutables que permiten auditar y verificar el comportamiento histórico del sistema.
+    \item \textbf{Detección}: en traffic-sim, el componente \texttt{BottleneckDetector} muestrea vía TraCI cada intersección semaforizada cada 15~s de tiempo simulado, registrando conteo de vehículos, velocidad media, densidad (en vehículos por kilómetro de carril) y longitud de cola. Cuando una intersección supera los umbrales de cuello de botella se dispara el ciclo de optimización, sujeto a un periodo de enfriamiento de 60~s por intersección, de modo que la re-optimización no sature el pipeline con información redundante mientras las recomendaciones estratégicas, que cambian en escala de minutos, todavía no se modificaron.
+
+    \item \textbf{Armado del clúster y payload crudo}: se agrupan los semáforos ubicados a una distancia de hasta 200~m del cuello de botella detectado y se construye un payload con identificadores de SUMO sin normalizar y densidad expresada directamente en veh/km. traffic-sim no aplica ninguna normalización sobre estos datos: el contrato de diseño reserva esa responsabilidad exclusivamente al eslabón siguiente.
+
+    \item \textbf{Normalización y transporte}: el endpoint \texttt{POST /ingest} de traffic-control valida, normaliza y persiste el batch recibido, sin tomar decisiones de control. Las normalizaciones aplicadas incluyen la extracción de identificadores mediante una expresión regular (por ejemplo, \texttt{GS\_cluster\_J0\_J1} se reduce a \texttt{0}), la división de la densidad entre 100 con acotamiento al intervalo $[0,1]$, la compleción del desglose por clase vehicular y el forzado de la versión de esquema. El batch se sube a traffic-storage, se recupera con reintentos (y una ruta de contingencia que usa el batch local si el almacenamiento falla, de modo que un fallo de persistencia nunca bloquee el control) y se reenvía a traffic-sync.
+
+    \item \textbf{Decisión estratégica}: traffic-sync encadena un sistema de inferencia difusa tipo Mamdani, que evalúa el nivel de congestión de cada sensor a partir de densidad, velocidad y flujo; un clustering jerárquico de Ward, que agrupa sensores con patrones de congestión similares; y un algoritmo PSO unidimensional, que busca por clúster la longitud de ciclo $C$ que minimiza una función de aptitud sensible a demora, capacidad y riesgo de atasco.
+
+    \item \textbf{Ejecución táctica con techo blando}: el ciclo óptimo devuelto por la capa estratégica no se traduce en una partición rígida en \emph{splits} fijos, sino que actúa como techo blando (\emph{soft cap}) sobre la duración de fase: el controlador local de traffic-sim, basado en el principio de Max-Pressure, decide en tiempo real qué fase servir según la presión de colas de entrada y salida, respetando ese límite superior orientativo.
 \end{enumerate}
+
+Las fases de detección, armado del clúster y ejecución táctica ocurren en traffic-sim; la normalización y transporte, en traffic-control; y la decisión estratégica, en traffic-sync. La Figura~\ref{fig:arquitectura_sistema_general} recoge este mismo flujo de datos a nivel de los cuatro módulos del sistema.
+
+Este diseño separa deliberadamente dos escalas temporales de decisión. La escala estratégica opera en minutos: el ciclo difuso--Ward--PSO se dispara solo cuando se detecta un cuello de botella y está sujeto al enfriamiento de 60~s por intersección descrito arriba, de modo que recalcula el presupuesto de ciclo con una frecuencia compatible con el costo computacional de la optimización y con la velocidad real de cambio de los patrones agregados de demanda. La escala táctica opera en segundos: la decisión de a qué fase dar verde se recalcula en cada paso de simulación en función de la presión instantánea de colas, respondiendo a la variabilidad de corto plazo que un recálculo cada varios minutos no podría capturar. Mantener estas escalas separadas, en lugar de que un único optimizador decida simultáneamente el ciclo y el reparto de fases, evita que ambas capas compitan por la misma variable de decisión a frecuencias incompatibles: la capa estratégica fija un presupuesto agregado sin necesidad de resolver, a esa misma frecuencia, el problema combinatorio de reparto de verde por fase, mientras que la capa táctica reacciona a la ocupación instantánea de colas sin necesidad de ejecutar en cada paso una optimización costosa a nivel de clúster.
 
 \section{Justificación de la Arquitectura}
 
