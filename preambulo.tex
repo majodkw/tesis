@@ -280,8 +280,11 @@
 \renewcommand{\algorithmicrepeat}{\textbf{repetir}}
 \renewcommand{\algorithmicuntil}{\textbf{antes de}}
 \renewcommand{\algorithmicreturn}{\textbf{retornar}}
-%\renewcommand{\algorithmicrequire}{\textbf{Require:}}
-%\renewcommand{\algorithmicensure}{\textbf{Ensure:}}
+\renewcommand{\algorithmicrequire}{\textbf{Entrada:}}
+\renewcommand{\algorithmicensure}{\textbf{Salida:}}
+% 'para cada X hacer' en vez de 'para cada X repetir'
+\algnewcommand\algorithmicforeachdo{\textbf{hacer}}
+\algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicforeachdo}
 %\renewcommand{\algorithmicelsif}{\algorithmicelse\ \algorithmicif}
 %\renewcommand{\algorithmicendif}{\algorithmicend\ \algorithmicif}
 %\renewcommand{\algorithmicendfor}{\algorithmicend\ \algorithmicfor}
@@ -293,3 +296,5 @@
 \addto\captionsspanish{\renewcommand*\contentsname{ÍNDICE}}
 \addto\captionsspanish{\renewcommand*\listfigurename{LISTA DE FIGURAS}}
 \addto\captionsspanish{\renewcommand*\listtablename{LISTA DE TABLAS}}
+% los epigrafes decian 'Cuadro' mientras toda la prosa referencia 'Tabla'
+\addto\captionsspanish{\renewcommand*\tablename{Tabla}}
