@@ -45,7 +45,7 @@ La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo tra
     \node[service, below right=1.3cm and 0.5cm of validator] (storage) {Cliente\\traffic-storage};
     
     % Almacenamiento distribuido (principal)
-    \node[storage, below=2.5cm of storage, xshift=0.5cm] (ipfs) {IPFS + BlockDAG\\(Almacenamiento principal)};
+    \node[storage, below=2.5cm of storage, xshift=0.5cm] (ipfs) {IPFS + BlockDAG\\};
     
     % Base de datos auxiliar
     \node[db, below=2.5cm of validator, xshift=-0.5cm] (db) {\tiny BD SQL\\\tiny Metadatos aux.};
@@ -55,10 +55,10 @@ La Figura~\ref{fig:control_architecture} ilustra la arquitectura del módulo tra
     \draw[arrow] (api) -- (validator);
     \draw[arrow] (validator) -- (sync);
     \draw[arrow] (validator) -- (storage);
-    \draw[arrow] (storage) -- node[right,font=\tiny] {Datos} (ipfs);
+    \draw[arrow] (storage) -- node[right,font=\scriptsize] {Datos} (ipfs);
     
     % Flechas auxiliares (dashed)
-    \draw[arrow_aux] (storage) |- node[left,font=\tiny] {CIDs} (db);
+    \draw[arrow_aux] (storage) |- node[left, yshift=-0.2cm, font=\tiny] {CIDs} (db);
     \draw[arrow_aux] (sync) |- node[left,font=\tiny] {Metadatos} (db);
 
 \end{tikzpicture}
