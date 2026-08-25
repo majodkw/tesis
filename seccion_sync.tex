@@ -1,6 +1,6 @@
 \label{sec:algoritmos_traffic_sync}
 
-El módulo traffic-sync implementa el servicio de optimización de tráfico del sistema, exponiendo una API que recibe mediciones macroscópicas de tráfico por semáforo y devuelve un presupuesto de ciclo semafórico optimizado por clúster. Para ello combina tres componentes principales: un sistema de inferencia difusa tipo Mamdani, que evalúa el nivel de congestión a partir de variables de flujo, velocidad y densidad; un agrupamiento jerárquico por enlace de Ward, que reúne sensores con salidas difusas similares en clústeres de tráfico; y un algoritmo de optimización Particle Swarm Optimization (PSO) de una sola variable, que ajusta el largo del ciclo semafórico por clúster con el objetivo de minimizar una función de aptitud que combina la congestión difusa re-evaluada con un costo de espera y de capacidad \cite{mamdani1975experiment,zadeh1965fuzzy,kennedy1995particle,ward1963hierarchical}. A diferencia de un esquema en el que el optimizador decidiera directamente el tiempo de verde de cada fase, en la arquitectura vigente traffic-sync opera como una capa de coordinación estratégica de ciclo: el resultado del PSO es un presupuesto agregado de tiempos de verde y rojo por clúster, que la capa de control táctico local —implementada mediante Max-Pressure en traffic-sim (Sección~\ref{subsec:traffic_sim_maxpressure})— reparte entre las fases de cada intersección según la longitud de cola observada en cada carril.
+El módulo traffic-sync implementa el servicio de optimización de tráfico del sistema, exponiendo una API que recibe mediciones macroscópicas de tráfico por semáforo y devuelve un presupuesto de ciclo semafórico optimizado por clúster. Para ello combina tres componentes principales: un sistema de inferencia difusa tipo Mamdani, que evalúa el nivel de congestión a partir de variables de flujo, velocidad y densidad; un agrupamiento jerárquico por enlace de Ward, que reúne sensores con salidas difusas similares en clústeres de tráfico; y un algoritmo de optimización Particle Swarm Optimization (PSO) de una sola variable, que ajusta el largo del ciclo semafórico por clúster con el objetivo de minimizar una función de aptitud que combina la congestión difusa re-evaluada con un costo de espera y de capacidad \cite{mamdani1975experiment,zadeh1965fuzzy,kennedy1995particle,ward1963hierarchical}. traffic-sync opera así como una capa de coordinación estratégica de ciclo: su salida es un presupuesto agregado de verde y rojo por clúster, que la capa de control táctico local reparte entre las fases de cada intersección según la longitud de cola observada en cada carril.
 
 % -----------------------------------------------------------------------------
 \section{Notación}
@@ -36,7 +36,8 @@ $D_{\max}, V_{\max}, VPM_{\max}$ & Extremos de los universos de $D$, $V$ y $VPM$
 $\mathit{wait\_cost}$ & Costo de espera; penaliza ciclos largos con carga baja & adimensional \\
 $\mathit{capacity\_cost}$ & Costo de capacidad; penaliza ciclos cortos con carga alta & adimensional \\
 $W$ & Peso relativo de los costos de espera/capacidad (2,0) & adimensional \\
-$\text{is\_gridlocked}$ & Predicado de atasco real (denso y detenido) & booleano \\
+$f(C)$ & Función de aptitud que minimiza el PSO & adimensional \\
+$f_{\text{gridlock}}(C)$ & Aptitud con la penalización adicional por atasco real & adimensional \\
 $p_{\text{best}_i}$ & Mejor posición histórica de la partícula $i$ & s \\
 $g_{\text{best}}$ & Mejor posición hallada por todo el enjambre & s \\
 $w$ (PSO) & Coeficiente de inercia (0,8) & adimensional \\
@@ -122,71 +123,42 @@ La Tabla~\ref{tab:fuzzy_mf} especifica los parámetros exactos de cada función 
 \end{tabular}
 \end{table}
 
-La Figura~\ref{fig:mamdani_flujo} resume el flujo de procesamiento en un sistema de inferencia Mamdani aplicado al problema de congestión vehicular, mostrando las etapas desde la fuzzificación de entradas hasta la defuzzificación que produce el nivel de congestión final.
+La Figura~\ref{fig:mamdani_cadena} traza la cadena de inferencia completa sobre un caso real, distinguiendo la evaluación de las 27 reglas mediante el conectivo AND como mínimo, la implicación que recorta cada consecuente a la altura de su antecedente, la agregación por máximo y la defuzzificación por centroide.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \shorthandoff{>}
-\begin{tikzpicture}[node distance=1.2cm,>=latex]
+\begin{tikzpicture}[
+    node distance=0.95cm,
+    etapa/.style={rectangle, draw, rounded corners, fill=blue!10,
+                  text width=7.2cm, align=center, minimum height=1.05cm, font=\small},
+    dato/.style={rectangle, draw, rounded corners, fill=yellow!10,
+                 text width=7.2cm, align=center, minimum height=1.05cm, font=\small},
+    line/.style={draw,->,thick}
+]
 
-    \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=5cm, align=center,
-                         minimum height=0.9cm, font=\small]
-    \tikzstyle{line} = [draw,->]
+    \node[dato]                  (in)    {Entradas nítidas:\\ $VPM = 42$, $V = 14$, $D = 121$};
+    \node[etapa, below=of in]    (fuzz)  {Fuzzificación a \emph{baja} / \emph{media} / \emph{alta}};
+    \node[etapa, below=of fuzz]  (rules) {Evaluación de las 27 reglas, con el mínimo como AND};
+    \node[etapa, below=of rules] (imp)   {Implicación:\\ recorte de cada consecuente};
+    \node[etapa, below=of imp]   (agg)   {Agregación por máximo\\ punto a punto};
+    \node[etapa, below=of agg]   (def)   {Defuzzificación por centroide};
+    \node[dato,  below=of def]   (out)   {Congestión nítida:\\ $8{,}2$ en $[0,10]$, categoría \emph{severa}};
 
-    \node[block] (inputs) {Entradas \emph{crisp}:\\ velocidad promedio, densidad, flujo};
-    \node[block, below=of inputs] (fuzz) {Fuzzificaci\'on:\\ c\'alculo de grados de pertenencia};
-    \node[block, below=of fuzz] (rules) {Base de reglas Mamdani:\\ combinaci\'on de etiquetas ling\"u\'isticas};
-    \node[block, below=of rules] (agg) {Agregaci\'on:\\ unificaci\'on de salidas difusas};
-    \node[block, below=of agg] (defuzz) {Defuzzificaci\'on:\\ c\'alculo de nivel de congesti\'on \emph{crisp}};
-    \node[block, below=of defuzz] (output) {Salida:\\ nivel de congesti\'on num\'erico y categ\'orico};
-
-    \path[line] (inputs) -- (fuzz);
-    \path[line] (fuzz) -- (rules);
-    \path[line] (rules) -- (agg);
-    \path[line] (agg) -- (defuzz);
-    \path[line] (defuzz) -- (output);
-
-\end{tikzpicture}
-\shorthandon{>}
-\caption{Etapas principales de un sistema de inferencia difusa tipo Mamdani aplicado a congestión vehicular \cite{mamdani1975experiment,izquierdo2018mamdani}.}
-\label{fig:mamdani_flujo}
-\end{figure}
-
-La Figura~\ref{fig:mamdani_cadena} detalla la misma cadena de inferencia con un ejemplo numérico intermedio, distinguiendo explícitamente la evaluación de las 27 reglas mediante el conectivo AND como mínimo, la implicación (que recorta cada consecuente a la altura de su antecedente), la agregación por máximo y la defuzzificación por centroide, es decir, los cinco pasos internos que la Figura~\ref{fig:mamdani_flujo} resume en la etapa ``base de reglas'' más ``agregación''.
-
-\begin{figure}[htbp]
-\centering
-\shorthandoff{>}
-\begin{tikzpicture}[node distance=1.0cm,>=latex]
-
-    \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=7.5cm, align=center,
-                         minimum height=0.9cm, font=\footnotesize]
-    \tikzstyle{line} = [draw,->]
-
-    \node[block] (in) {Entradas nítidas:\\ $VPM = 32$ veh/min, $V = 18$ km/h, $D = 95$ veh/km};
-    \node[block, below=of in] (fuzz) {Fuzzificación:\\ grado de pertenencia de cada entrada a \emph{low}/\emph{mid}/\emph{high}};
-    \node[block, below=of fuzz] (rules) {Evaluación de las 27 reglas:\\ antecedente $=\min$ de las 3 pertenencias (AND de Mamdani)};
-    \node[block, below=of rules] (imp) {Implicación:\\ cada regla recorta su consecuente (\emph{none}/\emph{mild}/\emph{severe}) a la altura de su antecedente};
-    \node[block, below=of imp] (agg) {Agregación:\\ máximo punto a punto de los consecuentes recortados};
-    \node[block, below=of agg] (def) {Defuzzificación por centroide:\\ congestión = centro de gravedad del conjunto agregado};
-    \node[block, below=of def] (out) {Salida nítida:\\ congestión $\in [0,10]$ + categoría por $\arg\max$ de pertenencia};
-
-    \path[line] (in) -- (fuzz);
-    \path[line] (fuzz) -- (rules);
+    \path[line] (in)    -- (fuzz);
+    \path[line] (fuzz)  -- (rules);
     \path[line] (rules) -- (imp);
-    \path[line] (imp) -- (agg);
-    \path[line] (agg) -- (def);
-    \path[line] (def) -- (out);
+    \path[line] (imp)   -- (agg);
+    \path[line] (agg)   -- (def);
+    \path[line] (def)   -- (out);
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Cadena completa de inferencia difusa de Mamdani, desde las entradas nítidas hasta la salida defuzzificada. Se lee de arriba hacia abajo: las entradas se fuzzifican, las 27 reglas se evalúan con el mínimo como AND, los consecuentes recortados se agregan por máximo y el centroide del conjunto agregado produce la congestión nítida final.}
+\caption{Cadena de inferencia difusa de Mamdani, ilustrada con el escenario de congestión severa de la Tabla~\ref{tab:sync_ejemplos}. Los recuadros amarillos son datos y los azules, operaciones.}
 \label{fig:mamdani_cadena}
 \end{figure}
 
-El módulo de evaluación expone funciones de alto nivel que reciben vectores de métricas de tráfico en formato estructurado y devuelven, para cada sensor o semáforo, un valor numérico de congestión y su categoría lingüística asociada. Estas funciones se utilizan en el pipeline principal del servicio web: el punto de entrada \texttt{/evaluate} recibe un lote de sensores, construye las entradas para el sistema difuso, ejecuta la evaluación Mamdani sobre cada uno y genera un conjunto de salidas que alimentan tanto el agrupamiento jerárquico de sensores como la función de aptitud del PSO. A diferencia de una arquitectura donde la salida difusa fuese en sí misma la función objetivo del optimizador, en el diseño actual la congestión Mamdani es un \emph{término} de una función de aptitud más amplia (Sección~\ref{subsec:pso_traffic_sync}): el sistema difuso re-evaluado sobre las métricas ajustadas por el ciclo candidato aporta la componente de congestión, mientras que términos adicionales penalizan el costo de espera y de capacidad asociados a un ciclo largo o corto. De esta forma, la lógica difusa conserva su rol de módulo de evaluación de desempeño que transforma mediciones de tráfico en un índice de congestión interpretable, pero ese índice pasa a ser un insumo del criterio de optimización en lugar del criterio completo.
+El módulo de evaluación expone funciones de alto nivel que reciben vectores de métricas de tráfico en formato estructurado y devuelven, para cada sensor o semáforo, un valor numérico de congestión y su categoría lingüística asociada. Estas funciones se utilizan en el pipeline principal del servicio web: el punto de entrada del servicio recibe un lote de sensores, construye las entradas para el sistema difuso, ejecuta la evaluación Mamdani sobre cada uno y genera un conjunto de salidas que alimentan tanto el agrupamiento jerárquico de sensores como la función de aptitud del PSO. A diferencia de una arquitectura donde la salida difusa fuese en sí misma la función objetivo del optimizador, en el diseño actual la congestión Mamdani es un \emph{término} de una función de aptitud más amplia (Sección~\ref{subsec:pso_traffic_sync}): el sistema difuso re-evaluado sobre las métricas ajustadas por el ciclo candidato aporta la componente de congestión, mientras que términos adicionales penalizan el costo de espera y de capacidad asociados a un ciclo largo o corto. De esta forma, la lógica difusa conserva su rol de módulo de evaluación de desempeño que transforma mediciones de tráfico en un índice de congestión interpretable, pero ese índice pasa a ser un insumo del criterio de optimización en lugar del criterio completo.
 
 La Tabla~\ref{tab:fuzzy_rules} presenta la base de reglas completa del sistema de inferencia
 Mamdani implementado en traffic-sync. Las 27 reglas cubren todas las combinaciones
@@ -239,9 +211,9 @@ Alto  & Alta  & Alta  & Severa \\
 \section{Agrupamiento Jerárquico por Enlace de Ward}
 \label{subsec:clustering_traffic_sync}
 
-Antes de aplicar PSO, traffic-sync agrupa los sensores evaluados por el sistema difuso en clústeres de tráfico con comportamiento similar, de modo que el ciclo semafórico se optimice una vez por grupo y no una vez por sensor individual. El agrupamiento se realiza mediante clustering jerárquico aglomerativo con enlace de Ward, que en cada paso fusiona el par de clústeres que produce el menor incremento en la suma de cuadrados intra-clúster, favoreciendo grupos compactos y de varianza mínima \cite{ward1963hierarchical}. El vector sobre el que se agrupa es unidimensional: el valor \emph{crisp} de congestión que produce la defuzzificación del sistema Mamdani para cada sensor (la salida \texttt{value} del módulo de evaluación difusa), con distancia euclidiana entre observaciones. Sobre el dendrograma resultante se aplica un corte por distancia con umbral $2$, formando clústeres planos mediante el criterio de distancia estándar de \texttt{scipy.cluster.hierarchy.fcluster}.
+Antes de aplicar PSO, traffic-sync agrupa los sensores evaluados por el sistema difuso en clústeres de tráfico con comportamiento similar, de modo que el ciclo semafórico se optimice una vez por grupo y no una vez por sensor individual. El agrupamiento se realiza mediante clustering jerárquico aglomerativo con enlace de Ward, que en cada paso fusiona el par de clústeres que produce el menor incremento en la suma de cuadrados intra-clúster, favoreciendo grupos compactos y de varianza mínima \cite{ward1963hierarchical}. El vector sobre el que se agrupa es unidimensional: el valor \emph{crisp} de congestión que produce la defuzzificación del sistema Mamdani para cada sensor, con distancia euclidiana entre observaciones. Sobre el dendrograma resultante se aplica un corte por distancia con umbral $2$, formando clústeres planos mediante el criterio de distancia estándar.
 
-Una vez asignados los clústeres, se calculan estadísticas descriptivas por grupo a posteriori: la moda de las categorías de congestión esperada y predicha, la media y desviación estándar del valor de congestión, y las medias de vehículos por minuto, velocidad y densidad. Estas estadísticas —en particular las medias de VPM, velocidad y densidad— son las que alimentan tanto la semilla del PSO (Ecuación~\ref{eq:load} y el cálculo de $C_{\text{base}}$) como la función de aptitud, de modo que cada clúster se optimiza como una unidad representativa de los sensores que agrupa.
+Una vez asignados los clústeres, se calculan estadísticas descriptivas por grupo a posteriori: la moda de las categorías de congestión esperada y predicha, la media y desviación estándar del valor de congestión, y las medias de vehículos por minuto, velocidad y densidad. Estas estadísticas (en particular las medias de VPM, velocidad y densidad) son las que alimentan tanto la semilla del PSO (Ecuación~\ref{eq:load} y el cálculo de $C_{\text{base}}$) como la función de aptitud, de modo que cada clúster se optimiza como una unidad representativa de los sensores que agrupa.
 
 % -----------------------------------------------------------------------------
 \section{Optimización de Enjambre de Partículas (PSO)}
@@ -289,6 +261,22 @@ La Figura~\ref{fig:pso_enjambre} ilustra esquemáticamente el concepto del enjam
 
 En el módulo traffic-sync, la lógica de PSO se implementa en el módulo de optimización por enjambre de partículas, que incluye el módulo de función de aptitud y el módulo de optimización. A diferencia de un diseño donde el PSO buscara directamente el tiempo de verde de cada fase, el espacio de búsqueda del optimizador se redujo a una sola variable por clúster: el largo de ciclo semafórico completo $C$. El reparto de ese ciclo entre las fases de cada intersección queda delegado a la capa de control táctico local Max-Pressure de traffic-sim, que decide en tiempo real cuánto verde recibe cada aproximación en función de la longitud de cola observada (Sección~\ref{subsec:traffic_sim_maxpressure}); esta sección no repite esa lógica local y se limita a describir el presupuesto de ciclo que traffic-sync le entrega. El módulo de optimización define la función principal de PSO, que recibe información agregada de tráfico por grupo (clúster) y aplica PSO para determinar el largo de ciclo óptimo por grupo. Cada partícula codifica un largo de ciclo propuesto, inicializado alrededor de un valor base calculado mediante una fórmula de carga normalizada de ingeniería de tráfico (función de cálculo de ciclo base en el módulo de aptitud), y restringido por límites mínimos y máximos coherentes con la normativa \cite{webster1958traffic,garber2019traffic}. El algoritmo utiliza configuraciones típicas de PSO (número de partículas, peso de inercia, componentes cognitiva y social, límites de velocidad) y añade mecanismos prácticos como parada temprana y reinicios parciales para evitar estancamiento en óptimos locales pobres. Dado que el espacio de búsqueda es unidimensional y de rango acotado, el enjambre se redimensionó respecto de implementaciones típicas de PSO multidimensional: un problema en $\mathbb{R}^1$ no requiere ni el número de partículas ni el número de iteraciones que sí serían necesarios para explorar espacios de mayor dimensionalidad.
 
+En cada iteración $k$, la partícula $i$ actualiza su velocidad y su posición según la regla
+canónica de PSO \cite{kennedy1995particle,shi1998parameter}, con la posición recortada al rango
+admisible de ciclo:
+
+\begin{equation}
+\begin{aligned}
+v_i^{k+1} &= w\,v_i^{k} + c_1 r_1 \left(p_{\text{best}_i} - x_i^{k}\right)
+                        + c_2 r_2 \left(g_{\text{best}} - x_i^{k}\right) \\
+x_i^{k+1} &= \operatorname{clip}\left(x_i^{k} + v_i^{k+1},\; C_{\min},\; C_{\max}\right)
+\end{aligned}
+\label{eq:pso_update}
+\end{equation}
+
+\noindent donde $r_1, r_2 \sim \mathcal{U}(0,1)$ se sortean en cada iteración, $w$ pondera la
+inercia y $c_1$, $c_2$ las atracciones hacia el mejor personal y el mejor global.
+
 La Tabla~\ref{tab:pso_params} especifica la configuración completa del algoritmo PSO
 implementado en traffic-sync.
 
@@ -324,8 +312,8 @@ del clúster con el sistema difuso Mamdani \cite{papageorgiou2003review,stevanov
 y agrega a esa congestión difusa un costo de espera y de capacidad que evita que el
 optimizador degenere hacia el extremo superior del rango de búsqueda. Dado un clúster con
 valores medios de vehículos por minuto ($VPM$), velocidad ($V$) y densidad ($D$), se define
-primero la fracción de ciclo útil $cf$ —la porción del ciclo no consumida por la pérdida de
-amarillo y todo-rojo— evaluada en el ciclo candidato $C$ y en el ciclo de referencia
+primero la fracción de ciclo útil $cf$ (la porción del ciclo no consumida por la pérdida de
+amarillo y todo-rojo), evaluada en el ciclo candidato $C$ y en el ciclo de referencia
 $C_{\text{ref}}$ bajo el cual fueron observadas las métricas:
 
 \begin{equation}
@@ -351,9 +339,9 @@ Sección~\ref{subsec:fuzzy_traffic_sync}. A esa congestión se le suma un térmi
 capacidad ponderado por la carga normalizada del cruce:
 
 \begin{equation}
-\text{load} = \alpha \cdot \min\!\left(\frac{D}{150},\,1\right)
-            + \beta \cdot \left(1 - \min\!\left(\frac{V}{60},\,1\right)\right)
-            + \gamma \cdot \min\!\left(\frac{VPM}{50},\,1\right)
+\text{load} = \alpha \cdot \min\!\left(\frac{D}{D_{\max}},\,1\right)
+            + \beta \cdot \left(1 - \min\!\left(\frac{V}{V_{\max}},\,1\right)\right)
+            + \gamma \cdot \min\!\left(\frac{VPM}{VPM_{\max}},\,1\right)
 \label{eq:load}
 \end{equation}
 
@@ -377,8 +365,8 @@ la carga del cruce (un cruce poco cargado no necesita un ciclo largo y sufre má
 promedio si lo tiene), mientras que \emph{capacity\_cost} penaliza ciclos cortos con más
 fuerza cuanto mayor es la carga (un cruce muy cargado pierde capacidad proporcionalmente si
 el ciclo es corto, porque la pérdida fija $Y$ pesa más). Cuando el clúster está en situación
-de atasco real —densidad normalizada $D/150 \geq 0{,}6$ y velocidad normalizada
-$V/60 \leq 0{,}05$ simultáneamente, condición que se denota \emph{gridlock}— se agrega
+de atasco real (densidad normalizada $D/D_{\max} \geq 0{,}6$ y velocidad normalizada
+$V/V_{\max} \leq 0{,}05$ simultáneamente, condición que se denota \emph{gridlock}), se agrega
 además un término que penaliza explícitamente los ciclos largos:
 
 \begin{equation}
@@ -400,112 +388,118 @@ desde ciclos más largos y viceversa.
 \subsection{Memoización de Resultados}
 \label{subsec:pso_memoizacion}
 
-Dado que la función de aptitud (Ecuación~\ref{eq:fitness}) depende únicamente de las estadísticas agregadas del clúster —vehículos por minuto, velocidad y densidad medias— y no de ningún estado externo, el PSO es determinista respecto de esa terna de valores: para las mismas estadísticas de entrada, el algoritmo converge siempre al mismo largo de ciclo óptimo. traffic-sync explota esta propiedad mediante una caché de resultados en memoria del proceso, indexada por una clave compuesta por las tres medias del clúster redondeadas a un decimal (VPM, velocidad y densidad). Cuando una nueva evaluación de clúster produce una clave ya presente en la caché, se reutiliza directamente el resultado almacenado sin ejecutar el enjambre; en caso contrario, se ejecuta la optimización completa y el resultado se guarda bajo esa clave para evaluaciones futuras.
+Dado que la función de aptitud (Ecuación~\ref{eq:fitness}) depende únicamente de las estadísticas agregadas del clúster (vehículos por minuto, velocidad y densidad medias) y no de ningún estado externo, el PSO es determinista respecto de esa terna de valores: para las mismas estadísticas de entrada, el algoritmo converge siempre al mismo largo de ciclo óptimo. traffic-sync explota esta propiedad mediante una caché de resultados en memoria del proceso, indexada por una clave compuesta por las tres medias del clúster redondeadas a un decimal (VPM, velocidad y densidad). Cuando una nueva evaluación de clúster produce una clave ya presente en la caché, se reutiliza directamente el resultado almacenado sin ejecutar el enjambre; en caso contrario, se ejecuta la optimización completa y el resultado se guarda bajo esa clave para evaluaciones futuras.
 
 El redondeo a un decimal es deliberado: convierte diferencias de ruido de medición insignificantes en la misma clave de caché, mientras que sigue distinguiendo condiciones de tráfico genuinamente distintas. Este mecanismo es particularmente relevante porque el orquestador del sistema (traffic-control) aplica un período de enfriamiento (\emph{cooldown}) de 60~s entre solicitudes sucesivas de optimización para un mismo semáforo: bajo tráfico real, las estadísticas agregadas de un clúster cambian poco entre ventanas de cooldown consecutivas, por lo que el acierto de caché es el caso dominante en operación. Empíricamente, una evaluación completa del PSO (enjambre de 12 partículas por hasta 40 iteraciones, cada una re-evaluando el sistema difuso Mamdani) toma del orden de 12~s, mientras que un acierto de caché se resuelve en menos de 1~ms, dos a tres órdenes de magnitud más rápido.
 
 La Figura~\ref{fig:pso_memoizacion} muestra el flujo completo del optimizador, incluida la vía rápida de memoización que domina en operación bajo el cooldown de 60~s descrito arriba.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \shorthandoff{>}
-\begin{tikzpicture}[node distance=0.9cm,>=latex]
+\begin{tikzpicture}[node distance=0.85cm,>=latex]
 
     \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=6.5cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
+                         text width=5.6cm, align=center,
+                         inner sep=4pt, font=\footnotesize]
     \tikzstyle{decision} = [rectangle, draw, dashed, rounded corners,
-                         text width=6.5cm, align=center,
-                         minimum height=0.8cm, font=\footnotesize]
+                         text width=5.6cm, align=center,
+                         inner sep=4pt, font=\footnotesize]
+    \tikzstyle{side} = [rectangle, draw, rounded corners, fill=blue!6,
+                         text width=3.8cm, align=center,
+                         inner sep=4pt, font=\scriptsize]
     \tikzstyle{line} = [draw,->]
 
-    \node[block] (stats) {Estadísticas del clúster:\\ $VPM$, $V$, $D$ medios};
-    \node[decision, below=of stats] (key) {Clave $=$ valores redondeados a 1 decimal\\ \textbf{¿clave en caché?}};
-    \node[block, below=of key, xshift=-2.3cm] (hit) {Sí (caso dominante bajo cooldown de 60~s):\\ reutilizar $C^*$ memorizado ($<1$~ms)};
-    \node[block, below=of key, xshift=2.3cm] (init) {No: inicializar 12 partículas\\ $x_i \sim \mathcal{N}(C_{\text{base}}, 10)$, $v_i = 0$};
-    \node[block, below=of init] (iter) {Iteración $k \leq 40$:\\ $v \leftarrow w v + c_1 r_1(p_{\text{best}}-x) + c_2 r_2(g_{\text{best}}-x)$\\ $x \leftarrow \text{clip}(x+v,\,60,\,120)$};
-    \node[block, below=of iter] (eval) {Evaluar fitness de cada partícula\\ y actualizar $p_{\text{best}}$ / $g_{\text{best}}$};
-    \node[decision, below=of eval] (stag) {\textbf{¿5 iteraciones sin mejora $\geq 10^{-3}$?}};
-    \node[block, below=of stag, xshift=2.3cm] (rst) {Sí, fitness $> 5$: reinicio parcial\\ (2 partículas $\sim \mathcal{N}(C_{\text{base}},10)$)};
-    \node[block, below=of stag, xshift=-2.3cm] (done) {Sí, fitness $\leq 5$: $C^* = g_{\text{best}}$};
-    \node[block, below=of done] (save) {Guardar $C^*$ en caché};
+    % --- columna principal ---
+    \node[block]                     (stats) {Estadísticas del clúster:\\ $VPM$, $V$, $D$ medios};
+    \node[decision, below=of stats]  (key)   {\textbf{¿estadísticas en caché?}};
+    \node[block, below=1.5cm of key] (init)  {Inicializar el enjambre\\ alrededor de $C_{\text{base}}$};
+    \node[block, below=of init]      (iter)  {Actualizar velocidad y posición\\ (Ecuación~\ref{eq:pso_update})};
+    \node[block, below=of iter]      (eval)  {Evaluar la aptitud y actualizar\\ $p_{\text{best}}$ y $g_{\text{best}}$};
+    \node[decision, below=of eval]   (stop)  {\textbf{¿converge o se agota\\ el presupuesto de iteraciones?}};
+    \node[block, below=1.5cm of stop] (done) {$C^{*} = g_{\text{best}}$};
+    \node[block, below=of done]      (save)  {Guardar $C^{*}$ en caché};
+    \node[block, below=of save]      (ret)   {Devolver $C^{*}$ al orquestador};
 
+    % --- ramas laterales ---
+    \node[side, below left=0.35cm and 0.7cm of key] (hit)
+        {Recuperar $C^{*}$ memorizado};
+    \node[side, right=0.7cm of eval] (rst)
+        {Reinicio parcial si sigue\\ estancado con aptitud alta};
+
+    % --- flujo principal ---
     \path[line] (stats) -- (key);
-    \path[line] (key) -| node[above,near start,font=\scriptsize] {sí} (hit);
-    \path[line] (key) -| node[above,near start,font=\scriptsize] {no} (init);
+    \path[line] (key)  -- node[right,font=\scriptsize] {no} (init);
     \path[line] (init) -- (iter);
     \path[line] (iter) -- (eval);
-    \path[line] (eval) -- (stag);
-    \path[line] (stag.east) to[bend left=40] node[right,font=\scriptsize] {no} (iter.east);
-    \path[line] (stag) -| node[above,near start,font=\scriptsize] {sí, $>5$} (rst);
-    \path[line] (rst.east) to[bend left=55] node[right,font=\scriptsize] {} (iter.east);
-    \path[line] (stag) -| node[above,near start,font=\scriptsize] {sí, $\leq 5$} (done);
+    \path[line] (eval) -- (stop);
+    \path[line] (stop) -- node[right,font=\scriptsize] {sí} (done);
     \path[line] (done) -- (save);
-    \path[line] (save) -- (hit);
+    \path[line] (save) -- (ret);
+
+    % --- rama de cache: entra directo a la devolucion ---
+    \path[line] (key.west) -| node[above,pos=0.22,font=\scriptsize] {sí} (hit.north);
+    \path[line] (hit) |- (ret.west);
+
+    % --- rama de continuacion: pasa por el reinicio parcial y vuelve al bucle ---
+    \path[line] (stop.east) to[out=0,in=-90] node[below,pos=0.85,font=\scriptsize] {no} (rst.south);
+    \path[line] (rst.north) to[out=90,in=0] (iter.east);
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Bucle del PSO unidimensional con memoización. La rama izquierda (acierto de caché) resuelve en menos de un milisegundo; la rama derecha ejecuta el enjambre completo, con reinicio parcial de dos partículas ante estancamiento, hasta converger y guardar el resultado en caché.}
+\caption{Bucle del PSO unidimensional con memoización. Un acierto de caché entrega el ciclo memorizado en menos de un milisegundo; en caso contrario se ejecuta el enjambre hasta converger o agotar su presupuesto de iteraciones. Ambas ramas confluyen en la entrega de $C^{*}$ al orquestador. El tamaño del enjambre, los umbrales y la regla de reinicio figuran en la Tabla~\ref{tab:pso_params}.}
 \label{fig:pso_memoizacion}
 \end{figure}
 
-En el pipeline de traffic-sync, orquestado por la función principal del servicio web, el flujo es el siguiente: (i) el servicio recibe un lote de sensores en la API \texttt{/evaluate}; (ii) las mediciones se pasan al módulo difuso para obtener un nivel de congestión por sensor; (iii) se agrupan sensores con salidas difusas similares mediante clustering jerárquico de Ward (Sección~\ref{subsec:clustering_traffic_sync}), produciendo un conjunto de clústeres de tráfico y sus estadísticas agregadas; (iv) se aplica la función de optimización PSO sobre cada clúster, con memoización por estadísticas redondeadas (Sección~\ref{subsec:pso_memoizacion}), para obtener el largo de ciclo óptimo por clúster; y (v) el ciclo óptimo $C^*$ se traduce en un presupuesto de verde y rojo mediante $\text{green} = \text{red} = \lfloor (C^* - Y) / 2 \rfloor$, repartiendo en partes iguales el ciclo útil una vez descontada la pérdida por amarillo y todo-rojo. La respuesta de la API se construye como un lote de optimizaciones, donde cada entrada incluye el largo de ciclo óptimo, el presupuesto de verde y de rojo derivado, el nivel de congestión original y optimizado, y las categorías lingüísticas correspondientes, preparados para su consumo posterior por el módulo de control de semáforos —que los reenvía a la capa Max-Pressure local de traffic-sim como techo blando del ciclo— y por el módulo de almacenamiento.
+El pipeline se expone a través de un único punto de entrada de la API, que recibe un lote de sensores y devuelve un lote de optimizaciones. El ciclo óptimo de cada clúster se traduce en un presupuesto de verde y rojo mediante $\text{green} = \text{red} = \lfloor (C^* - Y) / 2 \rfloor$, repartiendo en partes iguales el ciclo útil una vez descontada la pérdida por amarillo y todo-rojo. Cada entrada de la respuesta reúne ese presupuesto, el ciclo óptimo, los niveles de congestión original y optimizado y sus categorías lingüísticas, y la consumen el módulo de control de semáforos, que la reenvía a la capa Max-Pressure local de traffic-sim como techo blando del ciclo, y el módulo de almacenamiento.
 
 En conjunto, la integración entre lógica difusa Mamdani y PSO en traffic-sync permite que la optimización de tiempos semafóricos se base en una medida de congestión que captura adecuadamente la percepción y el comportamiento del tráfico urbano, mientras que el metaheurístico proporciona un mecanismo flexible para ajustar los parámetros de control en escenarios donde la función objetivo no es derivable y debe evaluarse a través de simulación o reglas de inferencia \cite{ross2010fuzzy,poli2007particle}.
 
-La Figura~\ref{fig:sync_architecture} ilustra la arquitectura general del módulo traffic-sync, mostrando la interacción entre los componentes de lógica difusa, agrupamiento de Ward y PSO, así como el flujo de datos desde la recepción de métricas de tráfico hasta la generación del presupuesto de ciclo que la capa Max-Pressure local reparte entre fases.
+La Figura~\ref{fig:sync_architecture} traza ese recorrido completo, desde la recepción de métricas hasta el presupuesto de ciclo, e incorpora una relación que la descripción secuencial no alcanza a expresar: la realimentación por la que la función de aptitud vuelve a invocar al sistema difuso en cada iteración del PSO, de modo que las etapas difusa y de optimización no se ejecutan una sola vez y en orden, sino anidadas.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \shorthandoff{>}
 \begin{tikzpicture}[
-    node distance=1.1cm,
-    block/.style={rectangle, draw, rounded corners, fill=blue!10,
-                  text width=3cm, align=center, minimum height=1cm},
-    data/.style={rectangle, draw, fill=yellow!10,
-                 text width=2.5cm, align=center, minimum height=0.7cm},
-    ext/.style={rectangle, draw, dashed, fill=gray!10,
-                text width=3cm, align=center, minimum height=1cm},
+    node distance=0.55cm,
+    caja/.style={rectangle, draw, rounded corners, align=center,
+                 text width=5.6cm, minimum height=0.85cm, font=\small},
+    block/.style={caja, fill=blue!10},
+    data/.style={caja, fill=yellow!10},
+    ext/.style={caja, draw, dashed, fill=gray!10},
     arrow/.style={->,thick,>=stealth}
 ]
 
-    % Entrada
-    \node[data] (input) {Métricas de\\tráfico (por sensor)};
+    \node[data]                       (input)      {Métricas de tráfico por sensor};
+    \node[block, below=of input]      (fuzzy)      {Sistema difuso Mamdani};
+    \node[data,  below=of fuzzy]      (congestion) {Nivel de congestión nítido};
+    \node[block, below=of congestion] (clustering) {Agrupamiento de Ward (1-D)};
+    \node[data,  below=of clustering] (clusters)   {Clústeres y estadísticas medias};
+    \node[block, below=of clusters]   (pso)        {PSO: ciclo $C$ por clúster};
+    \node[data,  below=of pso]        (output)     {Presupuesto de ciclo $C^{*}$};
+    \node[ext,   below=of output]     (maxpressure){Max-Pressure local en traffic-sim\\(techo blando)};
 
-    % Lógica difusa
-    \node[block, below=of input] (fuzzy) {Sistema Difuso\\Mamdani};
-    \node[data, below=of fuzzy] (congestion) {Nivel de\\congestión (crisp)};
+    \node[block, left=1.1cm of pso, text width=2.4cm] (fitness) {Función de aptitud};
+    % nodo fantasma: equilibra la caja envolvente para que la cadena quede centrada
+    \node[right=1.1cm of pso, text width=2.4cm, minimum height=0.85cm] (equilibrio) {};
 
-    % Agrupamiento
-    \node[block, below=of congestion] (clustering) {Agrupamiento\\Ward (1-D)};
-    \node[data, below=of clustering] (clusters) {Clústeres +\\estadísticas medias};
-
-    % PSO
-    \node[block, below=of clusters] (pso) {PSO\\(ciclo $C$ por clúster)};
-
-    % Función de aptitud
-    \node[block, left=2.2cm of pso] (fitness) {Función de\\aptitud};
-
-    % Salida
-    \node[data, below=of pso] (output) {Presupuesto de\\ciclo $C^*$ (verde+rojo)};
-
-    % Capa local externa
-    \node[ext, below=of output] (maxpressure) {Max-Pressure local\\(traffic-sim, techo blando)};
-
-    % Flechas
-    \draw[arrow] (input) -- (fuzzy);
-    \draw[arrow] (fuzzy) -- (congestion);
+    \draw[arrow] (input)      -- (fuzzy);
+    \draw[arrow] (fuzzy)      -- (congestion);
     \draw[arrow] (congestion) -- (clustering);
     \draw[arrow] (clustering) -- (clusters);
-    \draw[arrow] (clusters) -- (pso);
-    \draw[arrow] (pso) -- (output);
-    \draw[arrow] (output) -- (maxpressure);
+    \draw[arrow] (clusters)   -- (pso);
+    \draw[arrow] (pso)        -- (output);
+    \draw[arrow] (output)     -- (maxpressure);
+
+    % realimentacion: trazado ortogonal, la etiqueta no queda sobre la linea
     \draw[arrow, dashed] (pso) -- (fitness);
-    \draw[arrow, dashed] (fitness) -- node[above,font=\scriptsize] {evaluar} (fuzzy);
+    \draw[arrow, dashed] (fitness.north) |-
+        node[pos=0.30, left, font=\scriptsize, fill=white, inner sep=1.5pt] {re-evaluar}
+        (fuzzy.west);
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Arquitectura del módulo traffic-sync integrando lógica difusa Mamdani, agrupamiento jerárquico de Ward y optimización PSO de ciclo; la capa Max-Pressure local (fuera de traffic-sync) recibe el presupuesto de ciclo como techo blando.}
+\caption{Arquitectura del módulo traffic-sync, que integra la lógica difusa Mamdani, el agrupamiento jerárquico de Ward y la optimización PSO del ciclo. La flecha discontinua marca la realimentación: la función de aptitud vuelve a invocar al sistema difuso en cada iteración del enjambre. La capa Max-Pressure local, externa a traffic-sync, recibe el presupuesto de ciclo como techo blando.}
 \label{fig:sync_architecture}
 \end{figure}
 
@@ -513,7 +507,7 @@ La Figura~\ref{fig:sync_architecture} ilustra la arquitectura general del módul
 \section{Ejemplos de Ciclos de Optimización}
 \label{subsec:sync_ejemplos}
 
-La Tabla~\ref{tab:sync_ejemplos} presenta cinco ejecuciones reales del pipeline de optimización de traffic-sync (módulos de clustering, aptitud y PSO invocados directamente sobre datos de un único clúster), con condiciones de tráfico que cubren el rango de operación del sistema: desde flujo libre hasta un atasco real (\emph{gridlock}). En cada caso se muestran las métricas de entrada observadas, el nivel de congestión evaluado por el sistema Mamdani antes de la optimización, el largo de ciclo $C^*$ elegido por PSO junto con el presupuesto de verde y rojo derivado ($\lfloor (C^*-Y)/2 \rfloor$), y el nivel de congestión servida estimada en $C^*$ (sin el término de espera/capacidad, para que sea comparable con la congestión original).
+La Tabla~\ref{tab:sync_ejemplos} presenta cinco ejecuciones reales del pipeline de optimización de traffic-sync (módulos de clustering, aptitud y PSO invocados directamente sobre datos de un único clúster), con condiciones de tráfico que cubren el rango de operación del sistema: desde flujo libre hasta un atasco real (\emph{gridlock}). En cada caso se muestran las métricas de entrada observadas, el nivel de congestión evaluado por el sistema Mamdani antes de la optimización, el largo de ciclo $C^*$ elegido por PSO junto con el presupuesto de verde y rojo derivado ($\lfloor (C^*-Y)/2 \rfloor$), y los términos de costo de espera y de capacidad (Ecuación~\ref{eq:wait_capacity}) que explican esa elección de ciclo.
 
 \begin{table}[htbp]
 \centering
@@ -521,21 +515,29 @@ La Tabla~\ref{tab:sync_ejemplos} presenta cinco ejecuciones reales del pipeline 
 \label{tab:sync_ejemplos}
 \renewcommand{\arraystretch}{1.3}
 \footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrcrrcc}
 \toprule
-\multicolumn{4}{c}{\textbf{Entrada (observada)}} & \multicolumn{4}{c}{\textbf{Salida PSO}} \\
+\multicolumn{4}{c}{\textbf{Entrada (observada)}} & \multicolumn{5}{c}{\textbf{Salida PSO}} \\
 \cmidrule(lr){1-4} \cmidrule(lr){5-9}
-\textbf{Escenario} & \textbf{VPM} & \textbf{Vel.} & \textbf{Dens.} & \textbf{Cong. orig.} & \textbf{Ciclo $C^*$} & \textbf{Verde=Rojo} & \textbf{Cong. optim.} & \textbf{Categ.} \\
-& & \textbf{(km/h)} & \textbf{(veh/km)} & \textbf{(0--10)} & \textbf{(s)} & \textbf{(s)} & \textbf{(0--10)} & \textbf{orig. → optim.} \\
+\textbf{Escenario} & \textbf{VPM} & \textbf{Vel.} & \textbf{Dens.} & \multirow{3}{*}{\textbf{Congestión}} & \textbf{Ciclo} & \textbf{Verde=} & \textbf{Costo} & \textbf{Costo} \\
+                   &              & \textbf{(km/h)} & \textbf{(veh/km)} & & $\mathbf{C^*}$ & \textbf{Rojo} & \textbf{espera} & \textbf{capac.} \\
+                   &              &                 &                   & & \textbf{(s)} & \textbf{(s)} &                 &                 \\
 \midrule
-Flujo libre       &  8 & 48,0 &  12,0 & 1,6 &  60 & 27 & 1,7 & \textit{none} → \textit{none} \\
-Flujo moderado    & 18 & 22,0 &  58,0 & 4,9 &  68 & 30 & 5,0 & \textit{mild} → \textit{mild} \\
-Flujo alto        & 28 & 32,0 &  78,0 & 5,0 &  61 & 27 & 5,0 & \textit{mild} → \textit{mild} \\
-Congestión severa & 42 & 14,0 & 121,0 & 8,2 & 111 & 52 & 8,2 & \textit{severe} → \textit{severe} \\
-Gridlock          & 45 &  2,0 & 135,0 & 8,4 &  60 & 27 & 8,4 & \textit{severe} → \textit{severe} \\
+Flujo libre       &  8 & 48,0 &  12,0 & 1,6 &  60 & 27 & 0,00 & 0,14 \\
+Flujo moderado    & 18 & 22,0 &  58,0 & 4,9 &  68 & 30 & 0,07 & 0,42 \\
+Flujo alto        & 28 & 32,0 &  78,0 & 5,0 &  61 & 27 & 0,01 & 0,50 \\
+Congestión severa & 42 & 14,0 & 121,0 & 8,2 & 111 & 52 & 0,17 & 0,43 \\
+Gridlock          & 45 &  2,0 & 135,0 & 8,4 &  60 & 27 & 0,00 & 0,93 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Los valores de la Tabla~\ref{tab:sync_ejemplos} se obtuvieron ejecutando directamente el código de \texttt{modules.pso.optimization.pso} sobre un DataFrame de un solo clúster construido con las medias indicadas para cada escenario, sin mediar el servicio HTTP (el healthcheck de traffic-sync no respondía en el entorno de generación del reporte). En los escenarios de carga baja a moderada (flujo libre y flujo moderado) el ciclo óptimo se mantiene cerca del extremo inferior del rango $[60,\,120]$~s, reflejando que la carga normalizada del cruce (Ecuación~\ref{eq:load}) es baja y el término \emph{wait\_cost} domina la aptitud, empujando al optimizador hacia ciclos cortos que minimizan la espera promedio. En el escenario de congestión severa, con velocidad todavía apreciable (14~km/h) y por lo tanto sin cumplir la condición de \emph{gridlock}, el optimizador asigna un ciclo largo (111~s) porque la carga alta hace dominar a \emph{capacity\_cost}, que penaliza los ciclos cortos por la pérdida proporcional de capacidad. El contraste relevante es con el escenario de \emph{gridlock}: pese a tener una densidad y una congestión difusa originales muy similares a las del escenario de congestión severa (8,4 frente a 8,2), la velocidad casi nula (2~km/h) activa la condición de atasco real (Ecuación~\ref{eq:fitness_gridlock}), y el ciclo óptimo cae al mínimo del rango (60~s) en lugar de crecer. Esto confirma en código el comportamiento anti-\emph{gridlock} descrito en la Sección~\ref{subsec:pso_traffic_sync}: bajo un atasco real, alargar el ciclo no ayuda a un corredor que ya no puede drenar más vehículos, y el sistema recorta el ciclo en vez de extenderlo, a diferencia de lo que haría frente a la misma congestión con tráfico todavía en movimiento.
+Los valores de la Tabla~\ref{tab:sync_ejemplos} se obtuvieron ejecutando directamente el módulo de optimización PSO de traffic-sync sobre un solo clúster construido con las medias indicadas para cada escenario, sin mediar el servicio HTTP (el healthcheck de traffic-sync no respondía en el entorno de generación del reporte).
+
+\textbf{Carga baja a moderada (flujo libre y flujo moderado).} El ciclo óptimo se mantiene cerca del extremo inferior del rango $[60,\,120]$~s, reflejando que la carga normalizada del cruce (Ecuación~\ref{eq:load}) es baja y el término \emph{wait\_cost} domina la aptitud, empujando al optimizador hacia ciclos cortos que minimizan la espera promedio.
+
+\textbf{Congestión severa, sin gridlock.} Con velocidad todavía apreciable (14~km/h) y por lo tanto sin cumplir la condición de \emph{gridlock}, el optimizador asigna un ciclo largo (111~s) porque la carga alta hace dominar a \emph{capacity\_cost}, que penaliza los ciclos cortos por la pérdida proporcional de capacidad.
+
+\textbf{Gridlock.} El contraste relevante es con el escenario anterior: pese a tener una densidad y una congestión difusa originales muy similares a las de congestión severa (8,4 frente a 8,2), la velocidad casi nula (2~km/h) activa la condición de atasco real (Ecuación~\ref{eq:fitness_gridlock}), y el ciclo óptimo cae al mínimo del rango (60~s) en lugar de crecer. Esto confirma el comportamiento anti-\emph{gridlock} descrito en la Sección~\ref{subsec:pso_traffic_sync}: bajo un atasco real, alargar el ciclo no ayuda a un corredor que ya no puede drenar más vehículos, y el sistema recorta el ciclo en vez de extenderlo, a diferencia de lo que haría frente a la misma congestión con tráfico todavía en movimiento.
 
