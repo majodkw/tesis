@@ -808,9 +808,10 @@ depender de comparar dos muestras de tamaño distinto, no hereda el riesgo de qu
 población deprimida por colapso parcial sesgue el estadístico. El test de permutación,
 que reconstruye la distribución nula del estadístico de interés reordenando al azar las
 etiquetas de condición, aporta una verificación no paramétrica independiente del supuesto
-de normalidad. El test U de Mann-Whitney evalúa la separación estocástica entre las dos
-distribuciones de tiempos de viaje sin asumir emparejamiento, y sirve de contraste frente
-al resultado pareado. El estadístico $d$ de Cohen cuantifica la magnitud del efecto en
+de normalidad. El test U de Mann-Whitney ordena en conjunto todos los tiempos de viaje de ambas corridas
+(sin usar el emparejamiento) y contrasta si los valores de una tienden a ser
+sistemáticamente mayores que los de la otra, evaluando así la separación estocástica entre
+las dos distribuciones de tiempos de viaje; sirve de contraste frente al resultado pareado. El estadístico $d$ de Cohen cuantifica la magnitud del efecto en
 unidades de desviación estándar agrupada, independientemente de si alcanza significancia
 estadística, lo que permite distinguir un efecto pequeño pero consistente de un efecto
 grande pero ruidoso. Finalmente, el intervalo de confianza (IC) bootstrap al 95\%,
