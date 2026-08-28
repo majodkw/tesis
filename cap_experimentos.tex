@@ -876,15 +876,15 @@ coloreando cada punto según si la corrida fue clasificada como favorable.
     }
 }
 \begin{axis}[
-    width=0.95\linewidth,
-    height=8cm,
+    width=\linewidth,
+    height=11cm,
     xlabel={$\Delta$throughput (\%)},
     ylabel={$\Delta$tiempo de sistema (\%)},
     grid=both,
     grid style={dashed, gray!30},
     only marks,
-    mark size=1.5pt,
-    legend style={at={(0.5,-0.18)}, anchor=north, legend columns=2,
+    mark size=2pt,
+    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=2,
                   font=\footnotesize, draw=black, fill=white},
     extra x ticks={0}, extra x tick labels={},
     extra x tick style={grid=major, major grid style={black, thin}},
@@ -899,18 +899,9 @@ coloreando cada punto según si la corrida fue clasificada como favorable.
 \addlegendentry{No favorable}
 \end{axis}
 \end{tikzpicture}
-\caption{Dispersión de las 180 comparaciones A/B según la variación porcentual del
-throughput (eje horizontal) y del tiempo total de sistema (eje vertical), coloreadas
-según el veredicto de la corrida. Las líneas sólidas marcan el cero de cada eje, de modo
-que el cuadrante superior derecho (ambas métricas mejoran) y el inferior izquierdo (ambas
-empeoran) representan coherencia entre las dos métricas insesgadas; los puntos favorables
-que caen en los cuadrantes de coherencia dominan la nube, mientras que los puntos que
-aparecen en los cuadrantes mixtos (throughput mejora con tiempo de sistema empeorando, o
-viceversa) se explican por la autoridad de la guardia de throughput sobre el veredicto:
-una diferencia de throughput superior al 10\% decide la corrida por sí sola, aun cuando
-el tiempo de sistema se mueva en sentido opuesto, evitando así que el veredicto quede
-censurado por una métrica agregada que puede empeorar levemente en escenarios cercanos a
-la capacidad de la red incluso cuando más vehículos completan su viaje.}
+\caption{Dispersión de las 180 comparaciones A/B: variación porcentual de throughput (eje
+horizontal) contra variación porcentual de tiempo de sistema (eje vertical), coloreada
+según el veredicto de la corrida. Las líneas discontinuas marcan el cero de cada eje.}
 \label{fig:control_scatter}
 \end{figure}
 
