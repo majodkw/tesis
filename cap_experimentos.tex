@@ -1148,91 +1148,44 @@ potenciar su desempeño en escenarios de despliegue real.
 \subsection{Viabilidad del Sistema}
 \label{subsec:discusion_viabilidad}
 
-Los resultados de ambos módulos confirman la viabilidad del sistema para entornos con
-presupuesto limitado, como ciudades intermedias de la región. El módulo traffic-sync
-escala linealmente y opera dentro de la memoria disponible en hardware embebido de bajo
-costo, lo que lo hace apto para despliegues sobre unidades Raspberry~Pi en campo. En el
-módulo traffic-storage, la latencia de almacenamiento (6{,}7--7{,}3~s de subida) es
-aceptable para el modelo de reporte periódico del sistema, que opera sobre datos agregados
-de ciclos completados, no sobre control en tiempo estricto; y la descarga
-($\approx$1{,}75~s) es conveniente para flujos de auditoría y consulta. El cuello de
-botella identificado es el tiempo de confirmación en la red BlockDAG ($\approx$3{,}5~s
-en las pruebas por escenarios; 1,12~s en las pruebas base con nodo local),
-cuyo impacto podría reducirse mediante la optimización de la gestión de nonces y la
-precarga del estado de gas antes del ciclo de almacenamiento, sin modificar la
-infraestructura de red.
+Los tres frentes evaluados confirman la viabilidad del sistema para entornos con
+presupuesto limitado, como ciudades intermedias de la región: traffic-sync escala
+linealmente dentro de la memoria disponible en hardware embebido de bajo costo, y
+traffic-storage ofrece latencias de subida y descarga compatibles con su modelo de
+reporte periódico sobre datos agregados, no de control en tiempo estricto. El cuello de
+botella identificado es el tiempo de confirmación en la red BlockDAG, mitigable mediante
+la gestión de nonces y la precarga del estado de gas sin modificar la infraestructura de
+red. El Capítulo~\ref{chp:conclusion} retoma estas cifras junto con las de la campaña A/B
+en la síntesis final del trabajo.
 
 \subsection{Desafíos Identificados y Limitaciones}
 \label{subsec:discusion_limitaciones}
 
-Durante la ejecución de las pruebas se identificaron tres desafíos técnicos que
-deben tenerse en cuenta en un despliegue de producción.
-
-El primero es la dependencia de servicios IPFS gestionados: las pruebas
-utilizaron Pinata como nodo IPFS de terceros, lo que introduce una dependencia
-externa que podría comprometer la disponibilidad del sistema si el proveedor
-experimenta interrupciones. La transición a un nodo IPFS propio (por ejemplo,
-Kubo) eliminaría esta dependencia a costa de mayor complejidad operativa.
-
-El segundo desafío es la variabilidad en los tiempos de minado de la
-red BlockDAG: si bien el promedio en las pruebas por escenarios se sitúa en $\approx$3{,}5~s,
-los valores individuales pueden desviarse significativamente, especialmente bajo condiciones
-de congestión de la red pública de pruebas. En una red BlockDAG privada o
-permisionada, opción viable para despliegues municipales, este comportamiento
-sería más predecible y controlable.
-
-El tercer desafío es la configuración de endpoints de la API: durante
-las primeras corridas del protocolo de prueba se registraron respuestas HTTP~307
-(redirección temporal) provocadas por la ausencia de la barra final en las rutas
-de subida y descarga. Una vez corregida la configuración, todas
-las operaciones subsiguientes retornaron HTTP~200 con el ciclo completo de
-almacenamiento ejecutado. Este incidente ilustra la importancia de una validación
-exhaustiva del entorno antes de ejecutar pruebas formales, y la necesidad de
-contar con scripts de verificación previa del entorno como parte del proceso de
-despliegue.
+Durante la ejecución de las pruebas se identificaron tres desafíos técnicos relevantes
+para un despliegue de producción: la dependencia de Pinata como nodo IPFS gestionado por
+terceros, la variabilidad en los tiempos de minado de la red BlockDAG pública de pruebas,
+y un incidente de configuración de endpoints (redirecciones HTTP~307 por la ausencia de
+la barra final en las rutas de subida y descarga) que motivó incorporar validación previa
+del entorno al protocolo de prueba. El Capítulo~\ref{chp:conclusion} desarrolla estas
+limitaciones junto con las del control semafórico y las líneas de trabajo futuro que se
+desprenden de ellas.
 
 \subsection{Hallazgos del control semafórico}
 \label{subsec:discusion_control}
 
-La campaña A/B de la Sección~\ref{sec:experimentos_control_ab} aporta una lectura
-complementaria a la de los módulos de análisis y almacenamiento: mide el efecto del
-sistema sobre el fenómeno que en última instancia justifica su existencia, la circulación
-vehicular, y lo hace bajo una metodología diseñada explícitamente para no premiar al
-sistema propuesto por artefactos de medición. La guardia de throughput desempeñó un papel
-central en esa metodología: al subordinar las métricas por viaje al conteo de vehículos
-que efectivamente completan su trayecto, evita que un colapso parcial de una de las dos
-corridas, que descarta del promedio del registro de viajes precisamente a los vehículos
-más perjudicados, se traduzca en un veredicto artificialmente favorable. Sin esta guardia,
-el sesgo de supervivencia habría inflado la tasa de éxito reportada, en particular en los
-escenarios de demanda alta y saturada, donde ambos lados de la comparación operan cerca
-del límite de capacidad de la red.
-
-El hecho de que el sistema propuesto no logre superar de forma consistente a los planes
-fijos en el escenario de demanda alta simétrica, con apenas 5 de 10 corridas favorables
-frente a cada uno de los tres planes de referencia, no debe leerse como una falla del
-control adaptativo sino como el reflejo de un límite estructural esperable. Cuando la
-demanda se aproxima a la capacidad de saturación de la red de forma razonablemente
-uniforme entre aproximaciones, un plan fijo bien dimensionado, en particular los de 90~s y
-120~s, se acerca a una asignación de verde casi óptima, dado que no existe margen
-significativo de reparto desigual que explotar. En ese régimen, el control adaptativo
-del sistema propuesto no solo carece de una ineficiencia estructural que corregir, sino
-que incurre en un costo de conmutación que el plan fijo no paga: cada reasignación de
-fase realizada por Max-Pressure implica tiempo perdido adicional en intervalos de
-transición (amarillo y despeje), que en condiciones de alta ocupación consume una fracción
-no despreciable del margen de capacidad disponible. El resultado observado, medianas de
-$\Delta$sys negativas frente a los planes de 90~s y 120~s en demanda alta y saturada, es
-consistente con esta interpretación: el sistema no pierde por un déficit de inteligencia
-en la asignación, sino porque el propio acto de adaptarse tiene un costo que solo se
-amortiza cuando existe asimetría de demanda que aprovechar.
-
-Finalmente, los colapsos parciales autoinducidos identificados en demanda\_alta
-(Sección~\ref{subsec:control_patrones}) constituyen una limitación conocida del enfoque,
-distinta de la simple pérdida de margen frente a planes fijos bien dimensionados: mientras
-esta última es un costo de oportunidad esperable cuando no hay asimetría que explotar, la
-fragilidad frente al gridlock es un riesgo de la propia estrategia de control reactivo y
-local. Se sugiere como línea de trabajo futura la incorporación de mecanismos de detección
-de saturación de carril que restrinjan o penalicen decisiones locales de Max-Pressure
-cuando el riesgo de spillback hacia una intersección vecina sea alto.
+La campaña A/B de la Sección~\ref{sec:experimentos_control_ab} mide el efecto del sistema
+sobre la circulación vehicular bajo una metodología diseñada para no premiar al sistema
+propuesto por artefactos de medición: sin la guardia de throughput, el sesgo de
+supervivencia habría inflado la tasa de éxito reportada, en particular en los escenarios
+de demanda alta y saturada, donde ambos lados de la comparación operan cerca del límite
+de capacidad de la red. El límite observado en demanda alta simétrica (5 de 10 corridas
+favorables) no es una falla del control adaptativo sino el reflejo de que, cuando no hay
+asimetría de demanda que explotar, un plan fijo bien dimensionado se acerca a una
+asignación de verde casi óptima y el costo de conmutación de Max-Pressure erosiona parte
+del margen disponible. El Capítulo~\ref{chp:conclusion} retoma este límite, junto con los
+colapsos parciales autoinducidos identificados en esa misma celda
+(Sección~\ref{subsec:control_patrones}), en la discusión de limitaciones y trabajo
+futuro.
 
 Las evaluaciones cubren los tres frentes del sistema: traffic-sync demostró
 escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de
