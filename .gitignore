@@ -44,3 +44,6 @@ _minted-*/
 *.listing
 *.bak
 *~
+
+# Copias de respaldo por conflicto de guardado de Overleaf
+*-SAVE-ERROR
