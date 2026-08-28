@@ -68,14 +68,6 @@ plan fijo bien dimensionado se aproxima a una asignación de verde casi óptima 
 existe asimetría de demanda que explotar, y de que el propio costo de conmutación de
 Max-Pressure erosiona parte del margen disponible en ese régimen.
 
-Respecto de \cite{chilecon2025}, la diferencia sustantiva no es de escala sino de diseño
-del control: aquel trabajo ajustaba directamente los tiempos de señal, mientras que esta
-tesis introduce el esquema jerárquico (PSO de ciclo por clúster más Max-Pressure local) y
-lo somete a la prueba que el trabajo anterior había dejado como agenda, la validación
-sobre la red vial de San Lorenzo. El resultado de esa prueba, favorable en el 77,8\% de
-las comparaciones, confirma que el rediseño jerárquico no solo es viable sino
-cuantitativamente superior a la práctica de temporización fija vigente.
-
 \section{Divulgación científica}
 
 Los hallazgos centrales de esta investigación fueron sintetizados y publicados en el
@@ -111,7 +103,7 @@ el supervisor de congelamiento mitiga pero no elimina por completo dentro de la 
 simulación, una fragilidad residual frente al gridlock que constituye una limitación
 conocida del enfoque.
 
-En tercer lugar, traffic-storage dependió de un nodo IPFS gestionado por terceros
+En tercer lugar, traffic-storage depende de un nodo IPFS gestionado por terceros
 (Pinata), introduce variabilidad en los tiempos de minado de la red pública de pruebas
 BlockDAG y concentra el cuello de botella en la confirmación on-chain ($\approx$3,5~s dentro
 del pipeline de subida). No se implementaron aún mecanismos activos de tolerancia a fallos ni
