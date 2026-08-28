@@ -331,12 +331,12 @@ D_{\text{adj}} &= D \cdot \frac{cf_{\text{ref}}}{cf} \label{eq:density_adj} \\
 V_{\text{adj}} &= V \cdot \frac{cf}{cf_{\text{ref}}} \label{eq:speed_adj}
 \end{align}
 
-\noindent Un ciclo más largo que $C_{\text{ref}}$ produce $cf > cf_{\text{ref}}$, lo que reduce
-$D_{\text{adj}}$ (más ciclo útil para drenar el mismo tráfico) y aumenta $V_{\text{adj}}$; un
-ciclo más corto tiene el efecto inverso. La congestión difusa se re-evalúa con $VPM$ sin
-ajustar, $V_{\text{adj}}$ y $D_{\text{adj}}$ mediante el sistema Mamdani descrito en la
-Sección~\ref{subsec:fuzzy_traffic_sync}. A esa congestión se le suma un término de espera y de
-capacidad ponderado por la carga normalizada del cruce:
+\noindent Un ciclo más largo que $C_{\text{ref}}$ da $cf > cf_{\text{ref}}$, y reduce
+$D_{\text{adj}}$ y aumenta $V_{\text{adj}}$; un ciclo más corto invierte el efecto. La
+congestión difusa se re-evalúa con $VPM$ sin ajustar, $V_{\text{adj}}$ y $D_{\text{adj}}$
+mediante el sistema Mamdani descrito en la Sección~\ref{subsec:fuzzy_traffic_sync}. A esa
+congestión se le suma un término de espera y de capacidad ponderado por la carga normalizada
+del cruce:
 
 \begin{equation}
 \text{load} = \alpha \cdot \min\!\left(\frac{D}{D_{\max}},\,1\right)
@@ -360,11 +360,10 @@ f(C) = \text{Mamdani}(VPM,\ V_{\text{adj}},\ D_{\text{adj}})
 \end{equation}
 
 \noindent donde $C_{\min} = 60$~s, $C_{\max} = 120$~s son los límites del espacio de
-búsqueda y $W = 2{,}0$ es el peso relativo de los costos de espera y capacidad. El término \emph{wait\_cost} penaliza ciclos largos con más fuerza cuanto menor es
-la carga del cruce (un cruce poco cargado no necesita un ciclo largo y sufre más espera
-promedio si lo tiene), mientras que \emph{capacity\_cost} penaliza ciclos cortos con más
-fuerza cuanto mayor es la carga (un cruce muy cargado pierde capacidad proporcionalmente si
-el ciclo es corto, porque la pérdida fija $Y$ pesa más). Cuando el clúster está en situación
+búsqueda y $W = 2{,}0$ pondera los costos de espera y capacidad. \emph{wait\_cost} crece con
+el ciclo y pesa más cuando la carga es baja; \emph{capacity\_cost} crece cuando el ciclo es
+corto y pesa más cuando la carga es alta, porque ahí la pérdida fija $Y$ recorta más
+capacidad relativa. Cuando el clúster está en situación
 de atasco real (densidad normalizada $D/D_{\max} \geq 0{,}6$ y velocidad normalizada
 $V/V_{\max} \leq 0{,}05$ simultáneamente, condición que se denota \emph{gridlock}), se agrega
 además un término que penaliza explícitamente los ciclos largos:
@@ -374,11 +373,10 @@ f_{\text{gridlock}}(C) = f(C) + W \cdot \frac{C - C_{\min}}{C_{\max} - C_{\min}}
 \label{eq:fitness_gridlock}
 \end{equation}
 
-\noindent Esta distinción es necesaria porque, bajo carga alta pero con tráfico aún en
-movimiento, un ciclo más largo mejora el rendimiento (más vehículos servidos por ciclo); pero
-bajo un atasco real, en el que la velocidad es prácticamente nula, un ciclo largo solo
-alimenta más vehículos por verde hacia un corredor que ya no puede drenarlos, agravando el
-bloqueo aguas abajo. El PSO minimiza $f(C)$ (o $f_{\text{gridlock}}(C)$ si corresponde) sobre
+\noindent La distinción importa porque con carga alta pero tráfico aún en movimiento, un
+ciclo más largo sirve más vehículos por ciclo; pero en un atasco real, con velocidad
+prácticamente nula, un ciclo largo solo empuja más vehículos hacia un corredor que ya no
+puede drenarlos. El PSO minimiza $f(C)$ (o $f_{\text{gridlock}}(C)$ si corresponde) sobre
 $C \in [C_{\min}, C_{\max}]$, y la semilla inicial de las partículas se calcula con la misma
 lógica de carga: $C_{\text{base}} = C_{\min}$ si el clúster está en gridlock, y
 $C_{\text{base}} = \text{clip}\bigl(C_{\text{ref}} + (\text{load} - 0{,}5) \cdot 60,\; C_{\min},\; C_{\max}\bigr)$
@@ -539,5 +537,5 @@ Los valores de la Tabla~\ref{tab:sync_ejemplos} se obtuvieron ejecutando directa
 
 \textbf{Congestión severa, sin gridlock.} Con velocidad todavía apreciable (14~km/h) y por lo tanto sin cumplir la condición de \emph{gridlock}, el optimizador asigna un ciclo largo (111~s) porque la carga alta hace dominar a \emph{capacity\_cost}, que penaliza los ciclos cortos por la pérdida proporcional de capacidad.
 
-\textbf{Gridlock.} El contraste relevante es con el escenario anterior: pese a tener una densidad y una congestión difusa originales muy similares a las de congestión severa (8,4 frente a 8,2), la velocidad casi nula (2~km/h) activa la condición de atasco real (Ecuación~\ref{eq:fitness_gridlock}), y el ciclo óptimo cae al mínimo del rango (60~s) en lugar de crecer. Esto confirma el comportamiento anti-\emph{gridlock} descrito en la Sección~\ref{subsec:pso_traffic_sync}: bajo un atasco real, alargar el ciclo no ayuda a un corredor que ya no puede drenar más vehículos, y el sistema recorta el ciclo en vez de extenderlo, a diferencia de lo que haría frente a la misma congestión con tráfico todavía en movimiento.
+\textbf{Gridlock.} El contraste relevante es con el escenario anterior: pese a tener una densidad y una congestión difusa originales muy similares a las de congestión severa (8,4 frente a 8,2), la velocidad casi nula (2~km/h) activa la condición de atasco real (Ecuación~\ref{eq:fitness_gridlock}), y el ciclo óptimo cae al mínimo del rango (60~s) en lugar de crecer, confirmando el comportamiento anti-\emph{gridlock} descrito en la Sección~\ref{subsec:pso_traffic_sync}.
 
