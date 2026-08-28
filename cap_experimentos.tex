@@ -593,7 +593,10 @@ vehículo simulado tiene la misma hora de salida y la misma ruta en la corrida~A
 corrida~B, de modo que su tiempo de viaje en ambas corridas puede compararse directamente
 como si fuera el mismo vehículo bajo dos políticas de control distintas, en lugar de
 comparar dos poblaciones de vehículos potencialmente distintas; esta evidencia pareada es
-la que alimenta el test de Wilcoxon de rangos con signo de la Sección~\ref{subsec:control_rigor}.
+la que alimenta el test de Wilcoxon de rangos con signo de la Sección~\ref{subsec:control_rigor},
+que ordena por magnitud las diferencias de tiempo de viaje de cada par de vehículos y
+contrasta si su mediana es distinta de cero, sin asumir que esas diferencias siguen una
+distribución normal.
 Se define además una banda de empate del 2\%, dentro de la cual una comparación se
 considera neutra en lugar de favorable o desfavorable, y se registra el número de
 vehículos nunca insertados en cada corrida (diferencia entre vehículos cargados y
