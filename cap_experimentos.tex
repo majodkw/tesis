@@ -11,7 +11,7 @@ constituyen el núcleo computacional del sistema: traffic-sync, responsable del 
 de congestión y la optimización semafórica, y traffic-storage, encargado de la
 persistencia verificable y descentralizada de datos de tráfico.
 
-Las evaluaciones persiguen cuatro objetivos específicos. En primer lugar, se estudia la
+Las evaluaciones persiguen cinco objetivos específicos. En primer lugar, se estudia la
 escalabilidad del módulo de análisis y optimización, analizando cómo evolucionan el
 tiempo de procesamiento y el consumo de recursos del sistema conforme aumenta el número de
 sensores simulados que operan simultáneamente. En segundo lugar, se mide la eficiencia
@@ -25,10 +25,10 @@ alternativas de almacenamiento distribuido (particularmente con redes blockchain
 Ethereum) con el fin de evidenciar las ventajas operativas de la arquitectura propuesta para
 aplicaciones de monitoreo urbano de alta frecuencia. En quinto lugar, se valida el
 desempeño del control semafórico jerárquico (optimización de ciclo mediante PSO combinada
-con control local Max-Pressure) frente a planes de tiempo fijo de referencia, mediante una
-campaña de comparaciones A/B multi-escenario y multi-semilla que permite establecer bajo
-qué condiciones de demanda el sistema propuesto supera a la práctica de temporización fija
-vigente.
+con control local Max-Pressure) mediante tres campañas de comparaciones A/B, cada una frente
+a un plan de tiempo fijo de referencia distinto (MOPC~60~s, netconvert~90~s y ciclo
+largo~120~s), multi-escenario y multi-semilla, que permiten establecer bajo qué condiciones
+de demanda el sistema propuesto supera a la práctica de temporización fija vigente.
 
 Todos los experimentos se ejecutaron en hardware de consumo estándar, sin requerir
 infraestructura especializada, lo que pone de manifiesto la viabilidad del sistema para
