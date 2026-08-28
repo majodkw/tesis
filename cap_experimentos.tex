@@ -1086,23 +1086,14 @@ generador criptográficamente seguro y registradas para reproducibilidad exacta,
 \end{axis}
 \end{tikzpicture}
 \caption{Matrices de veredicto de las 180 comparaciones A/B, una por campaña de plan
-fijo de referencia. Cada celda es una comparación A/B completa entre una semilla
-(columna, s1 a s10 corresponden a las semillas 157300, 214181, 281772, 372292, 400290,
-423459, 449463, 843099, 950893 y 974616) y un escenario de demanda (fila); el verde marca
-veredicto favorable al sistema propuesto y el rojo, no favorable. El patrón dominante es
-horizontal: filas completas o casi completas de un mismo color (corredor en verde en las
-tres matrices; demanda\_alta con una mezcla persistente de rojo en las tres matrices)
-indican que el escenario de demanda determina el resultado con mucha mayor fuerza que la
-semilla concreta, mientras que dentro de una misma fila el color rara vez cambia de forma
-sistemática por columna, es decir, no existe una semilla que sea uniformemente
-desfavorable a través de todos los escenarios.}
+fijo de referencia.}
 \label{fig:control_grillas}
 \end{figure}
 
 \subsection{Análisis de patrones}
 \label{subsec:control_patrones}
 
-Del conjunto de resultados se desprenden tres patrones consistentes.
+Del conjunto de resultados se desprenden cuatro patrones consistentes.
 
 \textbf{Ventaja creciente con la asimetría de demanda.} La ventaja del sistema propuesto
 crece con la asimetría de la demanda entre aproximaciones: el escenario corredor, en el
@@ -1136,6 +1127,15 @@ intersecciones vecinas. Estos colapsos se concentran de forma recurrente en un s
 reducido de semillas, lo que sugiere una sensibilidad estructural del sistema a
 configuraciones iniciales de demanda cercanas al punto de saturación de la red, más que un
 fallo aleatorio y disperso.
+
+\textbf{Ninguna semilla es uniformemente desfavorable.} En las matrices de veredicto de la
+Figura~\ref{fig:control_grillas}, el patrón dominante es horizontal: filas completas o
+casi completas de un mismo color (corredor en verde en las tres matrices; demanda\_alta
+con una mezcla persistente de rojo en las tres matrices) muestran que el escenario de
+demanda determina el resultado con mucha mayor fuerza que la semilla concreta, mientras
+que dentro de una misma fila el color rara vez cambia de forma sistemática por columna:
+no existe una semilla que sea uniformemente desfavorable a través de todos los
+escenarios.
 
 % =============================================================================
 \section{Discusión}
