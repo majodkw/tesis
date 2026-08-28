@@ -474,7 +474,7 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{howpublished}{\url{https://ops.fhwa.dot.gov/publications/fhwahop08024/}}
-      \field{note}{FHWA-HOP-08-024, consultado: 2026-01-XX}
+      \field{note}{FHWA-HOP-08-024, consultado: 19 de julio de 2026}
       \field{title}{Traffic Signal Timing Manual}
       \field{year}{2008}
     \endentry
@@ -1303,6 +1303,81 @@
       \verb 10.1061/(ASCE)TE.1943-5436.0000506
       \endverb
     \endentry
+    \entry{lopez2018microscopic}{inproceedings}{}
+      \name{author}{10}{}{%
+        {{hash=cdc9dc5cee43404b0c308112b7731b20}{%
+           family={López},
+           familyi={L\bibinitperiod},
+           given={Pablo\bibnamedelima Alvarez},
+           giveni={P\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=1c9ff405f088e3a55884b1330deced62}{%
+           family={Behrisch},
+           familyi={B\bibinitperiod},
+           given={Michael},
+           giveni={M\bibinitperiod}}}%
+        {{hash=ef961de56b33c4867884e4df11451adb}{%
+           family={Bieker-Walz},
+           familyi={B\bibinithyphendelim W\bibinitperiod},
+           given={Laura},
+           giveni={L\bibinitperiod}}}%
+        {{hash=41bf4800dcf028820a93322a7128a622}{%
+           family={Erdmann},
+           familyi={E\bibinitperiod},
+           given={Jakob},
+           giveni={J\bibinitperiod}}}%
+        {{hash=33428e0f9c1bfbd497416bebb3d95369}{%
+           family={Flötteröd},
+           familyi={F\bibinitperiod},
+           given={Yun-Pang},
+           giveni={Y\bibinithyphendelim P\bibinitperiod}}}%
+        {{hash=0941dbe8973d8d859e0ae333eab155b8}{%
+           family={Hilbrich},
+           familyi={H\bibinitperiod},
+           given={Robert},
+           giveni={R\bibinitperiod}}}%
+        {{hash=8082a101444779c1160b1131e73025c0}{%
+           family={Lücken},
+           familyi={L\bibinitperiod},
+           given={Leonhard},
+           giveni={L\bibinitperiod}}}%
+        {{hash=e2dd5e9a6e4c37c79f4fd9a8ceaea7d9}{%
+           family={Rummel},
+           familyi={R\bibinitperiod},
+           given={Johannes},
+           giveni={J\bibinitperiod}}}%
+        {{hash=cc8222ab15219e58fd9f35fa138574ef}{%
+           family={Wagner},
+           familyi={W\bibinitperiod},
+           given={Peter},
+           giveni={P\bibinitperiod}}}%
+        {{hash=ae7d21b3c2b1db4c7ec17116e7345128}{%
+           family={Wie{ß}ner},
+           familyi={W\bibinitperiod},
+           given={Evamarie},
+           giveni={E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{3c4f5de8f8838f30834da2c0cc2f301c}
+      \strng{fullhash}{6d5643c6165a0bfe65139675b42a59fb}
+      \strng{bibnamehash}{6d5643c6165a0bfe65139675b42a59fb}
+      \strng{authorbibnamehash}{6d5643c6165a0bfe65139675b42a59fb}
+      \strng{authornamehash}{3c4f5de8f8838f30834da2c0cc2f301c}
+      \strng{authorfullhash}{6d5643c6165a0bfe65139675b42a59fb}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{2018 21st International Conference on Intelligent Transportation Systems (ITSC)}
+      \field{title}{Microscopic Traffic Simulation using {SUMO}}
+      \field{year}{2018}
+      \field{pages}{2575\bibrangedash 2582}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.1109/ITSC.2018.8569938
+      \endverb
+    \endentry
     \entry{singh2020blockchain}{article}{}
       \name{author}{4}{}{%
         {{hash=c11236314c6e7f14e2a2ce3388b46687}{%
@@ -1528,8 +1603,8 @@
       \strng{authorbibnamehash}{d7dbf22103e37060ded24d36d9b2de64}
       \strng{authornamehash}{d7dbf22103e37060ded24d36d9b2de64}
       \strng{authorfullhash}{d7dbf22103e37060ded24d36d9b2de64}
-      \field{sortinit}{8}
-      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Procedia Technology}
@@ -1588,7 +1663,7 @@
       \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{note}{Consultado: 2025-12-XX}
+      \field{note}{Consultado: 19 de julio de 2026}
       \field{title}{SUMO User Documentation}
       \field{year}{2025}
       \verb{urlraw}
@@ -1612,11 +1687,11 @@
       \strng{authorbibnamehash}{1977190f018b398e43ede3de043de8ea}
       \strng{authornamehash}{1977190f018b398e43ede3de043de8ea}
       \strng{authorfullhash}{1977190f018b398e43ede3de043de8ea}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{note}{Consultado: 2025-01-XX}
+      \field{note}{Consultado: 19 de julio de 2026}
       \field{title}{Bitcoin: A Peer-to-Peer Electronic Cash System}
       \field{year}{2008}
       \verb{urlraw}
@@ -1663,8 +1738,8 @@
       \strng{authorbibnamehash}{f512b13af32d34046a5ecb069096e94e}
       \strng{authornamehash}{1493becdacb9c2c2ea8e1f8e130cc6e9}
       \strng{authorfullhash}{f512b13af32d34046a5ecb069096e94e}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{isbn}{978-0-691-17169-2}
@@ -1689,7 +1764,7 @@
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{note}{Whitepaper, Consultado: 2025-01-XX}
+      \field{note}{Whitepaper, Consultado: 19 de julio de 2026}
       \field{title}{Ethereum: A Next-Generation Smart Contract and Decentralized Application Platform}
       \field{year}{2014}
       \verb{urlraw}
@@ -1728,7 +1803,7 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 19th International Conference on Principles of Distributed Systems (OPODIS 2015)}
-      \field{note}{Consultado: 2025-01-XX}
+      \field{note}{Consultado: 19 de julio de 2026}
       \field{title}{The Bitcoin Backbone Protocol: Analysis and Applications}
       \field{year}{2015}
       \field{pages}{1\bibrangedash 15}
@@ -1823,32 +1898,6 @@
       \verb https://arxiv.org/abs/2411.10026
       \endverb
     \endentry
-    \entry{ethereum_blocks}{misc}{}
-      \name{author}{1}{}{%
-        {{hash=91a561dbd1e35b5459edfad15075d17c}{%
-           family={{Ethereum Foundation}},
-           familyi={E\bibinitperiod}}}%
-      }
-      \strng{namehash}{91a561dbd1e35b5459edfad15075d17c}
-      \strng{fullhash}{91a561dbd1e35b5459edfad15075d17c}
-      \strng{bibnamehash}{91a561dbd1e35b5459edfad15075d17c}
-      \strng{authorbibnamehash}{91a561dbd1e35b5459edfad15075d17c}
-      \strng{authornamehash}{91a561dbd1e35b5459edfad15075d17c}
-      \strng{authorfullhash}{91a561dbd1e35b5459edfad15075d17c}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{note}{Documentación oficial de Ethereum sobre block time de 12 segundos en PoS}
-      \field{title}{Blocks}
-      \field{year}{2024}
-      \verb{urlraw}
-      \verb https://ethereum.org/developers/docs/blocks/
-      \endverb
-      \verb{url}
-      \verb https://ethereum.org/developers/docs/blocks/
-      \endverb
-    \endentry
     \entry{ipfs_architecture}{misc}{}
       \name{author}{1}{}{%
         {{hash=e508cfd39aa80d3c9a59e8717f41037b}{%
@@ -1906,43 +1955,6 @@
       \range{pages}{24}
       \verb{doi}
       \verb 10.1016/S0020-0255(71)80005-1
-      \endverb
-    \endentry
-    \entry{izquierdo2018mamdani}{article}{}
-      \name{author}{2}{}{%
-        {{hash=9744c1d14d74e8e278f49dc91c7c8310}{%
-           family={Izquierdo},
-           familyi={I\bibinitperiod},
-           given={Segismundo\bibnamedelima S.},
-           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
-        {{hash=ab30abd79f918f0a78da752535bb78d5}{%
-           family={Izquierdo},
-           familyi={I\bibinitperiod},
-           given={Luis\bibnamedelima R.},
-           giveni={L\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
-      }
-      \strng{namehash}{f9ac7621616eb2273c4032beda05362e}
-      \strng{fullhash}{f9ac7621616eb2273c4032beda05362e}
-      \strng{bibnamehash}{f9ac7621616eb2273c4032beda05362e}
-      \strng{authorbibnamehash}{f9ac7621616eb2273c4032beda05362e}
-      \strng{authornamehash}{f9ac7621616eb2273c4032beda05362e}
-      \strng{authorfullhash}{f9ac7621616eb2273c4032beda05362e}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{journaltitle}{Journal of Artificial Societies and Social Simulation}
-      \field{number}{3}
-      \field{title}{Mamdani Fuzzy Systems for Modelling and Simulation}
-      \field{volume}{21}
-      \field{year}{2018}
-      \field{pages}{2}
-      \range{pages}{1}
-      \verb{urlraw}
-      \verb https://www.jasss.org/21/3/2.html
-      \endverb
-      \verb{url}
-      \verb https://www.jasss.org/21/3/2.html
       \endverb
     \endentry
     \entry{eberhart1995new}{inproceedings}{}

@@ -165,45 +165,38 @@ Mamdani implementado en traffic-sync. Las 27 reglas cubren todas las combinacion
 posibles de los tres términos lingüísticos de cada variable de entrada.
 
 \begin{table}[htbp]
-\renewcommand{\arraystretch}{1.2}
-\caption{Base de reglas completa del sistema de inferencia difusa Mamdani (27 reglas)}
+\renewcommand{\arraystretch}{1.3}
+\caption{Matriz de reglas del sistema de inferencia difusa Mamdani para nivel de congestión}
 \label{tab:fuzzy_rules}
 \centering
 \footnotesize
-\begin{tabular}{ccc|c}
-\hline
-\textbf{Vehículos/min} & \textbf{Velocidad} & \textbf{Densidad} & \textbf{Congestión} \\
-\hline
-Bajo  & Baja  & Baja  & Leve \\
-Bajo  & Baja  & Media & Leve \\
-Bajo  & Baja  & Alta  & Severa \\
-Bajo  & Media & Baja  & Ninguna \\
-Bajo  & Media & Media & Leve \\
-Bajo  & Media & Alta  & Leve \\
-Bajo  & Alta  & Baja  & Ninguna \\
-Bajo  & Alta  & Media & Ninguna \\
-Bajo  & Alta  & Alta  & Leve \\
-\hline
-Medio & Baja  & Baja  & Leve \\
-Medio & Baja  & Media & Severa \\
-Medio & Baja  & Alta  & Severa \\
-Medio & Media & Baja  & Leve \\
-Medio & Media & Media & Leve \\
-Medio & Media & Alta  & Severa \\
-Medio & Alta  & Baja  & Ninguna \\
-Medio & Alta  & Media & Leve \\
-Medio & Alta  & Alta  & Leve \\
-\hline
-Alto  & Baja  & Baja  & Severa \\
-Alto  & Baja  & Media & Severa \\
-Alto  & Baja  & Alta  & Severa \\
-Alto  & Media & Baja  & Leve \\
-Alto  & Media & Media & Severa \\
-Alto  & Media & Alta  & Severa \\
-Alto  & Alta  & Baja  & Leve \\
-Alto  & Alta  & Media & Leve \\
-Alto  & Alta  & Alta  & Severa \\
-\hline
+\begin{tabular}{cc|ccc}
+\toprule
+\multirow{2}{*}{\textbf{Vehículos/min}} & \multirow{2}{*}{\textbf{Velocidad}} & \multicolumn{3}{c}{\textbf{Densidad}} \\
+\cmidrule{3-5}
+& & \textbf{Baja} & \textbf{Media} & \textbf{Alta} \\
+\midrule
+
+% --- Bloque: Vehículos/min BAJO ---
+\multirow{3}{*}{\textbf{Bajo}} 
+& \textbf{Baja}  & \cellcolor{yellow!40}Leve & \cellcolor{yellow!40}Leve & \cellcolor{red!40}Severa \\
+& \textbf{Media} & \cellcolor{green!30}Ninguna & \cellcolor{yellow!40}Leve & \cellcolor{yellow!40}Leve \\
+& \textbf{Alta}  & \cellcolor{green!30}Ninguna & \cellcolor{green!30}Ninguna & \cellcolor{yellow!40}Leve \\
+\midrule
+
+% --- Bloque: Vehículos/min MEDIO ---
+\multirow{3}{*}{\textbf{Medio}} 
+& \textbf{Baja}  & \cellcolor{yellow!40}Leve & \cellcolor{red!40}Severa & \cellcolor{red!40}Severa \\
+& \textbf{Media} & \cellcolor{yellow!40}Leve & \cellcolor{yellow!40}Leve & \cellcolor{red!40}Severa \\
+& \textbf{Alta}  & \cellcolor{green!30}Ninguna & \cellcolor{yellow!40}Leve & \cellcolor{yellow!40}Leve \\
+\midrule
+
+% --- Bloque: Vehículos/min ALTO ---
+\multirow{3}{*}{\textbf{Alto}} 
+& \textbf{Baja}  & \cellcolor{red!40}Severa & \cellcolor{red!40}Severa & \cellcolor{red!40}Severa \\
+& \textbf{Media} & \cellcolor{yellow!40}Leve & \cellcolor{red!40}Severa & \cellcolor{red!40}Severa \\
+& \textbf{Alta}  & \cellcolor{yellow!40}Leve & \cellcolor{yellow!40}Leve & \cellcolor{red!40}Severa \\
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -395,52 +388,51 @@ La Figura~\ref{fig:pso_memoizacion} muestra el flujo completo del optimizador, i
 \begin{figure}[ht]
 \centering
 \shorthandoff{>}
-\begin{tikzpicture}[node distance=0.85cm,>=latex]
-
-    \tikzstyle{block} = [rectangle, draw, rounded corners,
-                         text width=5.6cm, align=center,
-                         inner sep=4pt, font=\footnotesize]
-    \tikzstyle{decision} = [rectangle, draw, dashed, rounded corners,
-                         text width=5.6cm, align=center,
-                         inner sep=4pt, font=\footnotesize]
-    \tikzstyle{side} = [rectangle, draw, rounded corners, fill=blue!6,
-                         text width=3.8cm, align=center,
-                         inner sep=4pt, font=\scriptsize]
-    \tikzstyle{line} = [draw,->]
+\begin{tikzpicture}[
+    node distance=0.85cm and 1cm, 
+    >=latex,
+    % Definición moderna de estilos usando tikzset
+    block/.style = {rectangle, draw, rounded corners, text width=5.6cm, align=center, inner sep=4pt, font=\footnotesize},
+    % ROMBO PARA DECISIONES (Requiere \usetikzlibrary{shapes.geometric})
+    decision/.style = {diamond, draw, aspect=2.5, text width=4cm, align=center, inner sep=0pt, font=\footnotesize\bfseries},
+    side/.style = {rectangle, draw, rounded corners, fill=blue!6, text width=3.8cm, align=center, inner sep=4pt, font=\scriptsize},
+    terminator/.style = {rectangle, draw, rounded corners=10pt, text width=5.6cm, align=center, inner sep=4pt, font=\footnotesize, fill=gray!10},
+    line/.style = {draw, ->}
+]
 
     % --- columna principal ---
-    \node[block]                     (stats) {Estadísticas del clúster:\\ $VPM$, $V$, $D$ medios};
-    \node[decision, below=of stats]  (key)   {\textbf{¿estadísticas en caché?}};
-    \node[block, below=1.5cm of key] (init)  {Inicializar el enjambre\\ alrededor de $C_{\text{base}}$};
+    % Nota: Usamos terminator para inicio y fin
+    \node[terminator]                (stats) {Inicio: Estadísticas del clúster\\ $VPM$, $V$, $D$ medios};
+    \node[decision, below=of stats]  (key)   {¿Estadísticas\\ en caché?};
+    \node[block, below=0.8cm of key] (init)  {Inicializar el enjambre\\ alrededor de $C_{\text{base}}$};
     \node[block, below=of init]      (iter)  {Actualizar velocidad y posición\\ (Ecuación~\ref{eq:pso_update})};
     \node[block, below=of iter]      (eval)  {Evaluar la aptitud y actualizar\\ $p_{\text{best}}$ y $g_{\text{best}}$};
-    \node[decision, below=of eval]   (stop)  {\textbf{¿converge o se agota\\ el presupuesto de iteraciones?}};
-    \node[block, below=1.5cm of stop] (done) {$C^{*} = g_{\text{best}}$};
+    \node[decision, below=of eval]   (stop)  {¿Converge o se\\ agota iteraciones?};
+    \node[block, below=0.8cm of stop](done)  {$C^{*} = g_{\text{best}}$};
     \node[block, below=of done]      (save)  {Guardar $C^{*}$ en caché};
-    \node[block, below=of save]      (ret)   {Devolver $C^{*}$ al orquestador};
+    \node[terminator, below=of save] (ret)   {Fin: Devolver $C^{*}$ al orquestador};
 
     % --- ramas laterales ---
-    \node[side, below left=0.35cm and 0.7cm of key] (hit)
-        {Recuperar $C^{*}$ memorizado};
-    \node[side, right=0.7cm of eval] (rst)
-        {Reinicio parcial si sigue\\ estancado con aptitud alta};
+    % Ajustamos la posición relativa debido al ancho del rombo
+    \node[side, left=0.5cm of key]   (hit)   {Recuperar $C^{*}$\\ memorizado};
+    \node[side, right=0.8cm of eval] (rst)   {Reinicio parcial si sigue\\ estancado con aptitud alta};
 
     % --- flujo principal ---
     \path[line] (stats) -- (key);
-    \path[line] (key)  -- node[right,font=\scriptsize] {no} (init);
-    \path[line] (init) -- (iter);
-    \path[line] (iter) -- (eval);
-    \path[line] (eval) -- (stop);
-    \path[line] (stop) -- node[right,font=\scriptsize] {sí} (done);
-    \path[line] (done) -- (save);
-    \path[line] (save) -- (ret);
+    \path[line] (key)   -- node[right, font=\scriptsize] {no} (init);
+    \path[line] (init)  -- (iter);
+    \path[line] (iter)  -- (eval);
+    \path[line] (eval)  -- (stop);
+    \path[line] (stop)  -- node[right, font=\scriptsize] {sí} (done);
+    \path[line] (done)  -- (save);
+    \path[line] (save)  -- (ret);
 
-    % --- rama de cache: entra directo a la devolucion ---
-    \path[line] (key.west) -| node[above,pos=0.22,font=\scriptsize] {sí} (hit.north);
+    % --- rama de cache ---
+    \path[line] (key) -- node[above, font=\scriptsize] {sí} (hit);
     \path[line] (hit) |- (ret.west);
 
-    % --- rama de continuacion: pasa por el reinicio parcial y vuelve al bucle ---
-    \path[line] (stop.east) to[out=0,in=-90] node[below,pos=0.85,font=\scriptsize] {no} (rst.south);
+    % --- rama de continuacion ---
+    \path[line] (stop.east) to[out=0,in=-90] node[right,pos=0.85,font=\scriptsize] {no} (rst.south);
     \path[line] (rst.north) to[out=90,in=0] (iter.east);
 
 \end{tikzpicture}
