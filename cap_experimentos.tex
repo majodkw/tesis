@@ -1102,30 +1102,31 @@ desfavorable a través de todos los escenarios.}
 \subsection{Análisis de patrones}
 \label{subsec:control_patrones}
 
-Del conjunto de resultados se desprenden tres patrones consistentes. El primero es que
-la ventaja del sistema propuesto crece con la asimetría de la demanda entre
-aproximaciones: el escenario corredor, en el que la calle dominante concentra el doble de
-demanda que las transversales, es el único en resultar favorable en las 10 corridas de
-las tres campañas simultáneamente, con una mediana de $\Delta$throughput de +207,5\%
-frente al plan MOPC~60~s y de +22,6\% frente al ciclo largo~120~s. Esta magnitud refleja
-que un reparto de verde igualitario resulta especialmente ineficiente cuando la demanda
-real está lejos de ser simétrica, condición que el control adaptativo del sistema
-propuesto explota de forma directa.
+Del conjunto de resultados se desprenden tres patrones consistentes.
 
-El segundo patrón es que el tipo de ventaja que obtiene el sistema propuesto depende del
-ciclo del plan fijo contra el que se compara. Frente al plan MOPC de 60~s, cuyo ciclo
-corto y alto tiempo perdido relativo lo hacen más vulnerable a saturarse, la ventaja
-proviene principalmente de evitar el colapso: el sistema propuesto sostiene mayor
-throughput y menor tiempo de sistema incluso en escenarios de demanda alta y saturada. En
-cambio, frente a los planes de 90~s y 120~s, cuyo tiempo perdido por ciclo es menor y cuya
-capacidad de servicio está mejor dimensionada, la ventaja del sistema propuesto se
-concentra en los regímenes de demanda baja y media y en el escenario de asimetría marcada
-(corredor), mientras que en demanda alta y saturada las medianas de $\Delta$sys se
-vuelven negativas (-7,2\% y -5,2\% frente a netconvert~90~s; -8,8\% y -7,3\% frente al
-ciclo largo~120~s), señal de que el margen de mejora disponible se reduce cuando el plan
-de referencia ya opera cerca de su capacidad.
+\textbf{Ventaja creciente con la asimetría de demanda.} La ventaja del sistema propuesto
+crece con la asimetría de la demanda entre aproximaciones: el escenario corredor, en el
+que la calle dominante concentra el doble de demanda que las transversales, es el único
+en resultar favorable en las 10 corridas de las tres campañas simultáneamente, con una
+mediana de $\Delta$throughput de +207,5\% frente al plan MOPC~60~s y de +22,6\% frente al
+ciclo largo~120~s. Esta magnitud refleja que un reparto de verde igualitario resulta
+especialmente ineficiente cuando la demanda real está lejos de ser simétrica, condición
+que el control adaptativo del sistema propuesto explota de forma directa.
 
-El tercer patrón es el límite del sistema propuesto: el escenario demanda\_alta es el
+\textbf{Tipo de ventaja según el plan de referencia.} El tipo de ventaja que obtiene el
+sistema propuesto depende del ciclo del plan fijo contra el que se compara. Frente al
+plan MOPC de 60~s, cuyo ciclo corto y alto tiempo perdido relativo lo hacen más
+vulnerable a saturarse, la ventaja proviene principalmente de evitar el colapso: el
+sistema propuesto sostiene mayor throughput y menor tiempo de sistema incluso en
+escenarios de demanda alta y saturada. En cambio, frente a los planes de 90~s y 120~s,
+cuyo tiempo perdido por ciclo es menor y cuya capacidad de servicio está mejor
+dimensionada, la ventaja del sistema propuesto se concentra en los regímenes de demanda
+baja y media y en el escenario de asimetría marcada (corredor), mientras que en demanda
+alta y saturada las medianas de $\Delta$sys se vuelven negativas (-7,2\% y -5,2\% frente a
+netconvert~90~s; -8,8\% y -7,3\% frente al ciclo largo~120~s), señal de que el margen de
+mejora disponible se reduce cuando el plan de referencia ya opera cerca de su capacidad.
+
+\textbf{Límite del sistema: colapsos en demanda alta.} El escenario demanda\_alta es el
 peor evaluado en las tres campañas, con solo 5 de 10 corridas favorables frente a cada uno
 de los tres planes fijos. La inspección de las corridas desfavorables de esta celda
 revela colapsos parciales autoinducidos, en los que el propio control adaptativo del
