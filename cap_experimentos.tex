@@ -510,27 +510,6 @@ Compatibilidad edge/IoT
 \end{tabular}
 \end{table}
 
-\subsection{Reducción de Latencia respecto a Plataformas Centralizadas}
-\label{subsec:comparativa_centralizada}
-
-Más allá de la comparación entre plataformas descentralizadas, la arquitectura
-propuesta también supera a las soluciones IoT-cloud centralizadas convencionales
-en términos de latencia de persistencia verificable. Los sistemas centralizados
-típicos introducen latencias de confirmación de escritura del orden de 3--6~s
-cuando incluyen mecanismos de integridad (firmas digitales, logs de auditoría)
-\cite{singh2020blockchain,conoscenti2016blockchain},
-mientras que la confirmación BlockDAG obtenida en este trabajo alcanzó $\approx$1~s.
-Esto representa una reducción de latencia superior al 60\% respecto
-a dichos sistemas, con la ventaja adicional de que la inmutabilidad está garantizada
-por el protocolo de consenso distribuido, y no por la confianza en un operador
-central, y el costo operativo es órdenes de magnitud inferior.
-
-Este conjunto de propiedades, latencia baja, costo insignificante, inmutabilidad
-criptográfica e independencia de infraestructura centralizada, posiciona a la
-combinación IPFS+BlockDAG como una alternativa técnicamente superior para
-aplicaciones de monitoreo urbano con alta frecuencia de reporte y requisitos de
-trazabilidad auditables.
-
 % =============================================================================
 \section{Evaluación del control semafórico: campaña A/B}
 \label{sec:experimentos_control_ab}
@@ -1314,9 +1293,13 @@ local. Se sugiere como línea de trabajo futura la incorporación de mecanismos 
 de saturación de carril que restrinjan o penalicen decisiones locales de Max-Pressure
 cuando el riesgo de spillback hacia una intersección vecina sea alto.
 
-Las evaluaciones cubren los dos módulos nucleares del sistema: traffic-sync demostró
+Las evaluaciones cubren los tres frentes del sistema: traffic-sync demostró
 escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de
 220~MB de RAM; traffic-storage alcanzó confirmación BlockDAG en $\approx$1~s a un
 costo inferior a \$1{,}2$\times$10\textsuperscript{-5}~USD por transacción, superando
-a Ethereum en latencia de confirmación (>95\%) y costo operativo (>4 órdenes de magnitud).
-Estos resultados establecen la base cuantitativa para las conclusiones del capítulo siguiente.
+a Ethereum en latencia de confirmación (>95\%) y costo operativo (>4 órdenes de magnitud);
+y la campaña A/B de control semafórico resultó favorable al sistema propuesto en el
+77,8\% de las 180 comparaciones, con una ventaja que crece con la asimetría de demanda
+entre aproximaciones y un límite claro en demanda simétrica cercana a la capacidad de
+la red. Estos resultados establecen la base cuantitativa para las conclusiones del
+capítulo siguiente.
