@@ -636,6 +636,7 @@ tiempo de sistema, por escenario y campaña de comparación}
 \label{tab:control_favorables_celda}
 \centering
 \footnotesize
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccc}
 \hline
 & \multicolumn{3}{c}{\textbf{MOPC 60~s}} & \multicolumn{3}{c}{\textbf{netconvert 90~s}} & \multicolumn{3}{c}{\textbf{Ciclo largo 120~s}} \\
@@ -648,7 +649,8 @@ demanda\_alta      & 5/10  & +9,0\%   & +1,9\%  & 5/10  & +7,6\%   & -7,2\%  & 5
 demanda\_saturada  & 8/10  & +46,3\%  & +6,0\%  & 8/10  & +19,6\%  & -5,2\%  & 7/10  & +25,2\% & -7,3\% \\
 hora\_pico         & 7/10  & +22,7\%  & +3,0\%  & 6/10  & +15,3\%  & -1,3\%  & 7/10  & +23,8\% & -4,7\% \\
 \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 Como complemento de la Tabla~\ref{tab:control_favorables_celda}, que reporta la
