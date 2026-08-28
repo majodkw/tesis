@@ -507,6 +507,31 @@ produce $3 \times 6 \times 10 = 180$ comparaciones A/B. Las semillas se generaro
 mediante un generador criptográficamente seguro (CSPRNG) y quedaron registradas para
 garantizar la reproducibilidad exacta de cada corrida.
 
+La campaña se ejecutó en una máquina virtual de propósito general, sin hardware
+acelerador, cuyas especificaciones se resumen en la Tabla~\ref{tab:entorno_ab}.
+
+\begin{table}[htbp]
+\renewcommand{\arraystretch}{1.3}
+\caption{Especificaciones de la máquina que ejecutó la campaña A/B de control semafórico}
+\label{tab:entorno_ab}
+\centering
+\footnotesize
+\begin{tabular}{ll}
+\hline
+\textbf{Parámetro} & \textbf{Valor} \\
+\hline
+Sistema operativo      & Ubuntu 24.04.4 LTS (Noble Numbat), aarch64 \\
+Virtualización         & Máquina virtual KVM (virt-7.2) \\
+Kernel                 & Linux 6.17.0-1020-oracle \\
+Procesador             & ARM Neoverse-N1 (2 núcleos) \\
+RAM                    & 11,65 GiB (13\% en uso durante la ejecución) \\
+Almacenamiento         & 192,69 GiB, ext4 (22\% en uso) \\
+GPU                    & RedHat Virtio 1.0 (no utilizada para cómputo) \\
+Red                    & Tailscale, IP local 10.0.0.19/24 \\
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Escenarios de demanda}
 \label{subsec:control_escenarios}
 
