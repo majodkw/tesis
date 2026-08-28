@@ -923,8 +923,8 @@ diez observaciones ordenadas de cada escenario.
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-    width=0.95\linewidth,
-    height=7.5cm,
+    width=\linewidth,
+    height=10cm,
     ylabel={$\Delta$throughput (\%)},
         xtick={1,2,3,4,5,6},
     xticklabels={corredor,baja,media,alta,saturada,pico},
@@ -955,14 +955,7 @@ diez observaciones ordenadas de cada escenario.
 \end{axis}
 \end{tikzpicture}
 \caption{Distribución completa, por escenario, de la variación porcentual de throughput
-sobre las diez semillas de la campaña MOPC~60~s. La caja abarca el rango
-intercuartílico y la línea central la mediana; los bigotes marcan el valor observado más
-extremo dentro de 1,5~RIC. La dispersión es reducida en corredor y demanda\_baja, donde
-el sistema propuesto domina en las diez semillas, y crece marcadamente en demanda\_alta y
-demanda\_saturada, donde el rango intercuartílico cruza el cero: en esas dos celdas la
-ventaja o desventaja del sistema propuesto es sensible a la semilla concreta, reflejo del
-régimen de colapsos autoinducidos cerca de la capacidad de la red descrito en la
-Sección~\ref{subsec:control_patrones}.}
+sobre las diez semillas de la campaña MOPC~60~s.}
 \label{fig:control_box_thr}
 \end{figure}
 
@@ -970,8 +963,8 @@ Sección~\ref{subsec:control_patrones}.}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-    width=0.95\linewidth,
-    height=7.5cm,
+    width=\linewidth,
+    height=10cm,
     ylabel={$\Delta$tiempo de sistema (\%)},
         xtick={1,2,3,4,5,6},
     xticklabels={corredor,baja,media,alta,saturada,pico},
@@ -1003,12 +996,7 @@ Sección~\ref{subsec:control_patrones}.}
 \end{tikzpicture}
 \caption{Distribución completa, por escenario, de la variación porcentual del tiempo
 total de sistema sobre las diez semillas de la campaña MOPC~60~s, con la misma
-convención de caja y bigotes que la Figura~\ref{fig:control_box_thr}. La dispersión de
-esta métrica es sistemáticamente menor que la del throughput en todos los escenarios,
-consistente con su carácter de variable agregada continua frente al carácter más discreto
-y sensible al colapso del throughput; aun así, demanda\_alta y hora\_pico muestran cajas
-que cruzan el cero, confirmando que esos dos escenarios son los de resultado menos
-predecible entre semillas.}
+convención de caja y bigotes que la Figura~\ref{fig:control_box_thr}.}
 \label{fig:control_box_sys}
 \end{figure}
 
