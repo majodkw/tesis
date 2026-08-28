@@ -500,8 +500,8 @@ y la misma semilla del motor SUMO, difiriendo únicamente en el mecanismo de con
 semafórico. La corrida~A opera con el plan de tiempo fijo de referencia y la corrida~B
 con el sistema completo propuesto (PSO de ciclo más Max-Pressure local). La red vial
 utilizada corresponde al microcentro de la ciudad de San Lorenzo, con seis intersecciones
-semaforizadas cuya lógica de fases fue generada automáticamente mediante la opción
-\texttt{--tls.guess} de netconvert. Se consideraron tres planes fijos de referencia,
+semaforizadas cuya lógica de fases fue generada automáticamente mediante netconvert, la
+herramienta estándar de generación de redes de SUMO. Se consideraron tres planes fijos de referencia,
 seis escenarios de demanda y diez semillas aleatorias independientes por celda, lo que
 produce $3 \times 6 \times 10 = 180$ comparaciones A/B. Las semillas se generaron
 mediante un generador criptográficamente seguro (CSPRNG) y quedaron registradas para
@@ -511,7 +511,7 @@ garantizar la reproducibilidad exacta de cada corrida.
 \label{subsec:control_escenarios}
 
 Los seis escenarios evaluados se derivaron de forma determinista, sin componentes
-aleatorios, a partir de un mismo archivo base de rutas (\texttt{routes.rou.xml}), de
+aleatorios, a partir de un mismo archivo base de rutas, de
 modo que las diferencias entre escenarios provienen exclusivamente de la manipulación
 programática de los volúmenes y patrones de inserción, y no de variabilidad estocástica
 adicional. La Tabla~\ref{tab:control_escenarios} resume su definición.
@@ -574,48 +574,43 @@ Ciclo largo 120~s & Ciclo de 120~s con 57~s de verde. El tiempo perdido por cicl
 \subsection{Metodología de evaluación insesgada}
 \label{subsec:control_metodologia}
 
-La comparación directa de tiempos de viaje promedio a partir del archivo
-\texttt{tripinfo.xml} de SUMO está expuesta a un sesgo de supervivencia: dicho archivo
-registra únicamente los viajes completados durante la ventana de simulación, de modo que,
-cuando uno de los dos lados de la comparación colapsa parcialmente (los vehículos quedan
-atrapados en congestión y no llegan a destino), su promedio de tiempo de viaje se calcula
-solo sobre los vehículos rápidos que lograron escapar, produciendo una estimación
+La comparación directa de tiempos de viaje promedio a partir del registro de viajes
+completados que produce SUMO está expuesta a un sesgo de supervivencia: ese registro
+documenta únicamente los viajes que terminan dentro de la ventana de simulación, de modo
+que, cuando uno de los dos lados de la comparación colapsa parcialmente (los vehículos
+quedan atrapados en congestión y no llegan a destino), su promedio de tiempo de viaje se
+calcula solo sobre los vehículos rápidos que lograron escapar, produciendo una estimación
 artificialmente favorable para el lado colapsado. Para neutralizar este efecto se adoptó
 un veredicto compuesto por comparación. En primer lugar, se aplica una guardia de
 throughput con autoridad sobre las métricas por viaje: si el número de vehículos que
 completan su viaje difiere en más de un 10\% entre las corridas A y B, el veredicto se
 determina por throughput, independientemente de lo que indiquen los tiempos de viaje
-promedio. En segundo lugar, se incorpora el tiempo total de sistema calculado a partir de
-\texttt{summary.xml}, que contabiliza a los vehículos aún circulando o atrapados al cierre
-de la ventana de simulación y por lo tanto no hereda el sesgo de supervivencia de
-\texttt{tripinfo.xml}. En tercer lugar, se construye evidencia pareada por vehículo,
-emparejando cada vehículo por su salida y ruta idénticas en las corridas A y B, sobre la
-cual se aplica un test de Wilcoxon de rangos con signo. Se define además una banda de
-empate del 2\%, dentro de la cual una comparación se considera neutra en lugar de
-favorable o desfavorable, y se registra el número de vehículos nunca insertados en cada
-corrida (diferencia entre vehículos cargados y vehículos efectivamente insertados en la
-red), indicador adicional de saturación de la demanda de entrada. Este conteo
-loaded$-$inserted captura una población de vehículos estructuralmente invisible para
-\texttt{tripinfo.xml}: un vehículo que nunca logra incorporarse a la red, por bloqueo
-sostenido en su punto de inserción, no genera ningún registro de viaje y por lo tanto no
-puede empeorar ni mejorar ningún promedio calculado sobre viajes completados; solo el
-tiempo total de sistema y este conteo explícito dejan constancia de su existencia.
+promedio. En segundo lugar, se incorpora el tiempo total de sistema a partir del resumen
+agregado que produce SUMO, que contabiliza a los vehículos aún circulando o atrapados al
+cierre de la ventana de simulación y por lo tanto no hereda el sesgo de supervivencia del
+registro por viaje. En tercer lugar, se construye evidencia pareada por vehículo: cada
+vehículo simulado tiene la misma hora de salida y la misma ruta en la corrida~A y en la
+corrida~B, de modo que su tiempo de viaje en ambas corridas puede compararse directamente
+como si fuera el mismo vehículo bajo dos políticas de control distintas, en lugar de
+comparar dos poblaciones de vehículos potencialmente distintas; esta evidencia pareada es
+la que alimenta el test de Wilcoxon de rangos con signo de la Sección~\ref{subsec:control_rigor}.
+Se define además una banda de empate del 2\%, dentro de la cual una comparación se
+considera neutra en lugar de favorable o desfavorable, y se registra el número de
+vehículos nunca insertados en cada corrida (diferencia entre vehículos cargados y
+vehículos efectivamente insertados en la red), indicador adicional de saturación de la
+demanda de entrada. Este conteo loaded$-$inserted captura una población de vehículos
+estructuralmente invisible para el registro de viajes completados: un vehículo que nunca
+logra incorporarse a la red, por bloqueo sostenido en su punto de inserción, no genera
+ningún registro de viaje y por lo tanto no puede empeorar ni mejorar ningún promedio
+calculado sobre viajes completados; solo el tiempo total de sistema y este conteo
+explícito dejan constancia de su existencia.
 
-Dos corridas observadas durante la campaña ilustran de forma concreta la magnitud del
-sesgo de supervivencia que motiva esta metodología. En la primera, el tiempo de viaje
-promedio de \texttt{tripinfo.xml} registró una mejora del $+18\%$ para el sistema
-propuesto, mientras que el throughput de esa misma corrida cayó un $-55\%$: se trataba en
-realidad de un colapso parcial autoinducido del propio sistema dinámico, en el que solo
-los vehículos rápidos que escaparon antes de que se formara el bloqueo quedaron registrados
-en \texttt{tripinfo.xml}, produciendo una media artificialmente favorable sobre una
-minoría no representativa. En la segunda, en sentido inverso, el tiempo de viaje promedio
-``empeoró'' un $-52\%$ mientras que el throughput aumentó un $+116\%$: en este caso el plan
-fijo de referencia fue el que colapsó parcialmente, de modo que su promedio de
-\texttt{tripinfo.xml} se calculó sobre una fracción reducida de vehículos afortunados,
-produciendo la apariencia de una comparación desfavorable para el sistema propuesto
-cuando en realidad este sirvió a más del doble de vehículos. Sin la guardia de throughput
-y el tiempo total de sistema, ambas corridas habrían sido clasificadas en el sentido
-opuesto al correcto, el primer caso como una victoria y el segundo como una derrota.
+Dos corridas observadas durante la campaña confirman la magnitud real del sesgo: en una,
+el tiempo de viaje promedio mejoró $+18\%$ mientras el throughput caía $-55\%$ por un
+colapso parcial autoinducido del sistema propuesto; en otra, en sentido inverso, el
+tiempo de viaje promedio empeoró $-52\%$ mientras el throughput subía $+116\%$, porque en
+ese caso el colapso parcial ocurrió del lado del plan fijo de referencia. Sin la guardia
+de throughput, ambas corridas se habrían clasificado en el sentido opuesto al correcto.
 
 \subsection{Resultados globales}
 \label{subsec:control_resultados}
@@ -793,7 +788,7 @@ sesgo de selección; valores positivos indican ventaja del sistema propuesto.}
 \addlegendentry{Ciclo largo 120~s}
 \end{axis}
 \end{tikzpicture}
-\caption{Mediana de la variación porcentual del tiempo total de sistema (\texttt{summary.xml})
+\caption{Mediana de la variación porcentual del tiempo total de sistema
 del sistema propuesto respecto de cada plan fijo, por escenario. Valores negativos, presentes
 en demanda\_alta, demanda\_saturada y hora\_pico frente a los planes de 90~s y 120~s, indican
 que el plan fijo de referencia iguala o supera al sistema propuesto en esa métrica agregada.}
@@ -1226,7 +1221,7 @@ vehicular, y lo hace bajo una metodología diseñada explícitamente para no pre
 sistema propuesto por artefactos de medición. La guardia de throughput desempeñó un papel
 central en esa metodología: al subordinar las métricas por viaje al conteo de vehículos
 que efectivamente completan su trayecto, evita que un colapso parcial de una de las dos
-corridas, que descarta del promedio de \texttt{tripinfo.xml} precisamente a los vehículos
+corridas, que descarta del promedio del registro de viajes precisamente a los vehículos
 más perjudicados, se traduzca en un veredicto artificialmente favorable. Sin esta guardia,
 el sesgo de supervivencia habría inflado la tasa de éxito reportada, en particular en los
 escenarios de demanda alta y saturada, donde ambos lados de la comparación operan cerca
