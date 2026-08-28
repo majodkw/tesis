@@ -712,7 +712,7 @@ tiempo de sistema, respectivamente.
     ymin=0, ymax=11,
     ymajorgrids=true,
     grid style={dashed, gray!40},
-    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+    legend style={at={(0.5,-0.32)}, anchor=north, legend columns=3,
                   font=\footnotesize, draw=black, fill=white},
     enlarge x limits=0.12,
 ]
@@ -725,10 +725,7 @@ tiempo de sistema, respectivamente.
 \addlegendentry{Ciclo largo 120~s}
 \end{axis}
 \end{tikzpicture}
-\caption{Número de corridas favorables al sistema propuesto (de 10 semillas) por
-escenario de demanda y campaña de comparación. Cada barra agrupa las tres campañas frente
-a un mismo escenario; valores cercanos a 10 indican dominancia consistente del sistema
-propuesto sobre el plan fijo correspondiente, independientemente de la semilla.}
+\caption{Corridas favorables al sistema propuesto, de 10 semillas, por escenario y campaña.}
 \label{fig:control_favorables}
 \end{figure}
 
@@ -746,7 +743,7 @@ propuesto sobre el plan fijo correspondiente, independientemente de la semilla.}
     ylabel={Mediana de $\Delta$throughput (\%)},
     ymajorgrids=true,
     grid style={dashed, gray!40},
-    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+    legend style={at={(0.5,-0.32)}, anchor=north, legend columns=3,
                   font=\footnotesize, draw=black, fill=white},
     enlarge x limits=0.12,
 ]
@@ -759,10 +756,8 @@ propuesto sobre el plan fijo correspondiente, independientemente de la semilla.}
 \addlegendentry{Ciclo largo 120~s}
 \end{axis}
 \end{tikzpicture}
-\caption{Mediana de la variación porcentual del throughput (vehículos que completan viaje)
-del sistema propuesto respecto de cada plan fijo, por escenario. La mediana se calcula
-sobre las 10 corridas de cada celda, favorables y desfavorables por igual, para evitar
-sesgo de selección; valores positivos indican ventaja del sistema propuesto.}
+\caption{Mediana de la variación porcentual de throughput del sistema propuesto respecto
+de cada plan fijo, por escenario.}
 \label{fig:control_thr}
 \end{figure}
 
@@ -780,7 +775,7 @@ sesgo de selección; valores positivos indican ventaja del sistema propuesto.}
     ylabel={Mediana de $\Delta$tiempo de sistema (\%)},
     ymajorgrids=true,
     grid style={dashed, gray!40},
-    legend style={at={(0.5,-0.22)}, anchor=north, legend columns=3,
+    legend style={at={(0.5,-0.32)}, anchor=north, legend columns=3,
                   font=\footnotesize, draw=black, fill=white},
     enlarge x limits=0.12,
 ]
@@ -793,10 +788,8 @@ sesgo de selección; valores positivos indican ventaja del sistema propuesto.}
 \addlegendentry{Ciclo largo 120~s}
 \end{axis}
 \end{tikzpicture}
-\caption{Mediana de la variación porcentual del tiempo total de sistema
-del sistema propuesto respecto de cada plan fijo, por escenario. Valores negativos, presentes
-en demanda\_alta, demanda\_saturada y hora\_pico frente a los planes de 90~s y 120~s, indican
-que el plan fijo de referencia iguala o supera al sistema propuesto en esa métrica agregada.}
+\caption{Mediana de la variación porcentual del tiempo total de sistema del sistema
+propuesto respecto de cada plan fijo, por escenario.}
 \label{fig:control_sys}
 \end{figure}
 
