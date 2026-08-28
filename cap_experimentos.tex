@@ -4,7 +4,7 @@
 
 Los capítulos anteriores han descrito la arquitectura, los fundamentos teóricos y la
 implementación de cada módulo del sistema propuesto. El presente capítulo tiene como objetivo
-demostrar empíricamente que el sistema cumple con los requisitos de rendimiento, integridad y
+demostrar experimentalmente que el sistema cumple con los requisitos de rendimiento, integridad y
 eficiencia planteados para su aplicación en entornos de gestión de tráfico urbano. Para ello,
 se presentan los resultados de experimentos controlados ejecutados sobre los dos módulos que
 constituyen el núcleo computacional del sistema: traffic-sync, responsable del análisis
@@ -338,105 +338,6 @@ la comparación con tecnologías alternativas se detalla en la
 Sección~\ref{sec:experimentos_comparativa}.
 
 % -----------------------------------------------------------------------------
-\subsection{Pruebas con Escenarios de Tráfico Vehicular}
-\label{subsec:storage_escenarios}
-
-Con el objeto de evaluar el comportamiento del módulo ante volúmenes de datos representativos
-de distintas condiciones operativas reales, se diseñó un protocolo de prueba basado en tres
-escenarios de densidad vehicular: bajo, con 30--50 vehículos activos y condiciones
-de tráfico fluido; medio, con 80--120 vehículos y tráfico normal en horario diurno;
-y alto, con 150--200 vehículos en situación de congestión o pico de demanda.
-Los payloads de cada escenario se generaron de forma sintética utilizando el formato unificado
-versión~2.0 del sistema, incluyendo métricas por semáforo como vehículos por minuto,
-velocidad promedio, tiempo de circulación, densidad y clasificación por tipo de vehículo
-(motocicletas, automóviles, autobuses y camiones). A diferencia de las pruebas de la
-Sección~\ref{subsec:storage_base}, este protocolo utilizó Pinata como servicio IPFS
-gestionado en la nube, lo que introduce latencia adicional por autenticación remota y
-transferencia vía gateway externo; esto explica que los tiempos de subida reportados aquí
-(6,7--7,3~s) sean superiores a los obtenidos con nodo local (2,47~s). Cada escenario se
-ejecutó mediante 5~corridas independientes para obtener estimaciones estadísticamente
-representativas de media y desviación estándar.
-
-La Tabla~\ref{tab:storage_escenarios} presenta los tiempos promedio de subida y descarga
-para cada escenario, considerando únicamente las corridas con respuesta HTTP~200, que son
-aquellas en las que se completó el ciclo completo de almacenamiento y recuperación en
-la red BlockDAG\@.
-
-\begin{table}[htbp]
-\renewcommand{\arraystretch}{1.3}
-\caption{Tiempos de subida y descarga por escenario de tráfico (5 corridas válidas por escenario)}
-\label{tab:storage_escenarios}
-\centering
-\footnotesize
-\begin{tabular}{lccc}
-\hline
-\textbf{Escenario} & \textbf{Corridas válidas} & \textbf{Subida (avg $\pm$ sd, s)} & \textbf{Descarga (avg $\pm$ sd, s)} \\
-\hline
-Bajo  & 5 & $6{,}725 \pm 1{,}035$ & $1{,}981 \pm 0{,}861$ \\
-Medio & 5 & $6{,}896 \pm 0{,}963$ & $1{,}750 \pm 0{,}136$ \\
-Alto  & 5 & $7{,}290 \pm 0{,}787$ & $1{,}767 \pm 0{,}174$ \\
-\hline
-\end{tabular}
-\end{table}
-
-La Figura~\ref{fig:storage_escenarios} ilustra gráficamente los tiempos promedio de cada
-operación con sus barras de error correspondientes a una desviación estándar. Puede
-observarse que el tiempo de subida crece levemente con la densidad vehicular, de
-6,725~s en el escenario bajo a 7,290~s en el escenario alto, un incremento del 8,4\%,
-mientras que el tiempo de descarga permanece prácticamente estable en todos los escenarios,
-con variaciones inferiores a 0,25~s. Este comportamiento confirma que el módulo escala
-con el volumen de datos sin comprometer significativamente el rendimiento: el tamaño del
-payload influye de forma marginal en la latencia total, que está dominada principalmente
-por los tiempos de red y confirmación en la cadena.
-
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.88\linewidth,
-    height=7cm,
-    ybar,
-    bar width=18pt,
-    symbolic x coords={Bajo, Medio, Alto},
-    xtick=data,
-    xlabel={Escenario de tráfico},
-    ylabel={Tiempo promedio (s)},
-    ymin=0, ymax=10,
-    ymajorgrids=true,
-    grid style={dashed, gray!40},
-    legend style={at={(0.97,0.97)}, anchor=north east,
-                  font=\footnotesize, draw=black, fill=white},
-    error bars/y dir=both,
-    error bars/y explicit,
-    enlarge x limits=0.25,
-]
-\addplot+[
-    fill=blue!50!white, draw=blue!70!black,
-    error bars/.cd, y dir=both, y explicit
-] coordinates {
-    (Bajo,  6.725) +- (0, 1.035)
-    (Medio, 6.896) +- (0, 0.963)
-    (Alto,  7.290) +- (0, 0.787)
-};
-\addlegendentry{Subida}
-\addplot+[
-    fill=red!50!white, draw=red!70!black,
-    error bars/.cd, y dir=both, y explicit
-] coordinates {
-    (Bajo,  1.981) +- (0, 0.861)
-    (Medio, 1.750) +- (0, 0.136)
-    (Alto,  1.767) +- (0, 0.174)
-};
-\addlegendentry{Descarga}
-\end{axis}
-\end{tikzpicture}
-\caption{Tiempos promedio de subida y descarga del módulo traffic-storage por
-escenario de tráfico. Las barras de error representan $\pm$1 desviación estándar.
-El incremento de latencia de subida entre el escenario bajo y el alto es del 8,4\%.}
-\label{fig:storage_escenarios}
-\end{figure}
-
-% -----------------------------------------------------------------------------
 \subsection{Descomposición del Pipeline de Almacenamiento}
 \label{subsec:storage_pipeline}
 
@@ -506,46 +407,6 @@ de subida ($\approx$50\%), mientras que la descarga se completa en $\approx$1,6~
 sin necesidad de esperar confirmación.}
 \label{fig:storage_pipeline}
 \end{figure}
-
-% -----------------------------------------------------------------------------
-\subsection{Verificación de Integridad y Trazabilidad}
-\label{subsec:storage_integridad}
-
-Dado que el CID es el resumen criptográfico del contenido (véase la
-Sección~\ref{subsec:ipfs_traffic_storage}), la recuperación exitosa del archivo original
-constituye por sí misma una prueba de integridad. Esta propiedad fue verificada de forma
-experimental durante las pruebas por escenarios:
-el contenido descargado en cada corrida produjo consistentemente el mismo resumen
-criptográfico, independientemente del momento de ejecución y del escenario de tráfico.
-Adicionalmente, el mismo CID fue recuperado en las cinco corridas de cada escenario,
-lo que confirma que el contrato inteligente almacena y retorna los metadatos de forma
-determinista y reproducible. La Tabla~\ref{tab:storage_evidencias} presenta una muestra
-representativa de las transacciones registradas, incluyendo el CID de IPFS y el número
-de bloque en que fue confirmada cada operación.
-
-\begin{table}[htbp]
-\renewcommand{\arraystretch}{1.3}
-\caption{Muestra de transacciones exitosas registradas durante las pruebas}
-\label{tab:storage_evidencias}
-\centering
-\footnotesize
-\begin{tabular}{llcc}
-\hline
-\textbf{Escenario} & \textbf{CID de IPFS (truncado)} & \textbf{Estado HTTP} & \textbf{Bloque} \\
-\hline
-Bajo  & \texttt{Qmf9gGPs...G3AZox} & 200 & confirmado \\
-Medio & \texttt{QmXkDdj8...zHSHR}  & 200 & confirmado \\
-Alto  & \texttt{QmUK7Jxz...MDy8}   & 200 & confirmado \\
-\hline
-\end{tabular}
-\end{table}
-
-La trazabilidad de cada operación queda garantizada por el evento RecordStored
-emitido por el contrato inteligente en cada transacción exitosa, el cual registra de forma
-inmutable el identificador del semáforo, la marca de tiempo, el tipo de dato y el CID
-en el historial de la red BlockDAG\@. Este mecanismo permite a cualquier auditor externo
-verificar de forma independiente que un dato determinado fue almacenado en un instante
-concreto, sin necesidad de confiar en el operador del sistema.
 
 % -----------------------------------------------------------------------------
 \subsection{Consumo de Gas y Costos Operativos}
@@ -810,80 +671,6 @@ produciendo la apariencia de una comparación desfavorable para el sistema propu
 cuando en realidad este sirvió a más del doble de vehículos. Sin la guardia de throughput
 y el tiempo total de sistema, ambas corridas habrían sido clasificadas en el sentido
 opuesto al correcto, el primer caso como una victoria y el segundo como una derrota.
-
-\subsection{Evolución experimental y caminos descartados}
-\label{subsec:control_evolucion}
-
-La configuración final del sistema evaluado en esta campaña no se obtuvo en un único
-diseño, sino que se destiló de una secuencia de intentos medidos sobre el mismo protocolo
-A/B. Los caminos descartados durante ese proceso, junto con la evidencia numérica que
-motivó su abandono, forman parte del argumento central de esta evaluación en la misma
-medida que los resultados finales: cada alternativa rechazada acota el espacio de diseño
-y explica por qué la configuración reportada en las secciones siguientes tiene la forma
-que tiene. La Tabla~\ref{tab:control_descartes} resume las alternativas ensayadas y
-descartadas.
-
-\begin{table}[htbp]
-\renewcommand{\arraystretch}{1.3}
-\caption{Alternativas de diseño ensayadas y descartadas durante la fase experimental,
-con la evidencia medida que motivó su abandono}
-\label{tab:control_descartes}
-\centering
-\footnotesize
-\begin{tabular}{p{0.28\textwidth}p{0.28\textwidth}p{0.34\textwidth}}
-\hline
-\textbf{Alternativa} & \textbf{Resultado medido} & \textbf{Lección} \\
-\hline
-Split direccional 70/20 a la aproximación prioritaria &
-$-66\%$ de throughput en demanda alta &
-20~s de verde transversal genera spillback en cadena; la prioridad sin cota destruye
-una red casi simétrica. \\
-Prioridad direccional acotada al 65\% &
-Colapso en demanda alta &
-El margen de servicio transversal mínimo viable resultó cercano al 40\%; se adoptó el
-rango $[40\%, 60\%]$. \\
-Equisaturación por colas instantáneas (modo \texttt{queue}) &
-$+16\%$ en corredor, pero $-25\%$ en demanda\_baja &
-El snapshot instantáneo de cola sobre-sirve backlogs ya estancados y mata de hambre a la
-arteria principal; se adoptó en su lugar el reparto igualitario del ciclo PSO entre
-fases, con mejoras uniformes de $+3,8\%$ y $+4,6\%$. \\
-Gate de ``mejora prevista'' por intervención &
-Vetaba aproximadamente el 100\% de las aplicaciones &
-La congestión servida, reportada como entero, redondea igual antes y después de la
-intervención: la ganancia real está en la espera, invisible a esa métrica puntual. La
-evaluación de beneficio se trasladó al nivel de sistema (comparación A/B). \\
-Reparto proporcional AdaptiveSplit (predecesor de Max-Pressure) &
-Pierde frente a tiempo fijo en demanda alta simétrica, con colapsos por spillback &
-Repartir un presupuesto de verde una sola vez por ciclo no reacciona a las colas reales;
-Max-Pressure decide por presión en cada intervalo de decisión. \\
-Piso de verde dinámico por ocupación (0,35 a 0,85) &
-Colapsos de inserción en demanda baja y media &
-Verdes largos bajo carga alta bombean el anillo interior de la red, el mismo mecanismo
-que produce el gridlock; el piso de verde mínimo debe ser estático. \\
-Transición amarillo$\to$verde sin all-red &
-Más colapsos en hora\_pico &
-El despeje de 1~s evita que queden vehículos atrapados en el cruce durante el cambio de
-fase; su costo temporal se justifica por esa razón. \\
-\hline
-\end{tabular}
-\end{table}
-
-Junto con estos descartes de diseño de control, un conjunto de correcciones de
-infraestructura experimental fue condición necesaria para que los resultados de esta
-campaña fueran confiables. El aislamiento del baseline por construcción garantiza que la
-telemetría del sistema propuesto solo se registre en el modo dinámico, evitando que la
-propia instrumentación contamine la corrida de referencia; la idempotencia de aplicación
-corrige un defecto por el cual cada detección de intervención reaplicaba el programa
-semafórico desde la fase~0, reseteando el semáforo a mitad de ciclo hasta unas 30 veces
-por corrida; el cooldown de 60~s por clúster redujo el volumen de llamadas de aplicación
-de aproximadamente 600 por corrida a decenas, eliminando reaplicaciones sin efecto sobre
-el estado del semáforo; el uso de \texttt{libsumo} en el mismo proceso, en lugar de
-TraCI sobre sockets, produjo una aceleración aproximada de 100 veces en modo headless,
-condición que hizo posible ejecutar en tiempos razonables las 180 corridas de esta
-campaña; y el generador determinista de escenarios, descrito en la
-Sección~\ref{subsec:control_escenarios}, garantiza que los seis niveles de demanda se
-deriven del mismo archivo de rutas sin ningún componente aleatorio, de modo que la única
-fuente de estocasticidad de todo el diseño experimental sea la semilla del motor SUMO.
 
 \subsection{Resultados globales}
 \label{subsec:control_resultados}

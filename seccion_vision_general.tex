@@ -59,10 +59,64 @@ Las propiedades que resultan de estas decisiones son:
 La Figura~\ref{fig:arquitectura_sistema_general} ilustra de forma esquemática la organización modular del sistema, mostrando los cuatro módulos principales y sus relaciones.
 
 \begin{figure}[htbp]
-    \centering
-    \includegraphics[width=\textwidth]{images/arquitectura.pdf}
-    \caption{Arquitectura general del sistema mostrando los cuatro módulos principales y el flujo de información.}
-    \label{fig:arquitectura_sistema_general}
+\centering
+\shorthandoff{>}
+\begin{tikzpicture}[
+    node distance=1.5cm and 2cm,
+    % Definición de estilos inspirados en tu código original, adaptados a la nueva imagen
+    storage/.style={rectangle, draw, rounded corners, fill=red!15,
+                    text width=3.8cm, align=center, minimum height=2.8cm, font=\small},
+    control/.style={rectangle, draw, rounded corners, fill=green!15,
+                    text width=3.8cm, align=center, minimum height=2.2cm, font=\small},
+    sim/.style={rectangle, draw, rounded corners, fill=orange!20,
+                text width=3.5cm, align=center, minimum height=2cm, font=\small},
+    sync/.style={rectangle, draw, rounded corners, fill=blue!15,
+                 text width=3.5cm, align=center, minimum height=2cm, font=\small},
+    ipfs/.style={rectangle, draw, rounded corners, fill=violet!15,
+                 text width=2.5cm, align=center, minimum height=1.2cm, font=\small},
+    dag/.style={rectangle, draw, rounded corners, fill=gray!15,
+                text width=2.5cm, align=center, minimum height=1.2cm, font=\small},
+    arrow/.style={->,thick,>=stealth},
+    % Estilo para que el texto corte las líneas de las flechas limpiamente
+    label/.style={fill=white, inner sep=2pt, font=\footnotesize}
+]
+
+    % Nodos principales
+    \node[control] (control) at (0, 0) {\textbf{traffic-control}\\Orquesta el flujo\\y valida datos};
+    
+    \node[storage] (storage) at (0, 4.5) {\textbf{traffic-storage}\\Almacena en\\IPFS + BlockDAG};
+    
+    \node[sim] (sim) at (7, 1) {\textbf{traffic-sim}\\Simula tráfico\\utilizando SUMO};
+    
+    \node[sync] (sync) at (7, -2.5) {\textbf{traffic-sync}\\Optimiza tiempos de\\semáforos};
+    
+    \node[ipfs] (ipfs) at (7, 5.5) {\textbf{IPFS}};
+    \node[dag] (dag) at (7, 3.5) {\textbf{BlockDAG}};
+
+    % Flechas Control <-> Storage
+    \draw[arrow] ([xshift=-1cm]control.north) -- node[left, font=\footnotesize] {Subida} ([xshift=-1cm]storage.south);
+    \draw[arrow] ([xshift=1cm]storage.south) -- node[right, font=\footnotesize] {Bajada} ([xshift=1cm]control.north);
+
+    % Flecha Sim -> Control
+    \draw[arrow] (sim.west) -- node[label] {Datos simulados} (control.east |- sim.west);
+
+    % Flechas Control <-> Sync (usando conectores ortogonales |-)
+    \draw[arrow] ([xshift=1cm]control.south) |- node[label, pos=0.75] {Datos simulados} ([yshift=0.5cm]sync.west);
+    \draw[arrow] ([yshift=-0.5cm]sync.west) -| node[label, pos=0.25] {Datos optimizados} ([xshift=-1cm]control.south);
+
+    % Flechas Storage <-> IPFS
+    \draw[arrow] ([yshift=0.3cm]storage.east |- ipfs.west) -- node[label] {JSON} ([yshift=0.3cm]ipfs.west);
+    \draw[arrow] ([yshift=-0.3cm]ipfs.west) -- node[label] {CID} ([yshift=-0.3cm]storage.east |- ipfs.west);
+
+    % Flechas Storage <-> BlockDAG
+    \draw[arrow] ([yshift=0.45cm]storage.east |- dag.west) -- node[label] {CID} ([yshift=0.45cm]dag.west);
+    \draw[arrow] (storage.east |- dag.west) -- node[label] {JSON} (dag.west);
+    \draw[arrow] ([yshift=-0.45cm]dag.west) -- node[label] {CID} ([yshift=-0.45cm]storage.east |- dag.west);
+
+\end{tikzpicture}
+\shorthandon{>}
+\caption{Diagrama de la arquitectura del sistema mostrando la interacción de datos entre los módulos de control, simulación, sincronización y almacenamiento.}
+\label{fig:arquitectura_sistema_general}
 \end{figure}
 
 En síntesis, esta arquitectura modular proporciona una plataforma flexible y escalable para la gestión inteligente de tráfico urbano, combinando capacidades de simulación, análisis adaptativo y persistencia verificable en un sistema distribuido que puede integrarse con infraestructuras reales de monitoreo vehicular. Los capítulos subsiguientes describen en detalle la implementación, las tecnologías subyacentes y el funcionamiento de cada módulo.
