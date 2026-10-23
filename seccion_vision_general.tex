@@ -5,11 +5,11 @@ El sistema propuesto se concibe como un ecosistema modular de microservicios par
 El sistema se estructura en torno a cuatro módulos fundamentales:
 
 \begin{itemize}
-    \item \textbf{traffic-sim}: Módulo de simulación de tráfico urbano, que genera escenarios de prueba controlados y reproducibles para evaluar el comportamiento del sistema bajo diferentes condiciones de demanda vehicular. Permite emular redes viales con semáforos y flujos vehiculares variables.
+    \item \textbf{traffic-sim}: Módulo de simulación de tráfico urbano, que genera escenarios de prueba controlados y reproducibles para evaluar el comportamiento del sistema bajo diferentes condiciones de demanda vehicular. Permite emular redes viales con semáforos y flujos vehiculares variables. Incorpora además un controlador local de presión máxima (Max-Pressure), que decide en tiempo real qué fase servir según la presión de las colas de entrada y de salida, con un mecanismo anti-\emph{spillback} que penaliza las fases cuyos carriles de salida están saturados para evitar bloqueos.
     
     \item \textbf{traffic-control}: Módulo de orquestación que actúa como punto de entrada unificado al sistema. Recibe observaciones de tráfico, valida los datos, coordina las invocaciones a los servicios especializados de optimización y almacenamiento, y mantiene metadatos operativos en una base de datos relacional.
     
-    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional y determina, mediante PSO, el largo de ciclo semafórico óptimo por clúster de sensores; el ajuste fino del reparto de fases dentro de ese ciclo ocurre localmente en traffic-sim mediante control por presión (Max-Pressure).
+    \item \textbf{traffic-sync}: Módulo de análisis y optimización que procesa las métricas de tráfico recibidas, evalúa el nivel de congestión mediante técnicas de inteligencia computacional y determina, mediante PSO, el largo de ciclo semafórico óptimo por clúster de sensores.
     
     \item \textbf{traffic-storage}: Módulo de persistencia verificable que almacena datos del sistema en infraestructuras descentralizadas, garantizando trazabilidad, integridad e inmutabilidad de los registros históricos mediante el uso de tecnologías de almacenamiento distribuido y registro de auditoría.
 \end{itemize}
@@ -19,11 +19,11 @@ El sistema se estructura en torno a cuatro módulos fundamentales:
 El flujo operativo del sistema sigue un ciclo cerrado de captura, análisis, optimización y registro:
 
 \begin{enumerate}
-    \item \textbf{Detección}: en traffic-sim, el componente \texttt{BottleneckDetector} muestrea vía TraCI cada intersección semaforizada cada 15~s de tiempo simulado, registrando conteo de vehículos, velocidad media, densidad (en vehículos por kilómetro de carril) y longitud de cola. Cuando una intersección supera los umbrales de cuello de botella se dispara el ciclo de optimización, sujeto a un periodo de enfriamiento de 60~s por intersección, de modo que la re-optimización no sature el pipeline con información redundante mientras las recomendaciones estratégicas, que cambian en escala de minutos, todavía no se modificaron.
+    \item \textbf{Detección}: en traffic-sim, el detector de cuellos de botella muestrea vía TraCI cada intersección semaforizada cada 15~s de tiempo simulado, registrando conteo de vehículos, velocidad media, densidad (en vehículos por kilómetro de carril) y longitud de cola. Cuando una intersección supera los umbrales de cuello de botella se dispara el ciclo de optimización, sujeto a un periodo de enfriamiento de 60~s por intersección, de modo que la re-optimización no sature el pipeline con información redundante mientras las recomendaciones estratégicas, que cambian en escala de minutos, todavía no se modificaron.
 
     \item \textbf{Armado del clúster y payload crudo}: se agrupan los semáforos ubicados a una distancia de hasta 200~m del cuello de botella detectado y se construye un payload con identificadores de SUMO sin normalizar y densidad expresada directamente en veh/km. traffic-sim no aplica ninguna normalización sobre estos datos: el contrato de diseño reserva esa responsabilidad exclusivamente al eslabón siguiente.
 
-    \item \textbf{Normalización y transporte}: el endpoint \texttt{POST /ingest} de traffic-control valida, normaliza y persiste el batch recibido, sin tomar decisiones de control. Las normalizaciones aplicadas incluyen la extracción de identificadores mediante una expresión regular (por ejemplo, \texttt{GS\_cluster\_J0\_J1} se reduce a \texttt{0}), la división de la densidad entre 100 con acotamiento al intervalo $[0,1]$, la compleción del desglose por clase vehicular y el forzado de la versión de esquema. El batch se sube a traffic-storage, se recupera con reintentos (y una ruta de contingencia que usa el batch local si el almacenamiento falla, de modo que un fallo de persistencia nunca bloquee el control) y se reenvía a traffic-sync.
+    \item \textbf{Normalización y transporte}: el punto de entrada de ingesta de traffic-control valida, normaliza y persiste el batch recibido, sin tomar decisiones de control. Las normalizaciones aplicadas incluyen la extracción de identificadores numéricos mediante una expresión regular, la división de la densidad entre 100 con acotamiento al intervalo $[0,1]$, la compleción del desglose por clase vehicular y el forzado de la versión de esquema. El batch se sube a traffic-storage, se recupera con reintentos (y una ruta de contingencia que usa el batch local si el almacenamiento falla, de modo que un fallo de persistencia nunca bloquee el control) y se reenvía a traffic-sync.
 
     \item \textbf{Decisión estratégica}: traffic-sync encadena un sistema de inferencia difusa tipo Mamdani, que evalúa el nivel de congestión de cada sensor a partir de densidad, velocidad y flujo; un clustering jerárquico de Ward, que agrupa sensores con patrones de congestión similares; y un algoritmo PSO unidimensional, que busca por clúster la longitud de ciclo $C$ que minimiza una función de aptitud sensible a demora, capacidad y riesgo de atasco.
 
@@ -40,7 +40,7 @@ La elección de una arquitectura de microservicios sobre un diseño monolítico 
 
 La comunicación mediante REST/JSON se eligió frente a alternativas binarias como gRPC porque las latencias dominantes del sistema son la carga a IPFS ($\approx$1,2~s) y la confirmación en BlockDAG ($\approx$3,5~s), por lo que la sobrecarga de serialización JSON no es el cuello de botella. REST también reduce la barrera de integración con infraestructura municipal existente y con sensores IoT estándar que ya exponen APIs HTTP.
 
-La división en exactamente cuatro módulos refleja cuatro responsabilidades sin superposición: generar datos (traffic-sim), coordinar y validar (traffic-control), analizar y optimizar (traffic-sync), y persistir con verificabilidad (traffic-storage). Fusionar, por ejemplo, orquestación y optimización acoplaría la lógica de validación de entradas con el ciclo difuso-PSO, dificultando las pruebas independientes de cada componente.
+La división en cuatro módulos refleja cuatro responsabilidades diferenciadas: simular y controlar localmente (traffic-sim), coordinar y validar (traffic-control), analizar y optimizar a escala estratégica (traffic-sync), y persistir con verificabilidad (traffic-storage). El control local por presión máxima reside en traffic-sim, y no en traffic-sync, por una razón de latencia y volumen de información: la decisión de qué fase servir se toma en la escala de segundos a partir del estado de cada carril en cada instante, y trasladarla a un servicio remoto exigiría enviar ese flujo de datos por la red en cada paso de simulación, con una latencia incompatible con esa escala. Por ello solo es viable como un componente integrado en la interfaz TraCI de la propia simulación, mientras que traffic-sync atiende la capa estratégica, de cadencia mucho menor. Fusionar, por ejemplo, orquestación y optimización acoplaría la lógica de validación de entradas con el ciclo difuso-PSO, dificultando las pruebas independientes de cada componente.
 
 Las propiedades que resultan de estas decisiones son:
 
@@ -49,7 +49,7 @@ Las propiedades que resultan de estas decisiones son:
 
     \item \textbf{Escalabilidad}: traffic-sync escala linealmente con el número de sensores ($\approx 0{,}034$~s/sensor hasta 2000 sensores), como se demuestra en el Capítulo~\ref{chp:experimentos}.
 
-    \item \textbf{Trazabilidad verificable}: cada lote de datos recibe un CID de IPFS inmutable, registrado en el contrato \texttt{TrafficStorage.sol}, lo que permite auditar retroactivamente cualquier decisión de control.
+    \item \textbf{Trazabilidad verificable}: cada lote de datos recibe un CID de IPFS inmutable, registrado en el contrato inteligente, lo que permite auditar retroactivamente cualquier decisión de control.
 
     \item \textbf{Reproducibilidad}: SUMO genera escenarios con semillas deterministas, garantizando que los experimentos del Capítulo~\ref{chp:experimentos} puedan reproducirse de forma independiente.
 
@@ -86,7 +86,7 @@ La Figura~\ref{fig:arquitectura_sistema_general} ilustra de forma esquemática l
     
     \node[storage] (storage) at (0, 4.5) {\textbf{traffic-storage}\\Almacena en\\IPFS + BlockDAG};
     
-    \node[sim] (sim) at (7, 1) {\textbf{traffic-sim}\\Simula tráfico\\utilizando SUMO};
+    \node[sim] (sim) at (7, 1) {\textbf{traffic-sim}\\Simula con SUMO\\y controla fases\\con Max-Pressure};
     
     \node[sync] (sync) at (7, -2.5) {\textbf{traffic-sync}\\Optimiza tiempos de\\semáforos};
     
@@ -115,7 +115,7 @@ La Figura~\ref{fig:arquitectura_sistema_general} ilustra de forma esquemática l
 
 \end{tikzpicture}
 \shorthandon{>}
-\caption{Diagrama de la arquitectura del sistema mostrando la interacción de datos entre los módulos de control, simulación, sincronización y almacenamiento.}
+\caption{Diagrama de la arquitectura del sistema mostrando la interacción de datos entre los módulos de control, simulación (que incluye el control local Max-Pressure), sincronización y almacenamiento.}
 \label{fig:arquitectura_sistema_general}
 \end{figure}
 
