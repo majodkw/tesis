@@ -18,11 +18,12 @@
 Este trabajo presenta el diseño, la implementación y la evaluación experimental de un sistema
 modular y descentralizado para la optimización adaptativa del control semafórico urbano y la
 persistencia verificable de los datos asociados. La arquitectura propuesta integra cuatro
-microservicios: un módulo de simulación de tráfico basado en SUMO (traffic-sim),
+microservicios: un módulo de simulación de tráfico basado en SUMO (traffic-sim), que incorpora un
+submódulo de control local por presión (Max-Pressure) que reparte finamente las fases
+dentro del ciclo semafórico,
 un módulo de análisis y optimización que combina inferencia difusa tipo Mamdani con
 optimización por enjambre de partículas para ajustar el largo de ciclo semafórico por
-clúster de sensores (traffic-sync), un módulo de control local por presión
-(Max-Pressure) que reparte finamente las fases dentro de ese ciclo, un módulo de almacenamiento
+clúster de sensores (traffic-sync), un módulo de almacenamiento
 distribuido basado en IPFS y contratos inteligentes sobre una red BlockDAG
 (traffic-storage), y un módulo de orquestación con interfaz REST
 (traffic-control). Los módulos se comunican mediante APIs HTTP/JSON,

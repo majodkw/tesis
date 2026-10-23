@@ -18,10 +18,10 @@
 This work presents the design, implementation, and experimental evaluation of a modular,
 decentralized system for adaptive urban traffic signal optimization and verifiable data
 persistence. The proposed architecture integrates four microservices: a SUMO-based traffic
-simulation module (\textit{traffic-sim}), an analysis and optimization module combining
+simulation module (\textit{traffic-sim}) that includes a local pressure-based control
+submodule (Max-Pressure) fine-tuning phase allocation within the signal cycle, an analysis and optimization module combining
 Mamdani fuzzy inference with Particle Swarm Optimization to tune the signal cycle length
-per sensor cluster (\textit{traffic-sync}), a local pressure-based control module
-(Max-Pressure) that fine-tunes phase allocation within that cycle, a
+per sensor cluster (\textit{traffic-sync}), a
 distributed storage module built on IPFS and smart contracts over a BlockDAG network
 (\textit{traffic-storage}), and an orchestration module with a REST interface
 (\textit{traffic-control}). All modules communicate via HTTP/JSON APIs, ensuring loose
