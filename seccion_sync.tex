@@ -523,7 +523,7 @@ Gridlock          & 45 &  2,0 & 135,0 & 8,4 &  60 & 27 & 0,00 & 0,93 \\
 \end{tabular}
 \end{table}
 
-Los valores de la Tabla~\ref{tab:sync_ejemplos} se obtuvieron ejecutando directamente el módulo de optimización PSO de traffic-sync sobre un solo clúster construido con las medias indicadas para cada escenario, sin mediar el servicio HTTP (el healthcheck de traffic-sync no respondía en el entorno de generación del reporte).
+Los valores de la Tabla~\ref{tab:sync_ejemplos} se obtuvieron ejecutando directamente el módulo de optimización PSO de traffic-sync sobre un solo clúster construido con las medias indicadas para cada escenario.
 
 \textbf{Carga baja a moderada (flujo libre y flujo moderado).} El ciclo óptimo se mantiene cerca del extremo inferior del rango $[60,\,120]$~s, reflejando que la carga normalizada del cruce (Ecuación~\ref{eq:load}) es baja y el término \emph{wait\_cost} domina la aptitud, empujando al optimizador hacia ciclos cortos que minimizan la espera promedio.
 
