@@ -66,8 +66,8 @@ resume las especificaciones de ambos entornos.
 Las transacciones de almacenamiento se enviaron a la red \textit{Primordial TestNet}, una
 red BlockDAG de pruebas con identificador de cadena (Chain ID) 1043, accesible a través
 del nodo RPC público https://rpc.primordial.bdagscan.com~\cite{wang2023dag}, sobre el
-contrato inteligente \texttt{TrafficStorage.sol} (Solidity~0.8.19, dirección
-\texttt{\footnotesize 0xC3d520EBE9A9F52FC5E1519f\\17F5a9A01d8ac68f}) cuya interfaz se
+contrato inteligente de almacenamiento (Solidity~0.8.19, dirección
+{\footnotesize 0xC3d520EBE9A9F52FC5E1519f\\17F5a9A01d8ac68f}) cuya interfaz se
 describe en el Capítulo~\ref{sec:decentralized_tech_traffic_storage}. La capa de
 almacenamiento en IPFS se implementó mediante Pinata\footnote{\url{https://pinata.cloud}}
 como servicio de nodo gestionado.
@@ -293,7 +293,7 @@ Costo estimado (USD)   & $<0{,}00002$--$<0{,}00005$\textsuperscript{†} & ---  
 
 \noindent\textsuperscript{†}~Rango entre datos de tráfico (36.232 unidades,
 $<$\$0{,}00002) y resultados de optimización (95.624 unidades, $<$\$0{,}00005);
-la descarga usa \texttt{getRecord}, función \textit{view} sin costo on-chain.
+la descarga usa una función de solo lectura (\textit{view}) sin costo on-chain.
 Detalle por tipo en Tabla~\ref{tab:storage_gas}.
 \end{table}
 
@@ -396,8 +396,8 @@ en dólares para cada tipo de operación.
 \hline
 \textbf{Tipo de dato}         & \textbf{Gas consumido (unidades)} & \textbf{Costo estimado (USD)} \\
 \hline
-Datos de tráfico (\texttt{Data})         & 36.232 & $< 0{,}00002$ \\
-Optimizaciones (\texttt{Optimization})   & 95.624 & $< 0{,}00005$ \\
+Datos de tráfico (Data)         & 36.232 & $< 0{,}00002$ \\
+Optimizaciones (Optimization)   & 95.624 & $< 0{,}00005$ \\
 \hline
 \end{tabular}
 \end{table}
@@ -586,10 +586,9 @@ MOPC 60~s      & Ciclo de 60~s con 25~s de verde por fase, siguiendo el reparto 
                  de volumen vehicular por aproximación (sección 113.14.3) \cite{mopc2019manual}.
                  El tiempo perdido por ciclo asociado a este reparto es del 16,7\%. \\
 netconvert 90~s & Ciclo de 90~s con 42~s de verde, calculado como el residuo del algoritmo
-                 de generación automática de planes de netconvert: el valor por defecto
-                 \texttt{tls.cycle.time=90} (\texttt{NBFrame.cpp}, línea~584) y el verde
-                 semilla de 31~s (línea~587) se ajustan mediante estiramiento igualitario
-                 en \texttt{NBOwnTLDef.cpp} (líneas~803--816), de modo que
+                 de generación automática de planes de netconvert: el ciclo por defecto
+                 de 90~s y el verde semilla de 31~s se ajustan mediante estiramiento
+                 igualitario, de modo que
                  $31+(90-68)/2=42$. El tiempo perdido por ciclo es del 6,7\%. \\
 Ciclo largo 120~s & Ciclo de 120~s con 57~s de verde. El tiempo perdido por ciclo es del 5\%. \\
 \hline
@@ -711,7 +710,7 @@ hora\_pico         & 40,8\% & 39,9\% & 40,7\% \\
 
 Se observa que demanda\_saturada, pese a tener una fracción alta de corridas favorables
 (7 a 8 de 10, Tabla~\ref{tab:control_favorables_celda}), presenta la mediana de vehículos
-pareados mejorados más baja de la batería (23,7\% a 34,6\%): la ventaja agregada de esta
+pareados mejorados más baja de todos los escenarios (23,7\% a 34,6\%): la ventaja agregada de esta
 celda proviene en buena medida de un throughput global mayor y no de una mejora
 homogénea sobre la mayoría de los vehículos individuales, señal consistente con un
 régimen de saturación en el que el sistema propuesto evita el colapso pero no elimina la
@@ -824,10 +823,10 @@ propuesto respecto de cada plan fijo, por escenario.}
 Las medianas de la Tabla~\ref{tab:control_favorables_celda} resumen la magnitud del
 efecto, pero no informan por sí solas si ese efecto es estadísticamente distinguible del
 ruido introducido por la semilla aleatoria. Para cada una de las 180 corridas se aplicó
-por lo tanto una batería de pruebas de significancia sobre los tiempos de viaje pareados
+por lo tanto un conjunto de pruebas de significancia sobre los tiempos de viaje pareados
 por vehículo. El test de Wilcoxon de rangos con signo, aplicado sobre las diferencias
 pareadas vehículo a vehículo (mismo vehículo, misma ruta, mismo instante de salida en
-ambas corridas), constituye la evidencia más fuerte de la batería, porque el tamaño de
+ambas corridas), constituye la evidencia más sólida de ese conjunto, porque el tamaño de
 muestra $n$ resulta idéntico por construcción entre las condiciones A y B: al no
 depender de comparar dos muestras de tamaño distinto, no hereda el riesgo de que una
 población deprimida por colapso parcial sesgue el estadístico. El test de permutación,
