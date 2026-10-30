@@ -33,16 +33,17 @@ Estos resultados respaldan la viabilidad de despliegues sobre hardware embebido 
 como unidades Raspberry~Pi en campo.
 
 En traffic-storage, las transacciones de almacenamiento alcanzaron confirmación en
-la red BlockDAG en $\approx$1~s, con costos inferiores a \$1{,}2$\times$10\textsuperscript{-5}~USD
+la red BlockDAG en $\approx$3,5~s, con costos inferiores a \$2$\times$10\textsuperscript{-5}~USD
 por transacción. Los tiempos de subida extremo a extremo se situaron entre 6,7 y 7,3~s según
-la densidad vehicular del escenario, mientras que la descarga se completó en $\approx$1,75~s,
+la densidad vehicular del escenario, mientras que la descarga se completó en $\approx$1,8~s,
 adecuado para flujos de auditoría y consulta sobre datos agregados de ciclos completados, no
 sobre control en tiempo estricto. La verificación de integridad mediante el CID de IPFS
 demostró que los contenidos recuperados conservan fielmente el original. Frente a Ethereum,
-el sistema superó en más del 95\% la latencia de confirmación y en más de cuatro órdenes de
-magnitud el costo operativo; frente a arquitecturas IoT-cloud centralizadas, la reducción de
-latencia de persistencia verificable superó el 60\%, con inmutabilidad garantizada por
-consenso distribuido y no por confianza en un operador central.
+el sistema redujo entre 77 y 94\% la latencia de confirmación y en más de cuatro órdenes de
+magnitud el costo operativo. Frente a arquitecturas IoT-cloud centralizadas, la ventaja no es de
+latencia sino de garantías: inmutabilidad asegurada por consenso distribuido y no por
+confianza en un operador central; la comparación experimental directa de latencia con esas
+plataformas queda como trabajo futuro.
 
 En conjunto, los experimentos establecen que la combinación IPFS+BlockDAG constituye una
 alternativa técnicamente competitiva para monitoreo urbano de alta frecuencia con requisitos
@@ -80,7 +81,7 @@ octubre de 2025.\footnote{Disponible en IEEE Xplore:
 El artículo documenta, en formato condensado,
 la arquitectura modular del sistema, las métricas de escalabilidad y almacenamiento aquí
 ampliadas, y la comparación con plataformas basadas en Ethereum y soluciones centralizadas.
-La publicación valida externamente los resultados experimentales de la tesis y posiciona la
+La publicación valida externamente la arquitectura y la metodología de la tesis y posiciona la
 propuesta en el ámbito de sistemas inteligentes para ciudades con almacenamiento verificable
 y despliegue en dispositivos de bajo costo.
 

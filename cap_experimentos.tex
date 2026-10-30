@@ -255,10 +255,9 @@ El módulo traffic-storage es la capa de persistencia verificable del sistema.
 Ante cada reporte de tráfico o resultado de optimización, el módulo sube el contenido en
 formato JSON a IPFS y registra el identificador de contenido (CID) resultante en el contrato
 inteligente de la red BlockDAG, vinculándolo de forma inmutable al semáforo de origen y la
-marca de tiempo correspondiente. La evaluación de este módulo se realizó en dos etapas
-complementarias: primero, una medición de métricas de transacción base que caracteriza la
-latencia, el costo y el consumo de gas del pipeline completo; y segundo, un protocolo de
-prueba por escenarios de tráfico vehicular simulado que valida el comportamiento del sistema
+marca de tiempo correspondiente. La evaluación de este módulo se realizó mediante un
+protocolo de prueba por escenarios de tráfico vehicular simulado, que caracteriza la
+latencia, el costo y el consumo de gas del pipeline completo, y valida su comportamiento
 bajo distintas densidades de datos.
 
 % -----------------------------------------------------------------------------
@@ -266,10 +265,14 @@ bajo distintas densidades de datos.
 \label{subsec:storage_base}
 
 Para caracterizar el desempeño del pipeline de almacenamiento en condiciones controladas, se
-ejecutaron múltiples transacciones reales de subida y descarga sobre un nodo IPFS local
-(Kubo) con conexión directa a la red BlockDAG, midiendo cuatro indicadores: tiempo total
-de la operación extremo a extremo, tiempo de confirmación en la red BlockDAG, latencia de
-red y costo por transacción. La
+ejecutaron transacciones reales de subida y descarga contra la API de traffic-storage,
+con almacenamiento en IPFS mediante el servicio Pinata y registro en la red BlockDAG
+Primordial TestNet. Se definieron tres escenarios de densidad vehicular (bajo, medio y
+alto) con cinco corridas por escenario y operación, lo que totaliza 15 subidas y 15
+descargas exitosas (código HTTP~200). Se midieron el tiempo total de la operación extremo a
+extremo, medido desde el inicio de la petición HTTP, y el consumo de gas y el costo por
+transacción. El tiempo de confirmación en la red se obtuvo de los registros de ejecución
+detallados (Sección~\ref{subsec:storage_pipeline}). La
 Tabla~\ref{tab:storage_metricas_base} resume los resultados obtenidos.
 
 \begin{table}[htbp]
@@ -282,25 +285,33 @@ Tabla~\ref{tab:storage_metricas_base} resume los resultados obtenidos.
 \hline
 \textbf{Métrica} & \textbf{Subida (upload)} & \textbf{Bajada (download)} \\
 \hline
-Tiempo total (s)       & $2{,}47 \pm 0{,}26$ & $1{,}91 \pm 0{,}19$ \\
-Confirmación (s)       & $1{,}12 \pm 0{,}14$ & $0{,}98 \pm 0{,}11$ \\
-Latencia de red (ms)   & $184 \pm 21$        & $167 \pm 19$        \\
+Tiempo total (s)       & $6{,}97 \pm 0{,}90$ & $1{,}83 \pm 0{,}49$ \\
+Confirmación (s)       & $\approx 3{,}5$\textsuperscript{‡} & --- \\
 Gas utilizado (upload) & $36.232$--$95.624$\textsuperscript{†}  & ---                 \\
 Costo estimado (USD)   & $<0{,}00002$--$<0{,}00005$\textsuperscript{†} & ---       \\
 \hline
 \end{tabular}
 \smallskip
 
-\noindent\textsuperscript{†}~Rango entre datos de tráfico (36.232 unidades,
+\noindent Media $\pm$ desviación estándar muestral sobre $n=15$ corridas por operación.
+\textsuperscript{‡}~Obtenido de los registros de ejecución detallados
+(Sección~\ref{subsec:storage_pipeline}); la descarga no requiere confirmación.\\
+\textsuperscript{†}~Rango entre datos de tráfico (36.232 unidades,
 $<$\$0{,}00002) y resultados de optimización (95.624 unidades, $<$\$0{,}00005);
 la descarga usa una función de solo lectura (\textit{view}) sin costo on-chain.
 Detalle por tipo en Tabla~\ref{tab:storage_gas}.
 \end{table}
 
-Los tiempos de confirmación en la red BlockDAG, del orden de 1~segundo, y el costo por
-transacción, inferior a \$5 $\times$ 10\textsuperscript{-5}~USD según el tipo de dato
-almacenado, confirman la viabilidad del sistema para monitoreo de alta frecuencia;
-la comparación con tecnologías alternativas se detalla en la
+El tiempo de subida extremo a extremo se mantuvo entre 6,7 y 7,3~s en promedio según el
+escenario (bajo: 6,7~s; medio: 6,9~s; alto: 7,3~s) y la descarga en torno a 1,8~s.
+La confirmación en la red BlockDAG, del orden de 3,5~s, representa cerca de la mitad
+de la latencia de subida, y el costo por transacción se mantuvo inferior a
+\$5 $\times$ 10\textsuperscript{-5}~USD según el tipo de dato almacenado. Estos
+valores son adecuados para el registro verificable de reportes y resultados de
+optimización, que no forman parte del lazo de control en tiempo estricto.
+Estas mediciones, obtenidas de los registros de ejecución completos del módulo,
+actualizan las cifras preliminares del artículo de conferencia. La comparación con
+tecnologías alternativas se detalla en la
 Sección~\ref{sec:experimentos_comparativa}.
 
 % -----------------------------------------------------------------------------
@@ -318,17 +329,16 @@ el cálculo dinámico del precio de gas, la obtención del nonce actual y la fir
 criptográfica de la transacción; en conjunto, esta fase demanda aproximadamente 2,3~s.
 La tercera fase es la confirmación en la red: el tiempo que transcurre desde
 el envío de la transacción hasta que es incluida en un bloque minado y confirmada
-es de aproximadamente 3,5~s en las pruebas por escenarios. Este valor es superior
-al registrado en las pruebas base (1,12~s, Tabla~\ref{tab:storage_metricas_base}),
-diferencia atribuible a las condiciones variables de la red BlockDAG pública entre
-sesiones de prueba realizadas en distintas fechas.
+es de aproximadamente 3,5~s (3,48~s en la corrida trazada en detalle). La suma de las tres
+fases ($\approx 7{,}0$~s) es coherente con el tiempo total de subida medido
+(Tabla~\ref{tab:storage_metricas_base}).
 
 La Figura~\ref{fig:storage_pipeline} muestra la composición proporcional de estas
 etapas para las operaciones de subida y descarga. En el caso de la descarga, el
 pipeline se reduce a dos fases: la consulta al contrato inteligente para recuperar
 el CID asociado a un semáforo y timestamp determinados (~0,9~s), seguida de la
 descarga del contenido desde el gateway de IPFS usando dicho CID (~0,7~s), con
-un tiempo total de ~1,6~s.
+un tiempo total de ~1,6~s en la corrida trazada (1,83~s en promedio sobre las 15 descargas).
 
 \begin{figure}[htbp]
 \centering
@@ -430,8 +440,8 @@ literatura existente como desde los valores medidos experimentalmente.
 
 Las características de ambas plataformas se describieron en el
 Capítulo~\ref{sec:decentralized_tech_traffic_storage}; los resultados medidos en este
-trabajo, con confirmación en $\approx$1~s y costos inferiores a
-\$1{,}2$\times$10\textsuperscript{-5}~USD por transacción, ratifican las ventajas
+trabajo, con confirmación en $\approx$3,5~s y costos inferiores a
+\$2$\times$10\textsuperscript{-5}~USD por transacción de datos de tráfico, ratifican las ventajas
 teóricas de BlockDAG en condiciones de uso real sobre la red Primordial TestNet.
 La Tabla~\ref{tab:comparativa_blockchain} sintetiza la comparación desde la perspectiva
 del monitoreo urbano de tráfico.
@@ -450,7 +460,7 @@ urbano de tráfico. Valores de BlockDAG medidos en Primordial TestNet.}
 \hline
 Latencia de confirmación
   & 15--60~s \cite{conoscenti2016blockchain,garay2015backbone}
-  & $\approx$1~s (medido) \\
+  & $\approx$3,5~s (medido) \\
 Costo por transacción
   & \$0{,}50--5{,}00~USD \cite{eckermann2021blockchain}
   & $<$\$0{,}00002~USD (medido) \\
@@ -1210,9 +1220,9 @@ futuro.
 
 Las evaluaciones cubren los tres frentes del sistema: traffic-sync demostró
 escalabilidad lineal ($\approx$0{,}034~s/sensor) y operación estable en menos de
-220~MB de RAM; traffic-storage alcanzó confirmación BlockDAG en $\approx$1~s a un
-costo inferior a \$1{,}2$\times$10\textsuperscript{-5}~USD por transacción, superando
-a Ethereum en latencia de confirmación (>95\%) y costo operativo (>4 órdenes de magnitud);
+220~MB de RAM; traffic-storage alcanzó confirmación BlockDAG en $\approx$3,5~s a un
+costo inferior a \$2$\times$10\textsuperscript{-5}~USD por transacción de datos, superando
+a Ethereum en latencia de confirmación (77--94\%) y costo operativo (>4 órdenes de magnitud);
 y la campaña A/B de control semafórico resultó favorable al sistema propuesto en el
 77,8\% de las 180 comparaciones, con una ventaja que crece con la asimetría de demanda
 entre aproximaciones y un límite claro en demanda simétrica cercana a la capacidad de
